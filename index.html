@@ -948,6 +948,16 @@ async function load(){
   if(d && typeof d==='object'){ S = Object.assign(S,d); if(!S.stats) S.stats={}; }
   if(!S.firstDay) S.firstDay=todayKey();
   if(!S.visited) S.visited = (S.unlocked||[]).slice();
+  /* Older builds could mark a day done from a date baked into the file.
+     If a day is marked done but nothing was ever actually answered, undo it. */
+  if(!S.seedFix){
+    S.seedFix = 1;
+    const answered = Object.keys(S.stats||{}).length > 0 || (S.xp||0) > 0;
+    if(!answered && ((S.today||0) > 0 || S.earnedToday)){
+      S.today = 0; S.earnedToday = false; S.day = todayKey();
+    }
+    save();
+  }
   if(S.v!==3){ S.v=3; delete S.credits; delete S.unlocked; save(); }
   applySeed();
   loadSel();
