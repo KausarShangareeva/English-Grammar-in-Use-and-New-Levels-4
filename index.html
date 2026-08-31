@@ -561,7 +561,6 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
 
     <div class="gate" id="gateHome"></div>
     <button class="daily" id="dailyBtn"></button>
-    <button class="ghost hide" id="markDone" style="margin-top:-4px"></button>
     <div class="rows" id="hub"></div>
     <button class="ghost" id="resetBtn">Reset progress</button>
   </section>
@@ -940,7 +939,7 @@ function countAnswer(){
     S.earnedToday=true;
     toast('🔓 ' + GOAL + ' done — everything is open until midnight');
   }
-  save(); paintGate(); paintHub(); paintDayCnt(); paintMarkDone();
+  save(); paintGate(); paintHub(); paintDayCnt();
   if($('#grammar')) paintGrammar();
 }
 
@@ -953,7 +952,7 @@ async function load(){
   applySeed();
   loadSel();
   rollDay(); paintDark(); paintHome(); paintHub(); paintSound(); paintGate(); paintGrammar();
-  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintMarkDone();
+  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL();
   if(S.series && (S.series==='A'||S.series==='B')){ curSeries=S.series; paintSeries(); paintStories(); }
   restoreScreen();
 }
@@ -1023,25 +1022,6 @@ function paintDark(){
   const b=document.getElementById('darkBtn');
   if(b){ b.innerHTML = S.dark ? SUN_SVG : MOON_SVG;
     b.setAttribute('aria-label', S.dark ? 'Light mode' : 'Dark mode'); }
-}
-let markArm=false;
-function paintMarkDone(){
-  const b=document.getElementById('markDone'); if(!b) return;
-  const show = !dayOpen();
-  b.classList.toggle('hide', !show);
-  b.textContent = markArm ? 'Tap again to confirm — this opens everything for today'
-                          : 'I already did today’s quiz in an older version';
-  b.style.color = markArm ? 'var(--berry)' : '';
-  b.onclick = () => {
-    if(!markArm){ markArm=true; paintMarkDone();
-      setTimeout(()=>{ if(markArm){ markArm=false; paintMarkDone(); } },4000); return; }
-    markArm=false;
-    S.day=todayKey(); S.today=Math.max(S.today||0, GOAL); S.earnedToday=true;
-    markActive(); save();
-    paintGate(); paintHub(); paintDayCnt(); paintMarkDone();
-    if($('#grammar')) paintGrammar();
-    toast('🔓 Marked as done for today');
-  };
 }
 function paintHub(){
   rollDay();
@@ -2048,7 +2028,7 @@ $('#gTyped').onclick=()=>startGram('typed');
 $('#gPractiseAll').onclick=()=>startGram('all');
 $('#storyQuiz').onclick=()=>{ const u=ST[curStory].u;
   sel.units=new Set([u]); sel.mode='mix'; sel.only='all'; sel.len=20;
-  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintMarkDone(); startRound(); };
+  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); startRound(); };
 
 document.addEventListener('click',e=>{
   const b=e.target.closest('.sp'); if(!b) return;
