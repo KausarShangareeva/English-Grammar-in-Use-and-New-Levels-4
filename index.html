@@ -463,6 +463,8 @@ mark{background:#F7E7CB;color:var(--deep);font-weight:700;
 body.dark .sechead.s-essay{background:#16303A;border-color:#24505E}
 body.dark .sechead.s-speaking{background:#33202A;border-color:#4E2F3A}
 body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
+.buildline{font-family:var(--ui);font-size:9.5px;color:var(--mut2);text-align:center;
+  margin:18px 0 4px;letter-spacing:.4px}
 .legend2{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 16px;font-size:11.5px;color:var(--mut)}
 .legend2 span b{color:var(--deep);font-weight:700}
 .ggroup{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut2);
@@ -563,6 +565,7 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
     <button class="daily" id="dailyBtn"></button>
     <div class="rows" id="hub"></div>
     <button class="ghost" id="resetBtn">Reset progress</button>
+    <div class="buildline" id="buildline"></div>
   </section>
 
   <!-- ============ WORDS ============ -->
@@ -858,6 +861,7 @@ const store = {
 };
 const KEY='nl4vocab_v1';
 const GOAL = 25;
+const BUILD = '2026-08-31 08:50 UTC';
 /* Baked in at build time: the day the quiz was already done.
    It only fires if the device's date matches, so tomorrow the lock returns. */
 // No baked-in dates any more: use the button under the daily quiz instead.
@@ -936,7 +940,7 @@ function paintDayCnt(){
 function countAnswer(){
   rollDay(); markActive(); S.today=(S.today||0)+1;
   if(S.today>=GOAL && !S.earnedToday){
-    S.earnedToday=true;
+    S.earnedToday=true; S.doneBy='quiz';
     toast('🔓 ' + GOAL + ' done — everything is open until midnight');
   }
   save(); paintGate(); paintHub(); paintDayCnt();
@@ -948,19 +952,20 @@ async function load(){
   if(d && typeof d==='object'){ S = Object.assign(S,d); if(!S.stats) S.stats={}; }
   if(!S.firstDay) S.firstDay=todayKey();
   if(!S.visited) S.visited = (S.unlocked||[]).slice();
-  /* Older builds could mark a day done from a date baked into the file.
-     If a day is marked done but nothing was ever actually answered, undo it. */
-  if(!S.seedFix){
-    S.seedFix = 1;
-    const answered = Object.keys(S.stats||{}).length > 0 || (S.xp||0) > 0;
-    if(!answered && ((S.today||0) > 0 || S.earnedToday)){
-      S.today = 0; S.earnedToday = false; S.day = todayKey();
+  /* A day counts as done only if the quiz itself closed it.
+     Older builds could mark it from a date baked into the file — clear that. */
+  if(S.seedFix!==2){
+    S.seedFix=2;
+    if(S.day===todayKey() && (S.earnedToday || (S.today||0)>=GOAL) && S.doneBy!=='quiz'){
+      S.today=0; S.earnedToday=false;
     }
     save();
   }
   if(S.v!==3){ S.v=3; delete S.credits; delete S.unlocked; save(); }
   applySeed();
   loadSel();
+  const bl=document.getElementById('buildline');
+  if(bl) bl.textContent='build '+BUILD;
   rollDay(); paintDark(); paintHome(); paintHub(); paintSound(); paintGate(); paintGrammar();
   paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL();
   if(S.series && (S.series==='A'||S.series==='B')){ curSeries=S.series; paintSeries(); paintStories(); }
