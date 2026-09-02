@@ -28,7 +28,7 @@
   --ui:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{zoom:var(--zoom,1.5);margin:0;padding:0}
+html,body{margin:0;padding:0}
 body{
   background:var(--bg);
   background-image:radial-gradient(120% 60% at 50% -10%, var(--wash) 0%, rgba(247,234,234,0) 62%);
@@ -114,13 +114,6 @@ h2.sec{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(
 
 
 /* ================= dark mode ================= */
-.zoombtn{position:absolute;top:-2px;right:48px;width:42px;height:42px;border-radius:50%;
-  background:var(--card);border:1px solid var(--line2);color:var(--rose);
-  display:grid;place-items:center;padding:0;-webkit-tap-highlight-color:transparent;
-  font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:-.2px}
-.zoombtn:active{transform:scale(.94);background:var(--rose-l)}
-body.dark .zoombtn{color:var(--gold);border-color:#3A5058}
-.top{padding-right:98px}
 .darkbtn{position:absolute;top:-2px;right:-2px;width:42px;height:42px;border-radius:50%;
   background:var(--card);border:1px solid var(--line2);color:var(--rose);
   display:grid;place-items:center;padding:0;-webkit-tap-highlight-color:transparent}
@@ -184,6 +177,8 @@ body.dark .prose p.reading{box-shadow:0 0 0 8px var(--sand-l)}
 
 
 
+/* phones stay at their natural size; wider screens get a little more */
+@media (min-width:820px){ body{ zoom:1.25 } }
 /* ---------- schematic maps ---------- */
 .gverb.mapcard{padding:14px 12px 12px}
 .gverb.mapcard .gn{margin-top:0}
@@ -548,7 +543,7 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
   <div class="top">
     <div class="brand">English Grammar in Use <span class="amp">and</span> New&nbsp;Levels <em>4</em></div>
     <div class="sub" id="subtitle">vocabulary trainer</div>
-    <button class="zoombtn" id="zoomBtn" aria-label="Text size"></button><button class="darkbtn" id="darkBtn" aria-label="Dark mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    <button class="darkbtn" id="darkBtn" aria-label="Dark mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
   </div>
 
   <!-- ============ HOME ============ -->
@@ -978,7 +973,7 @@ async function load(){
   loadSel();
   const bl=document.getElementById('buildline');
   if(bl) bl.textContent='build '+BUILD;
-  rollDay(); paintZoom(); paintDark(); paintHome(); paintHub(); paintSound(); paintGate(); paintGrammar();
+  rollDay(); paintDark(); paintHome(); paintHub(); paintSound(); paintGate(); paintGrammar();
   paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL();
   if(S.series && (S.series==='A'||S.series==='B')){ curSeries=S.series; paintSeries(); paintStories(); }
   restoreScreen();
@@ -1044,15 +1039,6 @@ let curSeries='A';
 function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
 const MOON_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
 const SUN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.2M12 19.4v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.4 12h2.2M19.4 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>';
-const ZOOMS=[1,1.25,1.5,1.75,2];
-function paintZoom(){
-  let z=Number(S.zoom); if(!ZOOMS.includes(z)) z=1.5;
-  S.zoom=z;
-  document.documentElement.style.setProperty('--zoom', z);
-  const b=document.getElementById('zoomBtn');
-  if(b){ b.textContent = Math.round(z*100)+'%';
-    b.setAttribute('aria-label','Text size '+Math.round(z*100)+' per cent'); }
-}
 function paintDark(){
   document.body.classList.toggle('dark', !!S.dark);
   const b=document.getElementById('darkBtn');
@@ -2020,7 +2006,7 @@ $('#prevC').onclick=()=>{ ci=(ci-1+CD.length)%CD.length; flipped=false; paintCar
 $('#resetBtn').onclick=()=>{ if(confirm('Erase all progress, points and statistics?')){
   S={stats:{},xp:0,best:0,autoSpeak:S.autoSpeak,day:todayKey(),today:0,credits:1,
      earnedToday:false,visited:[],seen:{},firstDay:todayKey(),lastActive:'',
-     seenW:[],seenG:[],cycle:1,dark:S.dark,zoom:S.zoom,
+     seenW:[],seenG:[],cycle:1,dark:S.dark,
      deck:[],deckKey:'',deckIx:0}; save(); paintGate(); paintGrammar(); paintHub(); paintHome(); toast('Progress reset'); } };
 
 $('#prose').addEventListener('click',e=>{
@@ -2028,12 +2014,6 @@ $('#prose').addEventListener('click',e=>{
   const o=document.querySelector('m.on'); if(o)o.classList.remove('on');
   m.classList.add('on'); openSheet(+m.dataset.i);
 });
-$('#zoomBtn').onclick=()=>{
-  const i=ZOOMS.indexOf(Number(S.zoom));
-  S.zoom = ZOOMS[(i+1) % ZOOMS.length];
-  save(); paintZoom();
-  toast('Text size ' + Math.round(S.zoom*100) + '%');
-};
 $('#darkBtn').onclick=()=>{ S.dark=!S.dark; save(); paintDark(); };
 $('#playBtn').onclick=()=>{ RS.on ? stopRead() : startRead(); };
 $('#loopBtn').onclick=()=>{ RS.loop=!RS.loop; paintPlay(); };
