@@ -59,8 +59,10 @@ button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
 .mini{display:flex;gap:6px 14px;margin-top:9px;font-size:11.5px;color:var(--mut);flex-wrap:wrap}
 .mini b{color:var(--rose);font-weight:700}
 
-h2.sec .cnt2{float:right;font-weight:700;font-size:10px;color:var(--line2);letter-spacing:.3px;
+h2.sec .cnt2{float:right;font-weight:600;font-size:10.5px;color:var(--mut2);letter-spacing:.3px;
   text-transform:none}
+h2.sec .cnt2 b{font-weight:800;color:var(--rose)}
+.serieshd .sc b{font-weight:800;color:var(--rose-s)}
 .serieshd{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:1.3px;
   text-transform:uppercase;color:var(--mut2);margin:14px 0 8px;line-height:1.5}
 .serieshd .sc{font-weight:700;letter-spacing:.2px;text-transform:none;color:var(--line2)}
@@ -641,7 +643,7 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
     <button class="back" id="backW"><span class="ar">&larr;</span> Main menu</button>
     <h1 class="scrtitle">Words</h1>
     <div class="scrsub" id="wordsSub"></div>
-    <h2 class="sec">Units</h2>
+    <h2 class="sec" id="unitsSec">Units</h2>
     <div class="chips" id="units"></div>
     <h2 class="sec" id="booksSec">Books</h2>
     <div id="bookchips"></div>
@@ -1395,6 +1397,12 @@ function hi(sent,forms){
 }
 
 function paintUnits(){
+  const uh=document.getElementById('unitsSec');
+  if(uh){
+    const us=Object.keys(UNAMES).filter(u=>u.slice(0,2)!=='BK');
+    const n=W.filter(w=>w.u.slice(0,2)!=='BK').length;
+    uh.innerHTML='Units<span class="cnt2"><b>'+us.length+'</b> units &middot; <b>'+n+'</b> words</span>';
+  }
   const sub=document.getElementById('wordsSub');
   if(sub){
     const bk=W.filter(w=>w.u.slice(0,2)==='BK').length;
@@ -1462,8 +1470,8 @@ function paintBookChips(){
   const withWords = BOOKS.filter(b=>b.u && W.filter(w=>w.u===b.u).length);
   const totalW = withWords.reduce((a,b)=>a+W.filter(w=>w.u===b.u).length,0);
   const hd=$('#booksSec');
-  if(hd) hd.innerHTML = 'Books<span class="cnt2">'+withWords.length+' of '+BOOKS.length+
-    ' &middot; '+totalW+' words</span>';
+  if(hd) hd.innerHTML = 'Books<span class="cnt2"><b>'+withWords.length+'</b> of <b>'+
+    BOOKS.length+'</b> &middot; <b>'+totalW+'</b> words</span>';
   const order=[]; const byS={};
   BOOKS.forEach(b=>{ const k=b.s||'Other';
     if(!byS[k]){ byS[k]=[]; order.push(k); } byS[k].push(b); });
@@ -1472,8 +1480,8 @@ function paintBookChips(){
     const n=books.reduce((a,b)=>a+(b.u?W.filter(w=>w.u===b.u).length:0),0);
     const done=books.filter(b=>b.u&&W.filter(w=>w.u===b.u).length).length;
     box.appendChild(el('div','serieshd',
-      esc(k)+' <span class="sc">&middot; '+done+'/'+books.length+' book'+(books.length>1?'s':'')+
-      (n?' &middot; '+n+' words':'')+'</span>'));
+      esc(k)+' <span class="sc">&middot; <b>'+done+'</b>/<b>'+books.length+'</b> book'+
+      (books.length>1?'s':'')+(n?' &middot; <b>'+n+'</b> words':'')+'</span>'));
     const g=el('div','sgroup','');
     books.forEach(b=>g.appendChild(bookChip(b)));
     box.appendChild(g);
@@ -1510,8 +1518,8 @@ function paintShelf(){
     const total=books.reduce((a,b)=>a+(b.u?W.filter(w=>w.u===b.u).length:0),0);
     const done=books.filter(b=>b.u&&W.filter(w=>w.u===b.u).length).length;
     const h=el('div','serieshd',
-      esc(k)+' <span class="sc">&middot; '+done+'/'+books.length+' book'+(books.length>1?'s':'')+
-      (total?' &middot; '+total+' words':'')+'</span>');
+      esc(k)+' <span class="sc">&middot; <b>'+done+'</b>/<b>'+books.length+'</b> book'+
+      (books.length>1?'s':'')+(total?' &middot; <b>'+total+'</b> words':'')+'</span>');
     h.style.gridColumn='1 / -1';
     box.appendChild(h);
     books.forEach(b=>{
