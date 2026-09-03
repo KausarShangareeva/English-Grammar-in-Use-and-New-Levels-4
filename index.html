@@ -1470,8 +1470,8 @@ function paintBookChips(){
   const withWords = BOOKS.filter(b=>b.u && W.filter(w=>w.u===b.u).length);
   const totalW = withWords.reduce((a,b)=>a+W.filter(w=>w.u===b.u).length,0);
   const hd=$('#booksSec');
-  if(hd) hd.innerHTML = 'Books<span class="cnt2"><b>'+withWords.length+'</b> of <b>'+
-    BOOKS.length+'</b> &middot; <b>'+totalW+'</b> words</span>';
+  if(hd) hd.innerHTML = 'Books<span class="cnt2"><b>'+BOOKS.length+'</b> books &middot; <b>'+
+    totalW+'</b> words</span>';
   const order=[]; const byS={};
   BOOKS.forEach(b=>{ const k=b.s||'Other';
     if(!byS[k]){ byS[k]=[]; order.push(k); } byS[k].push(b); });
