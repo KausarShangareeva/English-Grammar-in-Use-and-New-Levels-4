@@ -240,6 +240,13 @@ body.dark .vtab tr.vex td{color:#B6C7CC}
 .vtab col.c-a{width:24%} .vtab col.c-b{width:24%} .vtab col.c-c{width:25%} .vtab col.c-d{width:27%}
 @media (max-width:400px){ .vtab td{font-size:15.5px;padding:6px 4px} .vtab td.ru3{font-size:10px} }
 
+
+/* ---------- book chips, the size of unit chips ---------- */
+.chip.bkchip{color:#fff;border:none;position:relative;padding-right:11px}
+.chip.bkchip .n{background:rgba(255,255,255,.26);color:#fff}
+.chip.bkchip[aria-pressed="true"]{box-shadow:0 0 0 2px var(--deep)}
+.chip.bkchip.soon{opacity:.62}
+.chip.bkchip.soon .n{background:rgba(0,0,0,.2)}
 /* ---------- the bookshelf ---------- */
 .shelf{display:flex;flex-direction:column;gap:11px;margin-top:4px}
 @supports (display:grid){ .shelf{display:grid;grid-template-columns:1fr} }
@@ -598,9 +605,11 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
   <section id="words" class="hide">
     <button class="back" id="backW"><span class="ar">&larr;</span> Main menu</button>
     <h1 class="scrtitle">Words</h1>
-    <div class="scrsub">363 words from the New Levels 4 word lists, with translations, collocations and essay examples.</div>
+    <div class="scrsub" id="wordsSub"></div>
     <h2 class="sec">Units</h2>
     <div class="chips" id="units"></div>
+    <h2 class="sec">Books</h2>
+    <div class="chips" id="bookchips"></div>
     <h2 class="sec">What to practise</h2>
     <div class="rows" id="modes"></div>
     <h2 class="sec">Sound</h2>
@@ -1006,7 +1015,7 @@ async function load(){
   const bl=document.getElementById('buildline');
   if(bl) bl.textContent='build '+BUILD;
   rollDay(); paintDark(); paintHome(); paintHub(); paintSound(); paintGate(); paintGrammar();
-  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintShelf();
+  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintShelf(); paintBookChips();
   if(S.series && (S.series==='A'||S.series==='B')){ curSeries=S.series; paintSeries(); paintStories(); }
   restoreScreen();
 }
@@ -1341,19 +1350,28 @@ function hi(sent,forms){
 }
 
 function paintUnits(){
+  const sub=document.getElementById('wordsSub');
+  if(sub){
+    const bk=W.filter(w=>w.u.slice(0,2)==='BK').length;
+    sub.textContent = `${W.length} words: ${W.length-bk} from the New Levels 4 units and the `+
+      `Academic Word List, ${bk} from the books you are reading — all with translations, `+
+      `collocations and examples.`;
+  }
   const box=$('#units'); box.innerHTML='';
-  Object.keys(UNAMES).forEach(u=>{
+  Object.keys(UNAMES).filter(u=>u.slice(0,2)!=='BK').forEach(u=>{
     const n = W.filter(w=>w.u===u).length;
     const b = el('button','chip',`${u} <span class="n">${n}</span>`);
     b.setAttribute('aria-pressed', sel.units.has(u));
     b.title = UNAMES[u];
     b.onclick=()=>{ sel.units.has(u)?sel.units.delete(u):sel.units.add(u);
       if(!sel.units.size) sel.units.add(u);
-      b.setAttribute('aria-pressed', sel.units.has(u)); saveSel(); paintUnits(); refreshStart(); };
+      b.setAttribute('aria-pressed', sel.units.has(u)); saveSel();
+      paintUnits(); paintBookChips(); refreshStart(); };
     box.appendChild(b);
   });
   const all = el('button','chip','all');
-  all.onclick=()=>{ Object.keys(UNAMES).forEach(u=>sel.units.add(u)); saveSel(); paintUnits(); refreshStart(); };
+  all.onclick=()=>{ Object.keys(UNAMES).forEach(u=>sel.units.add(u));
+    saveSel(); paintUnits(); paintBookChips(); refreshStart(); };
   box.appendChild(all);
 }
 
@@ -1389,6 +1407,29 @@ const BOOKS=[
  {u:null, t:'The Great Gatsby', a:'F. Scott Fitzgerald',
   g:'linear-gradient(140deg,#0F1E3C 0%,#2E4E7E 50%,#D4AF37 100%)', yr:'1925'}
 ];
+function paintBookChips(){
+  const box=$('#bookchips'); if(!box) return;
+  box.innerHTML='';
+  BOOKS.forEach(b=>{
+    const n = b.u ? W.filter(w=>w.u===b.u).length : 0;
+    const short = b.t.length>22 ? b.t.slice(0,20).trim()+'…' : b.t;
+    const c = el('button','chip bkchip'+(n?'':' soon'),
+      `${esc(short)} <span class="n">${n||'soon'}</span>`);
+    c.style.background=b.g;
+    c.title = b.a+' · '+b.yr;
+    if(b.u) c.setAttribute('aria-pressed', sel.units.has(b.u));
+    c.onclick=()=>{
+      if(!b.u){ toast('No words for this one yet — send me the list'); return; }
+      if(sel.units.has(b.u)) sel.units.delete(b.u); else sel.units.add(b.u);
+      if(!sel.units.size) sel.units.add(b.u);
+      saveSel(); paintUnits(); paintBookChips(); refreshStart();
+    };
+    box.appendChild(c);
+  });
+  const open=el('button','chip','open the shelf &rsaquo;');
+  open.onclick=()=>{ paintShelf(); show('books'); };
+  box.appendChild(open);
+}
 function paintShelf(){
   const box=$('#shelf'); if(!box) return;
   box.innerHTML='';
@@ -1411,7 +1452,7 @@ let wlUnit='1.1';
 function paintWL(){
   const box=$('#wlUnits'); if(!box) return;
   box.innerHTML='';
-  Object.keys(UNAMES).forEach(u=>{
+  Object.keys(UNAMES).filter(u=>u.slice(0,2)!=='BK').forEach(u=>{
     const n=W.filter(w=>w.u===u).length;
     const b=el('button','chip',`${u} <span class="n">${n}</span>`);
     b.setAttribute('aria-pressed', u===wlUnit);
@@ -2131,7 +2172,7 @@ $('#gTyped').onclick=()=>startGram('typed');
 $('#gPractiseAll').onclick=()=>startGram('all');
 $('#storyQuiz').onclick=()=>{ const u=ST[curStory].u;
   sel.units=new Set([u]); sel.mode='mix'; sel.only='all'; sel.len=20;
-  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintShelf(); startRound(); };
+  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintShelf(); paintBookChips(); startRound(); };
 
 document.addEventListener('click',e=>{
   const b=e.target.closest('.sp'); if(!b) return;
