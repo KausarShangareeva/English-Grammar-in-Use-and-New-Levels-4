@@ -243,10 +243,10 @@ body.dark .vtab tr.vex td{color:#B6C7CC}
 
 /* ---------- book chips, the size of unit chips ---------- */
 .chip.bkchip{color:#fff;border:none;position:relative;padding-right:11px}
-.chip.bkchip .n{background:rgba(255,255,255,.26);color:#fff}
+.chip.bkchip .n{background:none;color:#fff;opacity:.72;padding:0;margin-left:5px}
 .chip.bkchip[aria-pressed="true"]{box-shadow:0 0 0 2px var(--deep)}
 .chip.bkchip.soon{opacity:.62}
-.chip.bkchip.soon .n{background:rgba(0,0,0,.2)}
+.chip.bkchip.soon .n{background:none;opacity:.8}
 /* ---------- the bookshelf ---------- */
 .shelf{display:flex;flex-direction:column;gap:11px;margin-top:4px}
 @supports (display:grid){ .shelf{display:grid;grid-template-columns:1fr} }
