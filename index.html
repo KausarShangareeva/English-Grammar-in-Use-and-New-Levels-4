@@ -239,7 +239,27 @@ body.dark .vtab tr.vex td{color:#B6C7CC}
 .vtab td.ru3{font-family:var(--ui);font-size:11px;color:var(--mut);line-height:1.35}
 .vtab col.c-a{width:24%} .vtab col.c-b{width:24%} .vtab col.c-c{width:25%} .vtab col.c-d{width:27%}
 @media (max-width:400px){ .vtab td{font-size:15.5px;padding:6px 4px} .vtab td.ru3{font-size:10px} }
-/* ---------- word list sheet ---------- */
+
+/* ---------- the bookshelf ---------- */
+.shelf{display:flex;flex-direction:column;gap:11px;margin-top:4px}
+@supports (display:grid){ .shelf{display:grid;grid-template-columns:1fr} }
+@media (min-width:560px){ .shelf{grid-template-columns:1fr 1fr} }
+.bk{width:100%;box-sizing:border-box;position:relative;border:none;border-radius:16px;
+  padding:15px 15px 14px;text-align:left;
+  color:#fff;overflow:hidden;min-height:104px;display:flex;flex-direction:column;justify-content:flex-end;
+  -webkit-tap-highlight-color:transparent}
+.bk:active{transform:scale(.985)}
+.bk .au{font-family:var(--ui);font-size:10.5px;font-weight:800;letter-spacing:1.1px;
+  text-transform:uppercase;opacity:.82;margin-bottom:3px;padding-right:74px}
+.bk .ti2{font-family:var(--disp);font-size:23px;font-weight:600;line-height:1.15;margin-bottom:5px}
+.bk .yr{font-family:var(--ui);font-size:11px;opacity:.78}
+.bk .st{position:absolute;top:12px;right:12px;font-family:var(--ui);font-size:9.5px;font-weight:800;
+  letter-spacing:.5px;background:rgba(255,255,255,.22);border-radius:999px;padding:4px 9px;
+  backdrop-filter:blur(2px)}
+.bk .st.soon{background:rgba(0,0,0,.22)}
+.shelfnote{font-family:var(--ui);font-size:11.5px;color:var(--mut2);text-align:center;margin-top:14px;
+  line-height:1.5}
+
 .sheetbtn{display:block;width:100%;background:var(--card);border:1px solid var(--line);
   border-radius:16px;padding:13px;margin:0 0 12px;font-size:14px;font-weight:700;color:var(--rose)}
 .wl{border:1px solid var(--line2);border-radius:16px;overflow:hidden;background:var(--card);margin-bottom:16px}
@@ -589,7 +609,17 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
     <div class="chips" id="filters"></div>
     <button class="go" id="start">Start round</button>
     <button class="ghost" id="cardsBtn">Flashcards</button>
+    <button class="sheetbtn" id="booksBtn">&#128218; Books I&rsquo;m reading &mdash; words from each one</button>
     <button class="sheetbtn" id="wlBtn">&#128196; Open the word list &mdash; every word, meaning and example</button>
+  </section>
+
+  <!-- ============ BOOKS ============ -->
+  <section id="books" class="hide">
+    <button class="back" id="backBooks"><span class="ar">&larr;</span> Words</button>
+    <h1 class="scrtitle">Books I&rsquo;m reading</h1>
+    <div class="scrsub">Every book gets its own set of words. Tap a book to open its list.</div>
+    <div class="shelf" id="shelf"></div>
+    <div class="shelfnote">The ones marked <b>soon</b> are waiting for their word lists.</div>
   </section>
 
   <!-- ============ WORD LIST ============ -->
@@ -976,7 +1006,7 @@ async function load(){
   const bl=document.getElementById('buildline');
   if(bl) bl.textContent='build '+BUILD;
   rollDay(); paintDark(); paintHome(); paintHub(); paintSound(); paintGate(); paintGrammar();
-  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL();
+  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintShelf();
   if(S.series && (S.series==='A'||S.series==='B')){ curSeries=S.series; paintSeries(); paintStories(); }
   restoreScreen();
 }
@@ -997,6 +1027,7 @@ function restoreScreen(){
       if(!buildDeck(false)) return;
       flipped=false; show('cards'); paintCard(); return;
     }
+    if(id==='books'){ paintShelf(); show('books'); return; }
     if(id==='wordlist'){ paintWL(); show('wordlist'); return; }
     if(['words','readlist','gramlist'].indexOf(id)>=0){ show(id); if(id==='words') refreshStart(); }
   }catch(e){}
@@ -1336,6 +1367,46 @@ function paintModes(){
   });
 }
 
+const BOOKS=[
+ {u:'BK1', t:'Rebellion', sub:'The 100, book 4', a:'Kass Morgan', y:1,
+  g:'linear-gradient(140deg,#7A1F2B 0%,#B4462F 55%,#4A3A38 100%)', yr:'2016'},
+ {u:'BK2', t:'The Maze Runner', a:'James Dashner',
+  g:'linear-gradient(140deg,#1F3B2C 0%,#4C7A4A 55%,#6E6A4E 100%)', yr:'2009'},
+ {u:null, t:'Animal Farm', a:'George Orwell',
+  g:'linear-gradient(140deg,#6B2C2C 0%,#8A6A38 55%,#4A4A3E 100%)', yr:'1945'},
+ {u:null, t:'Charlie and the Chocolate Factory', a:'Roald Dahl',
+  g:'linear-gradient(140deg,#4A1F5C 0%,#8A3F86 50%,#C9922F 100%)', yr:'1964'},
+ {u:null, t:'Charlie and the Great Glass Elevator', a:'Roald Dahl',
+  g:'linear-gradient(140deg,#1B3A6B 0%,#3E7BA8 50%,#9E6FB8 100%)', yr:'1972'},
+ {u:null, t:'Fantastic Mr Fox', a:'Roald Dahl',
+  g:'linear-gradient(140deg,#8A3D14 0%,#C2702A 55%,#5C4326 100%)', yr:'1970'},
+ {u:null, t:'Frankenstein', a:'Mary Shelley',
+  g:'linear-gradient(140deg,#161E2B 0%,#2E4A5C 50%,#5E7A55 100%)', yr:'1818'},
+ {u:null, t:'Of Mice and Men', a:'John Steinbeck',
+  g:'linear-gradient(140deg,#8A6E2F 0%,#C9A94E 50%,#7E8A63 100%)', yr:'1937'},
+ {u:null, t:'The Picture of Dorian Gray', a:'Oscar Wilde',
+  g:'linear-gradient(140deg,#123A2E 0%,#2E6B4F 50%,#C0A040 100%)', yr:'1890'},
+ {u:null, t:'The Great Gatsby', a:'F. Scott Fitzgerald',
+  g:'linear-gradient(140deg,#0F1E3C 0%,#2E4E7E 50%,#D4AF37 100%)', yr:'1925'}
+];
+function paintShelf(){
+  const box=$('#shelf'); if(!box) return;
+  box.innerHTML='';
+  BOOKS.forEach(b=>{
+    const n = b.u ? W.filter(w=>w.u===b.u).length : 0;
+    const card=el('button','bk',
+      `<span class="st${n?'':' soon'}">${n? n+' words' : 'soon'}</span>`+
+      `<span class="au">${esc(b.a)}</span>`+
+      `<span class="ti2">${esc(b.t)}</span>`+
+      `<span class="yr">${esc(b.yr)}${b.sub?' · '+esc(b.sub):''}</span>`);
+    card.style.background=b.g;
+    card.onclick=()=>{
+      if(!b.u){ toast('No words for this one yet — send me the list'); return; }
+      wlUnit=b.u; paintWL(); show('wordlist');
+    };
+    box.appendChild(card);
+  });
+}
 let wlUnit='1.1';
 function paintWL(){
   const box=$('#wlUnits'); if(!box) return;
@@ -1930,12 +2001,12 @@ function finish(){
   show('result'); paintHome(); paintHub(); paintGate(); paintGrammar();
 }
 
-const KEEP=['home','words','wordlist','readlist','gramlist','story','gram','cards'];
+const KEEP=['home','words','books','wordlist','readlist','gramlist','story','gram','cards'];
 function show(id){
   if(typeof RS!=='undefined' && RS.on) stopRead();
   if(KEEP.indexOf(id)>=0 && typeof S==='object'){ S.screen=id; save(); }
-  ['home','words','wordlist','readlist','gramlist','quiz','result','cards','story','gram'].forEach(s=>$('#'+s).classList.toggle('hide', s!==id));
-  const SUBS={home:'vocabulary trainer',words:'words',wordlist:'word list',readlist:'reading',gramlist:'grammar',
+  ['home','words','books','wordlist','readlist','gramlist','quiz','result','cards','story','gram'].forEach(s=>$('#'+s).classList.toggle('hide', s!==id));
+  const SUBS={home:'vocabulary trainer',words:'words',books:'books',wordlist:'word list',readlist:'reading',gramlist:'grammar',
    quiz:'round in progress',result:'round finished',cards:'flashcards',story:'reading',gram:'grammar'};
   $('#subtitle').textContent = SUBS[id]||'vocabulary trainer';
   closeSheet();
@@ -2034,6 +2105,8 @@ $('#backRes').onclick=()=>{ if(lastFrom==='gramlist'){ paintGate(); paintGrammar
 $('#backStory').onclick=()=>show('readlist');
 $('#backCards').onclick=()=>show('words');
 $('#backWL').onclick=()=>show('words');
+$('#backBooks').onclick=()=>show('words');
+$('#booksBtn').onclick=()=>{ paintShelf(); show('books'); };
 $('#wlBtn').onclick=()=>{ const u=[...sel.units].sort()[0]; if(u) wlUnit=u; paintWL(); show('wordlist'); };
 $('#quitx').onclick=()=>{ if(qi>0) finish(); else show(lastFrom); };
 $('#backR').onclick=goHome;
@@ -2058,7 +2131,7 @@ $('#gTyped').onclick=()=>startGram('typed');
 $('#gPractiseAll').onclick=()=>startGram('all');
 $('#storyQuiz').onclick=()=>{ const u=ST[curStory].u;
   sel.units=new Set([u]); sel.mode='mix'; sel.only='all'; sel.len=20;
-  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); startRound(); };
+  paintUnits(); paintModes(); paintFilters(); refreshStart(); paintWL(); paintShelf(); startRound(); };
 
 document.addEventListener('click',e=>{
   const b=e.target.closest('.sp'); if(!b) return;
