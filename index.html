@@ -242,6 +242,8 @@ body.dark .vtab tr.vex td{color:#B6C7CC}
 
 
 /* ---------- book chips, the size of unit chips ---------- */
+.chip.bkchip .bke{margin-right:5px;font-size:13px;line-height:1;vertical-align:-1px}
+.bk .bke2{margin-right:7px;font-size:20px;vertical-align:-1px}
 .chip.bkchip{color:#fff;border:none;position:relative;padding-right:11px}
 .chip.bkchip .n{background:none;color:#fff;opacity:.72;padding:0;margin-left:5px}
 .chip.bkchip[aria-pressed="true"]{box-shadow:0 0 0 2px var(--deep)}
@@ -1386,25 +1388,25 @@ function paintModes(){
 }
 
 const BOOKS=[
- {u:'BK1', t:'Rebellion', sub:'The 100, book 4', a:'Kass Morgan', y:1,
+ {u:'BK1', t:'Rebellion', e:'🔥', sub:'The 100, book 4', a:'Kass Morgan', y:1,
   g:'linear-gradient(140deg,#7A1F2B 0%,#B4462F 55%,#4A3A38 100%)', yr:'2016'},
- {u:'BK2', t:'The Maze Runner', a:'James Dashner',
+ {u:'BK2', t:'The Maze Runner', e:'🌿', a:'James Dashner',
   g:'linear-gradient(140deg,#1F3B2C 0%,#4C7A4A 55%,#6E6A4E 100%)', yr:'2009'},
- {u:null, t:'Animal Farm', a:'George Orwell',
+ {u:null, t:'Animal Farm', e:'🐖', a:'George Orwell',
   g:'linear-gradient(140deg,#6B2C2C 0%,#8A6A38 55%,#4A4A3E 100%)', yr:'1945'},
- {u:null, t:'Charlie and the Chocolate Factory', a:'Roald Dahl',
+ {u:null, t:'Charlie and the Chocolate Factory', e:'🍫', a:'Roald Dahl',
   g:'linear-gradient(140deg,#4A1F5C 0%,#8A3F86 50%,#C9922F 100%)', yr:'1964'},
- {u:null, t:'Charlie and the Great Glass Elevator', a:'Roald Dahl',
+ {u:null, t:'Charlie and the Great Glass Elevator', e:'🛗', a:'Roald Dahl',
   g:'linear-gradient(140deg,#1B3A6B 0%,#3E7BA8 50%,#9E6FB8 100%)', yr:'1972'},
- {u:null, t:'Fantastic Mr Fox', a:'Roald Dahl',
+ {u:null, t:'Fantastic Mr Fox', e:'🦊', a:'Roald Dahl',
   g:'linear-gradient(140deg,#8A3D14 0%,#C2702A 55%,#5C4326 100%)', yr:'1970'},
- {u:null, t:'Frankenstein', a:'Mary Shelley',
+ {u:null, t:'Frankenstein', e:'⚡', a:'Mary Shelley',
   g:'linear-gradient(140deg,#161E2B 0%,#2E4A5C 50%,#5E7A55 100%)', yr:'1818'},
- {u:null, t:'Of Mice and Men', a:'John Steinbeck',
+ {u:null, t:'Of Mice and Men', e:'🌾', a:'John Steinbeck',
   g:'linear-gradient(140deg,#8A6E2F 0%,#C9A94E 50%,#7E8A63 100%)', yr:'1937'},
- {u:null, t:'The Picture of Dorian Gray', a:'Oscar Wilde',
+ {u:null, t:'The Picture of Dorian Gray', e:'🖼️', a:'Oscar Wilde',
   g:'linear-gradient(140deg,#123A2E 0%,#2E6B4F 50%,#C0A040 100%)', yr:'1890'},
- {u:null, t:'The Great Gatsby', a:'F. Scott Fitzgerald',
+ {u:null, t:'The Great Gatsby', e:'🥂', a:'F. Scott Fitzgerald',
   g:'linear-gradient(140deg,#0F1E3C 0%,#2E4E7E 50%,#D4AF37 100%)', yr:'1925'}
 ];
 function paintBookChips(){
@@ -1412,9 +1414,9 @@ function paintBookChips(){
   box.innerHTML='';
   BOOKS.forEach(b=>{
     const n = b.u ? W.filter(w=>w.u===b.u).length : 0;
-    const short = b.t.length>22 ? b.t.slice(0,20).trim()+'…' : b.t;
+    const short = b.t.length>20 ? b.t.slice(0,18).trim()+'…' : b.t;
     const c = el('button','chip bkchip'+(n?'':' soon'),
-      `${esc(short)} <span class="n">${n||'soon'}</span>`);
+      `<span class="bke">${b.e||''}</span>${esc(short)} <span class="n">${n||'soon'}</span>`);
     c.style.background=b.g;
     c.title = b.a+' · '+b.yr;
     if(b.u) c.setAttribute('aria-pressed', sel.units.has(b.u));
@@ -1438,7 +1440,7 @@ function paintShelf(){
     const card=el('button','bk',
       `<span class="st${n?'':' soon'}">${n? n+' words' : 'soon'}</span>`+
       `<span class="au">${esc(b.a)}</span>`+
-      `<span class="ti2">${esc(b.t)}</span>`+
+      `<span class="ti2"><span class="bke2">${b.e||''}</span>${esc(b.t)}</span>`+
       `<span class="yr">${esc(b.yr)}${b.sub?' · '+esc(b.sub):''}</span>`);
     card.style.background=b.g;
     card.onclick=()=>{
