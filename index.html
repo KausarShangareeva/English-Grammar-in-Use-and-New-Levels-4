@@ -549,6 +549,11 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
 .cardunit{display:inline-block;font-family:var(--ui);font-size:10px;font-weight:800;
   letter-spacing:1.1px;text-transform:uppercase;color:var(--rose);background:var(--rose-l);
   border-radius:999px;padding:5px 12px;margin-bottom:14px}
+.cardunit.bookunit{color:#fff;border:none;padding:6px 14px;text-transform:none;letter-spacing:.4px;
+  font-size:11px;box-shadow:0 2px 10px rgba(0,0,0,.13)}
+.cardunit.bookunit .bke3{margin-right:6px;font-size:13px;vertical-align:-1px}
+.cardfq{font-family:var(--ui);font-size:11px;color:var(--mut2);margin-top:-8px;margin-bottom:12px}
+.cardfq b{color:var(--rose)}
 .flip .coll,.flip .ex{text-align:left;margin-top:13px}
 .flip .badge{margin-top:13px}
 .flip .w{font-family:var(--disp);font-size:40px;font-weight:600;line-height:1.15;color:var(--deep)}
@@ -2084,7 +2089,17 @@ function buildDeck(fresh){
 function paintCard(){
   const w=CD[ci]; const c=$('#flipCard'); c.className='card flip in'; c.innerHTML='';
   const d=el('div','side');
-  d.appendChild(el('div','cardunit','unit '+esc(w.u)));
+  const bk = BOOKS.find(b=>b.u===w.u);
+  if(bk){
+    const chip=el('div','cardunit bookunit',
+      `<span class="bke3">${bk.e||''}</span>${esc(bk.t)}`);
+    chip.style.background=bk.g;
+    d.appendChild(chip);
+    if(w.fq) d.appendChild(el('div','cardfq',
+      `appears <b>${w.fq}</b> ${w.fq===1?'time':'times'} in the book`));
+  } else {
+    d.appendChild(el('div','cardunit','unit '+esc(w.u)));
+  }
   d.appendChild(el('div','w', esc(w.w)+sp(w.h||w.w)+(w.p?` <span class="pos">${w.p}</span>`:'')));
   if(flipped){
     d.appendChild(el('div','r', esc(w.r)));
@@ -2098,7 +2113,8 @@ function paintCard(){
   }
   c.appendChild(d);
   $('#flipC').textContent = flipped?'Hide':'Show translation';
-  $('#cardCnt').textContent = `${ci+1} / ${CD.length} · unit ${w.u}`;
+  const bkn = BOOKS.find(b=>b.u===w.u);
+  $('#cardCnt').textContent = `${ci+1} / ${CD.length} · ${bkn ? bkn.t : 'unit '+w.u}`;
   S.cardW=w.i; S.deckIx=ci; save();
 }
 function toast(t){ const x=$('#toast'); x.textContent=t; x.classList.add('on');
