@@ -59,6 +59,12 @@ button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
 .mini{display:flex;gap:6px 14px;margin-top:9px;font-size:11.5px;color:var(--mut);flex-wrap:wrap}
 .mini b{color:var(--rose);font-weight:700}
 
+h2.sec .cnt2{float:right;font-weight:700;font-size:10px;color:var(--line2);letter-spacing:.3px;
+  text-transform:none}
+.serieshd{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--mut2);margin:14px 0 8px;line-height:1.5}
+.serieshd .sc{font-weight:700;letter-spacing:.2px;text-transform:none;color:var(--line2)}
+.sgroup{display:flex;flex-wrap:wrap;gap:8px}
 h2.sec{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut2);
   margin:20px 0 9px;font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
@@ -637,8 +643,8 @@ body.dark .sechead.s-grammar{background:#2B2620;border-color:#463D2C}
     <div class="scrsub" id="wordsSub"></div>
     <h2 class="sec">Units</h2>
     <div class="chips" id="units"></div>
-    <h2 class="sec">Books</h2>
-    <div class="chips" id="bookchips"></div>
+    <h2 class="sec" id="booksSec">Books</h2>
+    <div id="bookchips"></div>
     <h2 class="sec">What to practise</h2>
     <div class="rows" id="modes"></div>
     <h2 class="sec">Sound</h2>
@@ -1425,72 +1431,106 @@ function paintModes(){
 }
 
 const BOOKS=[
- {u:'BK8', t:'Day 21', e:'☄️', sub:'The 100, book 2', a:'Kass Morgan',
+ {u:'BK8', t:'Day 21', s:'The 100 · Kass Morgan', e:'☄️', sub:'The 100, book 2', a:'Kass Morgan',
   g:'linear-gradient(140deg,#2B2140 0%,#5B3A6E 55%,#A8574F 100%)', yr:'2014'},
- {u:'BK9', t:'Homecoming', e:'🏚️', sub:'The 100, book 3', a:'Kass Morgan',
+ {u:'BK9', t:'Homecoming', s:'The 100 · Kass Morgan', e:'🏚️', sub:'The 100, book 3', a:'Kass Morgan',
   g:'linear-gradient(140deg,#3A2A20 0%,#8A5A32 55%,#5E6B4A 100%)', yr:'2015'},
- {u:'BK1', t:'Rebellion', e:'🔥', sub:'The 100, book 4', a:'Kass Morgan', y:1,
+ {u:'BK1', t:'Rebellion', s:'The 100 · Kass Morgan', e:'🔥', sub:'The 100, book 4', a:'Kass Morgan', y:1,
   g:'linear-gradient(140deg,#7A1F2B 0%,#B4462F 55%,#4A3A38 100%)', yr:'2016'},
- {u:'BK2', t:'The Maze Runner', e:'🌿', a:'James Dashner',
+ {u:'BK2', t:'The Maze Runner', s:'The Maze Runner · James Dashner', e:'🌿', a:'James Dashner',
   g:'linear-gradient(140deg,#1F3B2C 0%,#4C7A4A 55%,#6E6A4E 100%)', yr:'2009'},
- {u:'BK6', t:'Animal Farm', e:'🐖', a:'George Orwell',
+ {u:'BK6', t:'Animal Farm', s:'Classics', e:'🐖', a:'George Orwell',
   g:'linear-gradient(140deg,#6B2C2C 0%,#8A6A38 55%,#4A4A3E 100%)', yr:'1945'},
- {u:'BK4', t:'Charlie and the Chocolate Factory', e:'🍫', a:'Roald Dahl',
+ {u:'BK4', t:'Charlie and the Chocolate Factory', s:'Roald Dahl', e:'🍫', a:'Roald Dahl',
   g:'linear-gradient(140deg,#4A1F5C 0%,#8A3F86 50%,#C9922F 100%)', yr:'1964'},
- {u:'BK5', t:'Charlie and the Great Glass Elevator', e:'🛗', a:'Roald Dahl',
+ {u:'BK5', t:'Charlie and the Great Glass Elevator', s:'Roald Dahl', e:'🛗', a:'Roald Dahl',
   g:'linear-gradient(140deg,#1B3A6B 0%,#3E7BA8 50%,#9E6FB8 100%)', yr:'1972'},
- {u:'BK3', t:'Fantastic Mr Fox', e:'🦊', a:'Roald Dahl',
+ {u:'BK3', t:'Fantastic Mr Fox', s:'Roald Dahl', e:'🦊', a:'Roald Dahl',
   g:'linear-gradient(140deg,#8A3D14 0%,#C2702A 55%,#5C4326 100%)', yr:'1970'},
- {u:null, t:'Frankenstein', e:'⚡', a:'Mary Shelley',
+ {u:null, t:'Frankenstein', s:'Classics', e:'⚡', a:'Mary Shelley',
   g:'linear-gradient(140deg,#161E2B 0%,#2E4A5C 50%,#5E7A55 100%)', yr:'1818'},
- {u:'BK7', t:'Of Mice and Men', e:'🌾', a:'John Steinbeck',
+ {u:'BK7', t:'Of Mice and Men', s:'Classics', e:'🌾', a:'John Steinbeck',
   g:'linear-gradient(140deg,#8A6E2F 0%,#C9A94E 50%,#7E8A63 100%)', yr:'1937'},
- {u:null, t:'The Picture of Dorian Gray', e:'🖼️', a:'Oscar Wilde',
+ {u:null, t:'The Picture of Dorian Gray', s:'Classics', e:'🖼️', a:'Oscar Wilde',
   g:'linear-gradient(140deg,#123A2E 0%,#2E6B4F 50%,#C0A040 100%)', yr:'1890'},
- {u:null, t:'The Great Gatsby', e:'🥂', a:'F. Scott Fitzgerald',
+ {u:null, t:'The Great Gatsby', s:'Classics', e:'🥂', a:'F. Scott Fitzgerald',
   g:'linear-gradient(140deg,#0F1E3C 0%,#2E4E7E 50%,#D4AF37 100%)', yr:'1925'}
 ];
 function paintBookChips(){
   const box=$('#bookchips'); if(!box) return;
   box.innerHTML='';
-  BOOKS.forEach(b=>{
-    const n = b.u ? W.filter(w=>w.u===b.u).length : 0;
-    const short = b.t.length>20 ? b.t.slice(0,18).trim()+'…' : b.t;
-    const c = el('button','chip bkchip'+(n?'':' soon'),
-      `<span class="bke">${b.e||''}</span>${esc(short)} <span class="n">${n||'soon'}</span>`);
-    c.style.background=b.g;
-    c.title = b.a+' · '+b.yr;
-    if(b.u) c.setAttribute('aria-pressed', sel.units.has(b.u));
-    c.onclick=()=>{
-      if(!b.u){ toast('No words for this one yet — send me the list'); return; }
-      if(sel.units.has(b.u)) sel.units.delete(b.u); else sel.units.add(b.u);
-      if(!sel.units.size) sel.units.add(b.u);
-      saveSel(); paintUnits(); paintBookChips(); refreshStart();
-    };
-    box.appendChild(c);
+  const withWords = BOOKS.filter(b=>b.u && W.filter(w=>w.u===b.u).length);
+  const totalW = withWords.reduce((a,b)=>a+W.filter(w=>w.u===b.u).length,0);
+  const hd=$('#booksSec');
+  if(hd) hd.innerHTML = 'Books<span class="cnt2">'+withWords.length+' of '+BOOKS.length+
+    ' &middot; '+totalW+' words</span>';
+  const order=[]; const byS={};
+  BOOKS.forEach(b=>{ const k=b.s||'Other';
+    if(!byS[k]){ byS[k]=[]; order.push(k); } byS[k].push(b); });
+  order.forEach(k=>{
+    const books=byS[k];
+    const n=books.reduce((a,b)=>a+(b.u?W.filter(w=>w.u===b.u).length:0),0);
+    const done=books.filter(b=>b.u&&W.filter(w=>w.u===b.u).length).length;
+    box.appendChild(el('div','serieshd',
+      esc(k)+' <span class="sc">&middot; '+done+'/'+books.length+' book'+(books.length>1?'s':'')+
+      (n?' &middot; '+n+' words':'')+'</span>'));
+    const g=el('div','sgroup','');
+    books.forEach(b=>g.appendChild(bookChip(b)));
+    box.appendChild(g);
   });
+  const wrap=el('div','sgroup','');
   const open=el('button','chip','open the shelf &rsaquo;');
   open.onclick=()=>{ paintShelf(); show('books'); };
-  box.appendChild(open);
+  wrap.appendChild(open); box.appendChild(wrap);
+}
+function bookChip(b){
+  const n = b.u ? W.filter(w=>w.u===b.u).length : 0;
+  const short = b.t.length>20 ? b.t.slice(0,18).trim()+'…' : b.t;
+  const c = el('button','chip bkchip'+(n?'':' soon'),
+    `<span class="bke">${b.e||''}</span>${esc(short)} <span class="n">${n||'soon'}</span>`);
+  c.style.background=b.g;
+  c.title = b.a+' · '+b.yr;
+  if(b.u) c.setAttribute('aria-pressed', sel.units.has(b.u));
+  c.onclick=()=>{
+    if(!b.u){ toast('No words for this one yet — send me the list'); return; }
+    if(sel.units.has(b.u)) sel.units.delete(b.u); else sel.units.add(b.u);
+    if(!sel.units.size) sel.units.add(b.u);
+    saveSel(); paintUnits(); paintBookChips(); refreshStart();
+  };
+  return c;
 }
 function paintShelf(){
   const box=$('#shelf'); if(!box) return;
   box.innerHTML='';
-  BOOKS.forEach(b=>{
-    const n = b.u ? W.filter(w=>w.u===b.u).length : 0;
-    const card=el('button','bk',
-      `<span class="st${n?'':' soon'}">${n? n+' words' : 'soon'}</span>`+
-      `<span class="au">${esc(b.a)}</span>`+
-      `<span class="ti2"><span class="bke2">${b.e||''}</span>${esc(b.t)}</span>`+
-      `<span class="yr">${esc(b.yr)}${b.sub?' · '+esc(b.sub):''}</span>`);
-    card.style.background=b.g;
-    card.onclick=()=>{
-      if(!b.u){ toast('No words for this one yet — send me the list'); return; }
-      wlUnit=b.u; paintWL(); show('wordlist');
-    };
-    box.appendChild(card);
+  const order=[]; const byS={};
+  BOOKS.forEach(b=>{ const k=b.s||'Other';
+    if(!byS[k]){ byS[k]=[]; order.push(k); } byS[k].push(b); });
+  order.forEach(k=>{
+    const books=byS[k];
+    const total=books.reduce((a,b)=>a+(b.u?W.filter(w=>w.u===b.u).length:0),0);
+    const done=books.filter(b=>b.u&&W.filter(w=>w.u===b.u).length).length;
+    const h=el('div','serieshd',
+      esc(k)+' <span class="sc">&middot; '+done+'/'+books.length+' book'+(books.length>1?'s':'')+
+      (total?' &middot; '+total+' words':'')+'</span>');
+    h.style.gridColumn='1 / -1';
+    box.appendChild(h);
+    books.forEach(b=>{
+      const n = b.u ? W.filter(w=>w.u===b.u).length : 0;
+      const card=el('button','bk',
+        `<span class="st${n?'':' soon'}">${n? n+' words' : 'soon'}</span>`+
+        `<span class="au">${esc(b.a)}</span>`+
+        `<span class="ti2"><span class="bke2">${b.e||''}</span>${esc(b.t)}</span>`+
+        `<span class="yr">${esc(b.yr)}${b.sub?' · '+esc(b.sub):''}</span>`);
+      card.style.background=b.g;
+      card.onclick=()=>{
+        if(!b.u){ toast('No words for this one yet — send me the list'); return; }
+        wlUnit=b.u; paintWL(); show('wordlist');
+      };
+      box.appendChild(card);
+    });
   });
 }
+
 let wlUnit='1.1';
 function paintBands(){
   const box=$('#bands'); if(!box) return;
