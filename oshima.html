@@ -373,19 +373,25 @@ function shuffle(arr){
   }
   return a;
 }
+/* Progress is kept in two places: the chat's storage when it exists, and the
+   browser's own localStorage, which is what works on a published page. */
+const OSH_PREFIX = 'oshima_';
+const localOK = (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t');
+                             return true; }catch(e){ return false; } })();
 async function storageGet(key, fallback){
-  try{
-    const r = await window.storage.get(key);
-    return r ? JSON.parse(r.value) : fallback;
-  }catch(e){ return fallback; }
+  let a=null, b=null;
+  try{ const r = await window.storage.get(key); if(r) a=JSON.parse(r.value); }catch(e){}
+  if(localOK){ try{ const t=localStorage.getItem(OSH_PREFIX+key); if(t) b=JSON.parse(t); }catch(e){} }
+  if(a && b) return ((b.savedAt||0) > (a.savedAt||0)) ? b : a;
+  return a ?? b ?? fallback;
 }
 async function storageSet(key, value, retries=2){
+  if(value && typeof value === 'object' && !Array.isArray(value)) value.savedAt = Date.now();
+  if(localOK){ try{ localStorage.setItem(OSH_PREFIX+key, JSON.stringify(value)); }catch(e){} }
   for(let attempt=0; attempt<=retries; attempt++){
-    try{
-      await window.storage.set(key, JSON.stringify(value));
-      return true;
-    }catch(e){
-      if(attempt===retries){ console.error('storage set failed after retries', e); return false; }
+    try{ await window.storage.set(key, JSON.stringify(value)); return true; }
+    catch(e){
+      if(attempt===retries) return localOK;
       await new Promise(r=>setTimeout(r, 400*(attempt+1)));
     }
   }
