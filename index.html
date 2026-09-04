@@ -218,21 +218,44 @@ function open(id){
   v.onload = () => load.classList.add('gone');
   v.src = a.file;
   try { localStorage.setItem(KEY, id); } catch(e){}
-  if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+  /* Inside a sandboxed preview the page has no real address of its own,
+     so touching the URL throws. The hub works either way. */
+  try {
+    if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+  } catch(e){}
 }
 
 paintChrome();
 paintNav();
 setInterval(paintChrome, 60000);
 
-let start = location.hash.slice(1);
+let start = '';
+try { start = location.hash.slice(1); } catch(e){}
 if (!APPS.some(a => a.id === start && a.file)) {
   try { start = localStorage.getItem(KEY); } catch(e){ start = null; }
 }
 if (!APPS.some(a => a.id === start && a.file)) start = 'words';
 open(start);
 
-window.addEventListener('hashchange', () => open(location.hash.slice(1)));
+window.addEventListener('hashchange', () => {
+  try { open(location.hash.slice(1)); } catch(e){}
+});
+
+/* If the apps cannot be reached — a sandboxed preview, or the files not
+   uploaded yet — say so instead of showing an empty white panel. */
+(function watchFrame(){
+  const v = document.getElementById('view'), load = document.getElementById('loading');
+  let done = false;
+  v.addEventListener('load', () => { done = true; });
+  setTimeout(() => {
+    if (done) return;
+    load.classList.remove('gone');
+    load.innerHTML = '<div style="text-align:center;line-height:1.7;max-width:320px">' +
+      '<b>The apps live next to this page.</b><br>' +
+      'Open the hub from GitHub Pages, or open <b>trainer.html</b> and ' +
+      '<b>oshima.html</b> directly — a preview window cannot reach them.</div>';
+  }, 4000);
+})();
 </script>
 </body>
 </html>
