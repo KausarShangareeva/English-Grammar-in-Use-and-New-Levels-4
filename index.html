@@ -196,6 +196,16 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .wactions button.cards:hover{color:var(--rose)}
 .planview{display:none;flex-direction:column;gap:12px}
 .planview.on{display:flex}
+.backupbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:var(--panel);
+  border-radius:16px;padding:11px 14px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.bkh{font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--mut2);margin-right:auto}
+.backupbar button{border:1px solid var(--line);background:var(--panel);border-radius:11px;
+  padding:8px 13px;font-family:var(--ui);font-size:12px;font-weight:700;color:var(--mut);cursor:pointer}
+.backupbar button:hover{color:var(--sea);border-color:var(--line2)}
+.bkn{font-size:11px;color:var(--sage);font-weight:700}
+.storewarn{background:var(--rose-l);border:1px solid #F0DCE2;border-radius:16px;padding:13px 15px;
+  font-size:12.5px;line-height:1.6;color:var(--ink)}
+.storewarn b{color:var(--rose)}
 .weekbar{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:19px;
   padding:13px 15px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
 .wkbtn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 14px;
@@ -657,6 +667,14 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 
     <div class="planview" id="planView">
       <div class="panelcard today" id="todayTop2"></div>
+      <div class="storewarn hide" id="storeWarn"></div>
+      <div class="backupbar">
+        <span class="bkh">Your marks live in this browser only</span>
+        <button id="bkSave">↓ Save a backup</button>
+        <button id="bkLoad">↑ Restore from a backup</button>
+        <input type="file" id="bkFile" accept="application/json,.json" style="display:none">
+        <span class="bkn" id="bkNote"></span>
+      </div>
       <div class="weekbar">
         <button class="wkbtn" id="wkPrev">&larr;</button>
         <div class="wkmid">
@@ -1236,6 +1254,48 @@ const BOOKS = [
 ];
 
 
+/* ---- keeping the marks safe ---- */
+function storageWorks(){
+  try { localStorage.setItem('__probe','1'); localStorage.removeItem('__probe'); return true; }
+  catch(e){ return false; }
+}
+const BACKUP_KEYS = ['task-status-8weeks','task-moves-8weeks','nl4vocab_v1',
+                     'oshima_essays-read','story-read','awards-done','studyhub_last'];
+function saveBackup(){
+  const data = { savedAt:new Date().toISOString(), v:1, store:{} };
+  BACKUP_KEYS.forEach(k => { const v = readJSON(k); if (v) data.store[k] = v; });
+  const marks = Object.keys(data.store['task-status-8weeks'] || {}).length;
+  const blob = new Blob([JSON.stringify(data, null, 1)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'study-hub-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  const n = $('#bkNote');
+  n.textContent = 'saved \u00b7 ' + marks + ' marks';
+  setTimeout(() => { n.textContent = ''; }, 4000);
+}
+function restoreBackup(file){
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      const store = data.store || data;
+      let n = 0;
+      Object.keys(store).forEach(k => {
+        if (BACKUP_KEYS.indexOf(k) < 0) return;
+        /* merge, never wipe: a mark you already have stays */
+        const cur = readJSON(k);
+        if (cur && typeof cur === 'object' && !Array.isArray(cur)){
+          writeJSON(k, Object.assign({}, store[k], cur));
+        } else writeJSON(k, store[k]);
+        n++;
+      });
+      $('#bkNote').textContent = 'restored ' + n + ' sets';
+      paintToday('#todayTop2'); paintWeek(); paintCards();
+    } catch(e){ $('#bkNote').textContent = 'that file could not be read'; }
+  };
+  r.readAsText(file);
+}
 /* ---- the plan, rendered by the platform itself ---- */
 /* which of the three the task belongs to */
 /* in the order the day actually happens: you get up, then the Quran, then study */
@@ -2455,6 +2515,16 @@ $('#backGram').onclick = () => go(lastGramCard);
 $('#wkPrev').onclick  = () => { if (wkIx > 0){ wkIx--; paintWeek(); toTop(); } };
 $('#wkNext').onclick  = () => { if (wkIx < WEEKS.length-1){ wkIx++; paintWeek(); toTop(); } };
 $('#wkToday').onclick = () => { wkIx = weekOfToday(); paintWeek(); toTop(); };
+$('#bkSave').onclick = saveBackup;
+$('#bkLoad').onclick = () => $('#bkFile').click();
+$('#bkFile').onchange = e => { if (e.target.files[0]) restoreBackup(e.target.files[0]); };
+if (!storageWorks()){
+  const w = $('#storeWarn');
+  w.classList.remove('hide');
+  w.innerHTML = '<b>This browser is not letting the page save anything.</b> ' +
+    'Marks will hold until you close the tab, and then go. Open the file from a normal ' +
+    'window (not a preview), or use Save a backup before you leave.';
+}
 $('#backRead').onclick = () => { stopRead(); go('reading'); };
 $('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
 $('#qQuit').onclick = () => quizExit();
