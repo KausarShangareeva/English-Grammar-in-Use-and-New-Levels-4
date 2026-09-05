@@ -211,7 +211,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
     <div class="sidefoot">
       <div class="who"><span class="av">K</span>
         <span class="txt"><span class="nm">Kausar</span><span class="sub">Student</span></span></div>
-      <div class="build">build 05 Sep 2026, 07:09 UTC</div>
+      <div class="build">build 05 Sep 2026, 07:12 UTC</div>
     </div>
   </aside>
 
@@ -308,6 +308,49 @@ const COURSES = [
     go:null },
 ];
 const AWARDS = [
+  { g:'Engelska', s:'The ladder you are already climbing',
+    items:[
+      { id:'eng-d4', t:'Engelska delkurs 4', n:'Where you are now.' },
+      { id:'eng-n1', t:'Engelska niv\u00e5 1 \u00b7 Engelska 5', n:'' },
+      { id:'eng-n2', t:'Engelska niv\u00e5 2 \u00b7 Engelska 6',
+        n:'\u2b50 Required by <b>both</b> universities. This is the one that unlocks everything.' },
+      { id:'eng-n3', t:'Engelska niv\u00e5 3 \u00b7 Engelska 7',
+        n:'Not required \u2014 but it adds merit points and makes the IELTS feel easy.' }
+    ] },
+  { g:'Svenska', s:'Plan A is taught in Swedish, so this is not optional',
+    items:[
+      { id:'sve-d2', t:'Svenska delkurs 2', n:'' },
+      { id:'sve-d3', t:'Svenska delkurs 3', n:'' },
+      { id:'sve-d4', t:'Svenska delkurs 4', n:'' },
+      { id:'sve-n1', t:'Svenska niv\u00e5 1 \u00b7 SVA 1', n:'' },
+      { id:'sve-n2', t:'Svenska niv\u00e5 2 \u00b7 SVA 2', n:'' },
+      { id:'sve-n3', t:'Svenska niv\u00e5 3 \u00b7 SVA 3',
+        n:'\u2b50 Required for <b>Plan A</b> at Stockholm University.' }
+    ] },
+  { g:'Matematik', s:'The longest ladder \u2014 start it before you feel ready',
+    items:[
+      { id:'mat-d1', t:'Matematik delkurs 1', n:'' },
+      { id:'mat-d2', t:'Matematik delkurs 2', n:'' },
+      { id:'mat-d3', t:'Matematik delkurs 3', n:'' },
+      { id:'mat-d4', t:'Matematik delkurs 4', n:'' },
+      { id:'mat-1c', t:'Matematik 1c', n:'' },
+      { id:'mat-2c', t:'Matematik 2c', n:'' },
+      { id:'mat-3c', t:'Matematik 3c',
+        n:'\u2b50 Required for <b>Plan A</b>.' },
+      { id:'mat-4c', t:'Matematik 4',
+        n:'\u2b50 Required for <b>Plan B</b> at KTH.' }
+    ] },
+  { g:'Fysik', s:'Only Plan B asks for it \u2014 but Plan B is the English-taught one',
+    items:[
+      { id:'fys-1', t:'Fysik 1', n:'' },
+      { id:'fys-2', t:'Fysik 2',
+        n:'\u2b50 Required for <b>Plan B</b> at KTH.' }
+    ] },
+  { g:'Also on the SU list', s:'Easy to forget, and it would stop the application',
+    items:[
+      { id:'sam-1b', t:'Samh\u00e4llskunskap 1b',
+        n:'\u2b50 Stockholm University asks for this one too. Not in your list \u2014 I added it so it does not get missed.' }
+    ] },
   { g:'Certificates', s:'Proof you can show a recruiter',
     items:[
       { id:'ms-fundamentals', t:'Microsoft Azure Fundamentals (AZ-900)',
@@ -503,10 +546,13 @@ function paintAwards(){
   const done = readJSON('awards-done') || {};
   const all = AWARDS.reduce((a,g) => a + g.items.length, 0);
   const n = AWARDS.reduce((a,g) => a + g.items.filter(i => done[i.id]).length, 0);
+  const REQ = ['eng-n2','sve-n3','mat-3c','mat-4c','fys-2','sam-1b'];
+  const reqDone = REQ.filter(id => done[id]).length;
   $('#awTitle').textContent = 'What I am collecting';
   $('#awSub').innerHTML =
-    'Not a wish list \u2014 a list of things that are actually reachable from where you are ' +
-    'standing. Tick one and it stays ticked.';
+    'The courses come first \u2014 without them the application does not exist. ' +
+    'Everything after them is what makes the application interesting. ' +
+    '<b>' + reqDone + ' of ' + REQ.length + '</b> entry requirements done.';
   $('#awRing').innerHTML = '<div class="num">' + n + '/' + all + '</div><div class="lb">done</div>';
   box.innerHTML = AWARDS.map(g =>
     '<div class="awgroup"><h4>' + g.g + '</h4><div class="gs">' + g.s + '</div>' +
