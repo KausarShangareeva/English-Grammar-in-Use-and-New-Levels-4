@@ -1151,13 +1151,14 @@ function openEssay(title, level){
   const eq = $('#essayQuiz');
   eq.className = 'openraw quiz' + (epool.length < 6 ? ' hide' : '');
   eq.textContent = '\u25b6 Practise the ' + epool.length + ' words';
-  eq.onclick = () => startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
+  const backToEssay = () => { startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
+                              quizExit = () => openEssay(title, e.level); };
+  eq.onclick = backToEssay;
   if (epool.length >= 6){
     $('#paper').insertAdjacentHTML('beforeend',
       '<div class="endquiz"><div class="eh">Now try the words this essay is built on.</div>' +
       '<button id="eEndQuiz">\u25b6 Practise the ' + epool.length + ' words</button></div>');
-    document.getElementById('eEndQuiz').onclick =
-      () => startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
+    document.getElementById('eEndQuiz').onclick = backToEssay;
   }
   const mk = $('#markRead');
   const paint = () => { mk.textContent = isRead(key(e)) ? '\u2713 Read \u00b7 ' + e.level
@@ -1391,6 +1392,8 @@ function variants(w){
   return [...out].filter(Boolean);
 }
 let Q = [], qi = 0, qRight = 0, qLocked = false, qFrom = 'units';
+/* where Back should land: set by whichever screen started the round */
+let quizExit = () => go(qFrom);
 
 let quizPool = null, quizTitle = '', quizBack = 'units';
 function currentPool(){
@@ -1441,6 +1444,7 @@ function startQuiz(pool2, title, back){
   if (!Q.length){ alert('This set has nothing to ask in that mode.'); return; }
   qi = 0; qRight = 0; qLocked = false;
   qFrom = quizBack;
+  quizExit = () => go(quizBack);
   $('#dash').classList.add('off');
   ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
    '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
@@ -1539,7 +1543,7 @@ function finishQuiz(){
     '<button class="qnext" id="qBack" style="background:var(--panel);color:var(--mut);' +
     'border:1px solid var(--line);margin-top:8px">Back to the words</button></div>';
   document.getElementById('qAgain').onclick = () => startQuiz(quizPool, quizTitle, quizBack);
-  document.getElementById('qBack').onclick = () => go(qFrom);
+  document.getElementById('qBack').onclick = () => quizExit();
   paintCards();
 }
 
@@ -1664,12 +1668,15 @@ function openWords(mode){
 }
 /* ---- the grammar quiz: the questions written for each topic ---- */
 let GQ = [], gqi = 0, gqRight = 0, gqBack = 'grammar', gqTitle = '';
+let gqIx = 0;
 function startGramQuiz(ix){
   const g = GR[ix]; if (!g || !g.items.length) return;
+  gqIx = ix;
   GQ = shuffle(g.items).slice(0, 20);
   gqi = 0; gqRight = 0;
   gqBack = (g.sec === 'Speaking') ? 'speaking' : 'grammar';
   gqTitle = g.t;
+  quizExit = () => openGramTopic(ix);     /* back to the topic you were reading */
   $('#dash').classList.add('off');
   ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
    '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
@@ -1731,7 +1738,7 @@ function finishGQ(){
      : pct >= 50 ? 'Read the table again \u2014 the rule is nearly there.'
      : 'Worth reading the whole topic through before another round.') + '</div>' +
     '<button class="qnext" id="qBack2">Back to ' + gqTitle + '</button></div>';
-  document.getElementById('qBack2').onclick = () => go(gqBack);
+  document.getElementById('qBack2').onclick = () => openGramTopic(gqIx);
   paintCards();
 }
 
@@ -1920,13 +1927,14 @@ function openStory(sr, n){
   const qb = $('#storyQuiz');
   qb.className = 'openraw quiz' + (pool.length < 6 ? ' hide' : '');
   qb.textContent = '\u25b6 Practise the ' + pool.length + ' words';
-  qb.onclick = () => startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
+  const backToStory = () => { startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
+                              quizExit = () => openStory(sr, n); };
+  qb.onclick = backToStory;
   if (pool.length >= 6){
     $('#storyPaper').insertAdjacentHTML('beforeend',
       '<div class="endquiz"><div class="eh">That is the episode. Twenty questions on its words?</div>' +
       '<button id="sEndQuiz">\u25b6 Practise the ' + pool.length + ' words</button></div>');
-    document.getElementById('sEndQuiz').onclick =
-      () => startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
+    document.getElementById('sEndQuiz').onclick = backToStory;
   }
   const lg = $('#storyLegend');
   lg.textContent = done[sr+n] ? '\u2713 Read' : 'Mark as read';
@@ -2416,7 +2424,7 @@ $('#wkNext').onclick  = () => { if (wkIx < WEEKS.length-1){ wkIx++; paintWeek();
 $('#wkToday').onclick = () => { wkIx = weekOfToday(); paintWeek(); toTop(); };
 $('#backRead').onclick = () => { stopRead(); go('reading'); };
 $('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
-$('#qQuit').onclick = () => go(qFrom);
+$('#qQuit').onclick = () => quizExit();
 $('#cQuit').onclick = () => go(wMode === 'books' ? 'books' : 'units');
 $('#flipCard').onclick = () => { flipped = !flipped; renderCard(); };
 $('#cFlip').onclick    = () => { flipped = !flipped; renderCard(); };
