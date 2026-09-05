@@ -366,19 +366,21 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 "use strict";
 const COURSES = [
   { id:'units', app:'words', emoji:'\uD83D\uDCD8',
-    title:'Words from units', sub:'New Levels 4 \u00b7 13 sections',
+    title:'Words from units', sub:'New Levels 4 \u00b7 827 words',
     grad:'linear-gradient(140deg,#1E5A66 0%,#2F8A86 55%,#7FA98B 100%)',
     desc:'The course word lists, 1.1 to 4.3 and the Academic Word List.',
-    go:"var r=document.querySelectorAll('#hub .hubrow'); r[0].click();" +
-       "document.querySelectorAll('#bookchips .chip').forEach(function(c){" +
-       "if(c.getAttribute('aria-pressed')==='true') c.click();});" },
+    only:'units',
+    go:"document.querySelectorAll('#hub .hubrow')[0].click();" +
+       "sel.units=new Set(Object.keys(UNAMES).filter(function(u){return u.slice(0,2)!=='BK';}));" +
+       "saveSel(); paintUnits(); paintBookChips(); refreshStart();" },
   { id:'books', app:'words', emoji:'\uD83D\uDCDA',
-    title:'Words from books', sub:'twelve books \u00b7 four series',
+    title:'Words from books', sub:'twelve books \u00b7 1254 words',
     grad:'linear-gradient(140deg,#5B3A6E 0%,#A8574F 55%,#C9A227 100%)',
     desc:'Everything you have read, from The 100 to Gatsby, with the idioms.',
-    go:"var r=document.querySelectorAll('#hub .hubrow'); r[0].click();" +
-       "document.querySelectorAll('#units .chip').forEach(function(c){" +
-       "if(c.getAttribute('aria-pressed')==='true') c.click();});" },
+    only:'books',
+    go:"document.querySelectorAll('#hub .hubrow')[0].click();" +
+       "sel.units=new Set(Object.keys(UNAMES).filter(function(u){return u.slice(0,2)==='BK';}));" +
+       "saveSel(); paintUnits(); paintBookChips(); refreshStart();" },
   { id:'grammar', app:'words', emoji:'\uD83D\uDCD0',
     title:'Grammar', sub:'31 topics \u00b7 essay, speaking, rules',
     grad:'linear-gradient(140deg,#2B4A6B 0%,#4E7BA8 55%,#8FB0C4 100%)',
@@ -501,7 +503,7 @@ function writeJSON(k, v){
   MEM[k] = v;
   try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
 }
-const UNIT_WORDS=966, BOOK_WORDS=1115, GRAM_TOPICS=31, EPISODES=12;
+const UNIT_WORDS=827, BOOK_WORDS=1254, GRAM_TOPICS=31, EPISODES=12;
 function stats(){
   const out = { units:{pct:0,line:'not started yet'}, books:{pct:0,line:'not started yet'},
     grammar:{pct:0,line:'not opened yet'}, reading:{pct:0,line:'not opened yet'},
@@ -884,6 +886,11 @@ function go(id){
         ? 'var n=0;var t=setInterval(function(){n++;try{' + c.go +
           ' clearInterval(t);}catch(e){} if(n>8)clearInterval(t);},350);'
         : '';
+      const onlyCss = c.only === 'units'
+        ? '<style>#booksSec,#bookchips{display:none!important}</style>'
+        : c.only === 'books'
+        ? '<style>#unitsSec,#units{display:none!important}</style>'
+        : '';
       const remeasure = c.app === 'tracker'
         ? 'function nudge(){try{document.querySelectorAll(".week-card.open").forEach(' +
           'function(card){var b=card.querySelector(".week-body"),i=card.querySelector(".week-body-inner");' +
@@ -891,8 +898,9 @@ function go(id){
           '[300,900,1800].forEach(function(ms){setTimeout(nudge,ms);});' +
           'window.addEventListener("resize",nudge);'
         : '';
-      const jump = (tries || remeasure)
-        ? '<scr'+'ipt>window.addEventListener("load",function(){' + tries + remeasure + '});</scr'+'ipt>'
+      const jump = (tries || remeasure || onlyCss)
+        ? onlyCss + '<scr'+'ipt>window.addEventListener("load",function(){' +
+          tries + remeasure + '});</scr'+'ipt>'
         : '';
       if (parked){
         /* the closing tags were escaped so the browser would not run the parked
