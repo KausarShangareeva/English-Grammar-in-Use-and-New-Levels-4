@@ -162,6 +162,43 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .aw .n{display:block;font-size:11.5px;color:var(--mut2);font-weight:400;margin-top:2px}
 .aw a{color:var(--sea);text-decoration:none;font-weight:700}
 .aw a:hover{text-decoration:underline}
+.wordsview{display:none;flex-direction:column;gap:12px}
+.wordsview.on{display:flex}
+.whead{background:var(--panel);border-radius:19px;padding:17px 18px;display:flex;gap:16px;
+  align-items:center;flex-wrap:wrap;box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.whead h2{font-family:var(--disp);font-size:25px;font-weight:600;margin:0 0 3px}
+.wsearch{margin-left:auto;flex:0 1 260px;min-width:180px;border:1px solid var(--line);
+  border-radius:999px;padding:10px 16px;font-family:var(--ui);font-size:13px;color:var(--ink);
+  background:var(--bg);outline:none}
+.wsearch:focus{border-color:var(--sea);background:var(--panel)}
+.wchips{display:flex;flex-wrap:wrap;gap:7px}
+.wchips button{border:1px solid var(--line);background:var(--panel);border-radius:999px;
+  padding:8px 13px;font-family:var(--ui);font-size:12px;font-weight:700;color:var(--mut);
+  cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wchips button .n{opacity:.6;margin-left:5px;font-size:10.5px}
+.wchips button[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:#fff}
+.wchips button.bk[aria-pressed="true"]{color:#fff;border-color:transparent}
+.wlist{background:var(--panel);border-radius:19px;padding:6px 4px;
+  box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.wrow{display:block;width:100%;text-align:left;border:none;background:none;padding:13px 15px;
+  border-bottom:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wrow:last-child{border-bottom:none}
+.wrow:hover{background:var(--bg)}
+.wrow .w1{font-family:var(--disp);font-size:20px;font-weight:600;line-height:1.2}
+.wrow .pos2{font-size:10.5px;color:var(--mut2);font-weight:700;margin-left:7px;vertical-align:2px}
+.wrow .tag{font-size:10px;font-weight:800;border-radius:999px;padding:2px 7px;margin-left:7px;
+  vertical-align:3px}
+.wrow .tag.flag{background:var(--sage-l);color:var(--sage)}
+.wrow .tag.red{background:var(--rose-l);color:var(--rose)}
+.wrow .ru1{font-size:13.5px;color:var(--rose);font-weight:700;margin-top:3px}
+.wrow .mn1{font-size:12.5px;color:var(--mut);margin-top:4px;line-height:1.5}
+.wrow .co1{font-size:12px;color:var(--sea);margin-top:5px;font-weight:700}
+.wrow .ex1{font-size:12.5px;color:var(--ink);margin-top:6px;line-height:1.5;
+  border-left:2.5px solid var(--line2);padding-left:10px}
+.wrow .nt1{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.5}
+.wempty{padding:26px 16px;text-align:center;color:var(--mut2);font-size:13px}
+.wmore{width:100%;border:none;background:none;padding:14px;font-family:var(--ui);font-size:12.5px;
+  font-weight:800;color:var(--sea);cursor:pointer}
 .readlist,.storyview{display:none;flex-direction:column;gap:12px}
 .readlist.on,.storyview.on{display:flex}
 .serieshead{background:var(--panel);border-radius:19px;padding:16px 18px;
@@ -436,6 +473,18 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       <div id="awList"></div>
     </div>
 
+    <div class="wordsview" id="wordsView">
+      <div class="whead">
+        <div>
+          <h2 id="wTitle"></h2>
+          <div class="ps" id="wSub"></div>
+        </div>
+        <input class="wsearch" id="wSearch" type="search" placeholder="search a word or a translation">
+      </div>
+      <div class="wchips" id="wChips"></div>
+      <div class="wlist" id="wList"></div>
+    </div>
+
     <div class="readlist" id="readList"></div>
 
     <div class="storyview" id="storyView">
@@ -502,7 +551,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 <script>
 "use strict";
 const COURSES = [
-  { id:'units', app:'words', emoji:'\uD83D\uDCD8',
+  { id:'units', app:'native', emoji:'\uD83D\uDCD8',
     title:'Words from units', sub:'New Levels 4 \u00b7 827 words',
     grad:'linear-gradient(140deg,#1E5A66 0%,#2F8A86 55%,#7FA98B 100%)',
     desc:'The course word lists, 1.1 to 4.3 and the Academic Word List.',
@@ -510,7 +559,7 @@ const COURSES = [
     go:"document.querySelectorAll('#hub .hubrow')[0].click();" +
        "sel.units=new Set(Object.keys(UNAMES).filter(function(u){return u.slice(0,2)!=='BK';}));" +
        "saveSel(); paintUnits(); paintBookChips(); refreshStart();" },
-  { id:'books', app:'words', emoji:'\uD83D\uDCDA',
+  { id:'books', app:'native', emoji:'\uD83D\uDCDA',
     title:'Words from books', sub:'twelve books \u00b7 1254 words',
     grad:'linear-gradient(140deg,#5B3A6E 0%,#A8574F 55%,#C9A227 100%)',
     desc:'Everything you have read, from The 100 to Gatsby, with the idioms.',
@@ -857,6 +906,121 @@ function openEssay(title, level){
   };
   window.scrollTo(0,0);
 }
+const UNAMES = {"1.1":"The natural world","1.2":"The force of nature","1.3":"The man-made world",
+  "2.1":"Youth culture","2.2":"Eating in and eating out","2.3":"Changes in leisure",
+  "3.1":"Books, newspapers and magazines","3.2":"Radio and TV","3.3":"Computers and the Internet",
+  "4.1":"Student life","4.2":"Settling down","4.3":"The ups and downs of life",
+  "AWL":"Academic Word List · the ten most frequent",
+  "BK1":"📚 The 100 · Rebellion — Kass Morgan",
+  "BK2":"📚 The Maze Runner — James Dashner",
+  "BK3":"📚 Fantastic Mr Fox — Roald Dahl",
+  "BK4":"📚 Charlie and the Chocolate Factory — Roald Dahl",
+  "BK5":"📚 Charlie and the Great Glass Elevator — Roald Dahl",
+  "BK6":"📚 Animal Farm — George Orwell",
+  "BK7":"📚 Of Mice and Men — John Steinbeck",
+  "BK8":"📚 The 100 · Day 21 — Kass Morgan",
+  "BK9":"📚 The 100 · Homecoming — Kass Morgan",
+  "BK10":"📚 Frankenstein — Mary Shelley",
+  "BK11":"📚 The Picture of Dorian Gray — Oscar Wilde",
+  "BK12":"📚 The Great Gatsby — F. Scott Fitzgerald"};
+const BOOKS = [
+ {u:'BK8', t:'Day 21', s:'The 100 · Kass Morgan', e:'☄️', sub:'The 100, book 2', a:'Kass Morgan',
+  g:'linear-gradient(140deg,#2B2140 0%,#5B3A6E 55%,#A8574F 100%)', yr:'2014'},
+ {u:'BK9', t:'Homecoming', s:'The 100 · Kass Morgan', e:'🏚️', sub:'The 100, book 3', a:'Kass Morgan',
+  g:'linear-gradient(140deg,#3A2A20 0%,#8A5A32 55%,#5E6B4A 100%)', yr:'2015'},
+ {u:'BK1', t:'Rebellion', s:'The 100 · Kass Morgan', e:'🔥', sub:'The 100, book 4', a:'Kass Morgan', y:1,
+  g:'linear-gradient(140deg,#7A1F2B 0%,#B4462F 55%,#4A3A38 100%)', yr:'2016'},
+ {u:'BK2', t:'The Maze Runner', s:'The Maze Runner · James Dashner', e:'🌿', a:'James Dashner',
+  g:'linear-gradient(140deg,#1F3B2C 0%,#4C7A4A 55%,#6E6A4E 100%)', yr:'2009'},
+ {u:'BK6', t:'Animal Farm', s:'Classics', e:'🐖', a:'George Orwell',
+  g:'linear-gradient(140deg,#6B2C2C 0%,#8A6A38 55%,#4A4A3E 100%)', yr:'1945'},
+ {u:'BK4', t:'Charlie and the Chocolate Factory', s:'Roald Dahl', e:'🍫', a:'Roald Dahl',
+  g:'linear-gradient(140deg,#4A1F5C 0%,#8A3F86 50%,#C9922F 100%)', yr:'1964'},
+ {u:'BK5', t:'Charlie and the Great Glass Elevator', s:'Roald Dahl', e:'🛗', a:'Roald Dahl',
+  g:'linear-gradient(140deg,#1B3A6B 0%,#3E7BA8 50%,#9E6FB8 100%)', yr:'1972'},
+ {u:'BK3', t:'Fantastic Mr Fox', s:'Roald Dahl', e:'🦊', a:'Roald Dahl',
+  g:'linear-gradient(140deg,#8A3D14 0%,#C2702A 55%,#5C4326 100%)', yr:'1970'},
+ {u:'BK10', t:'Frankenstein', s:'Classics', e:'⚡', a:'Mary Shelley',
+  g:'linear-gradient(140deg,#161E2B 0%,#2E4A5C 50%,#5E7A55 100%)', yr:'1818'},
+ {u:'BK7', t:'Of Mice and Men', s:'Classics', e:'🌾', a:'John Steinbeck',
+  g:'linear-gradient(140deg,#8A6E2F 0%,#C9A94E 50%,#7E8A63 100%)', yr:'1937'},
+ {u:'BK11', t:'The Picture of Dorian Gray', s:'Classics', e:'🖼️', a:'Oscar Wilde',
+  g:'linear-gradient(140deg,#123A2E 0%,#2E6B4F 50%,#C0A040 100%)', yr:'1890'},
+ {u:'BK12', t:'The Great Gatsby', s:'Classics', e:'🥂', a:'F. Scott Fitzgerald',
+  g:'linear-gradient(140deg,#0F1E3C 0%,#2E4E7E 50%,#D4AF37 100%)', yr:'1925'}
+];
+
+/* ---- the word list, rendered by the platform itself ---- */
+let wMode = 'units', wUnit = null, wShown = 60, wQuery = '';
+function wUnitsFor(mode){
+  return Object.keys(UNAMES).filter(u =>
+    (mode === 'books') === (u.slice(0,2) === 'BK') && WD.some(w => w.u === u));
+}
+function paintWordChips(){
+  const box = $('#wChips'); if (!box) return;
+  const us = wUnitsFor(wMode);
+  box.innerHTML = us.map(u => {
+    const n = WD.filter(w => w.u === u).length;
+    const bk = BOOKS.find(x => x.u === u);
+    const label = bk ? (bk.e || '') + ' ' + bk.t : u + ' \u00b7 ' + (UNAMES[u] || '');
+    return '<button data-u="' + u + '"' + (bk ? ' class="bk"' : '') +
+      (u === wUnit ? ' aria-pressed="true"' : '') +
+      (bk && u === wUnit ? ' style="background:' + bk.g + '"' : '') +
+      '>' + label + '<span class="n">' + n + '</span></button>';
+  }).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    wUnit = b.dataset.u; wShown = 60; paintWordChips(); paintWordList();
+  });
+}
+function paintWordList(){
+  const box = $('#wList'); if (!box) return;
+  const bk = BOOKS.find(x => x.u === wUnit);
+  $('#wTitle').textContent = wMode === 'books'
+    ? (bk ? (bk.e || '') + ' ' + bk.t : 'Words from books')
+    : 'Unit ' + wUnit;
+  $('#wSub').textContent = bk
+    ? bk.a + ' \u00b7 ' + bk.yr + ' \u00b7 ' + WD.filter(w => w.u === wUnit).length + ' words'
+    : (UNAMES[wUnit] || '') + ' \u00b7 ' + WD.filter(w => w.u === wUnit).length + ' words';
+
+  const q = wQuery.trim().toLowerCase();
+  let ws = WD.filter(w => q
+    ? ((w.w + ' ' + (w.r||'') + ' ' + (w.m||'')).toLowerCase().indexOf(q) >= 0 &&
+       (w.u.slice(0,2) === 'BK') === (wMode === 'books'))
+    : w.u === wUnit);
+  if (!ws.length){
+    box.innerHTML = '<div class="wempty">Nothing matches \u201c' + gEsc(wQuery) + '\u201d here.</div>';
+    return;
+  }
+  const slice = ws.slice(0, wShown);
+  box.innerHTML = slice.map(w => {
+    const ex = (w.e && w.e.length)
+      ? gEsc(String(w.e[0][0])).replace('____', '<b>' + gEsc(w.e[0][1]) + '</b>') : '';
+    const fq = w.fq ? '<div class="co1">appears <b>' + w.fq + '</b> times in the book</div>' : '';
+    return '<button class="wrow">' +
+      '<div><span class="w1">' + gEsc(w.w) + '</span>' +
+      (w.p ? '<span class="pos2">' + gEsc(w.p) + '</span>' : '') +
+      (w.t === 'flag' ? '<span class="tag flag">essay</span>' : '') +
+      (w.t === 'red' ? '<span class="tag red">spoken</span>' : '') + '</div>' +
+      '<div class="ru1">' + gEsc(w.r || '') + '</div>' +
+      (w.m ? '<div class="mn1">' + gEsc(w.m) + '</div>' : '') +
+      (w.c ? '<div class="co1">' + gSafe(w.c) + '</div>' : '') + fq +
+      (ex ? '<div class="ex1">' + ex + '</div>' : '') +
+      (w.n ? '<div class="nt1">' + gSafe(w.n) + '</div>' : '') +
+      '</button>';
+  }).join('') +
+  (ws.length > wShown
+    ? '<button class="wmore" id="wMore">Show ' +
+      Math.min(60, ws.length - wShown) + ' more \u00b7 ' + (ws.length - wShown) + ' left</button>' : '');
+  const m = document.getElementById('wMore');
+  if (m) m.onclick = () => { wShown += 60; paintWordList(); };
+}
+function openWords(mode){
+  wMode = mode;
+  const us = wUnitsFor(mode);
+  if (!wUnit || us.indexOf(wUnit) < 0) wUnit = us[0];
+  wShown = 60;
+  paintWordChips(); paintWordList();
+}
 /* ---- reading, rendered by the platform itself ---- */
 const WBY = {};
 let wordIndexBuilt = false;
@@ -1135,6 +1299,20 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
 function go(id){
   const c = id === 'plan' ? PLAN_VIEW : COURSES.find(x => x.id === id);
   if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
+  if (id === 'units' || id === 'books'){
+    $('#dash').classList.add('off');
+    ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList','#storyView']
+      .forEach(x => $(x).classList.remove('on'));
+    $('#wordsView').classList.add('on');
+    $('#tagline').textContent = c.desc;
+    document.querySelectorAll('#nav button, #mobbar button')
+      .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'dash'));
+    openWords(id === 'books' ? 'books' : 'units');
+    try { localStorage.setItem('studyhub_last', id); } catch(e){}
+    try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
+    return;
+  }
+  $('#wordsView').classList.remove('on');
   if (id === 'reading'){
     $('#dash').classList.add('off');
     ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#storyView']
@@ -1282,6 +1460,7 @@ $('#backEssays').onclick = () => go('essay');
 let lastGramCard = 'grammar';
 $('#backGram').onclick = () => go(lastGramCard);
 $('#backRead').onclick = () => go('reading');
+$('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
 function openTrainerAt(code){
   const c = { id:'grammar-quiz', app:'words', title:'Grammar practice',
               desc:'Practice questions run in the trainer.', go:code };
