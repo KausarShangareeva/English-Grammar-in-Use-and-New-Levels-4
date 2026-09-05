@@ -89,6 +89,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .bar i{display:block;height:100%;background:var(--sea);border-radius:99px}
 .cstat{display:flex;gap:6px;margin-top:8px;font-size:11px;color:var(--mut2);font-weight:700}
 .cstat b{color:var(--ink)}
+.lockline{margin-top:7px;font-size:10.5px;font-weight:700;color:var(--rose)}
 .course.soon{opacity:.62;cursor:default}
 .course.soon:hover{transform:none;box-shadow:0 6px 20px rgba(39,107,122,.06)}
 
@@ -100,7 +101,10 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .today .wk{font-size:11px;font-weight:800;color:var(--mut2);letter-spacing:.4px}
 .today .done{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--sage)}
 .tlist{display:flex;flex-direction:column;gap:2px;margin-top:10px}
-.trow{display:flex;align-items:flex-start;gap:9px;padding:7px 2px;font-size:13px;line-height:1.45}
+.trow{display:flex;align-items:flex-start;gap:9px;padding:7px 6px;font-size:13px;line-height:1.45;
+  width:100%;border:none;background:none;text-align:left;font-family:var(--ui);color:var(--ink);
+  border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.trow:hover{background:var(--sage-l)}
 .trow .box{width:15px;height:15px;flex:0 0 15px;border-radius:5px;border:1.6px solid var(--line2);
   margin-top:1px}
 .trow.on .box{background:var(--sage);border-color:var(--sage);position:relative}
@@ -254,16 +258,6 @@ const COURSES = [
     grad:'linear-gradient(140deg,#7A3B5C 0%,#A85578 55%,#C98BA6 100%)',
     desc:'Thirty-six model essays, paragraph structure and the quiz gate.',
     go:null },
-  { id:'plan', app:'tracker', emoji:'\uD83D\uDDD3\uFE0F',
-    title:'The whole plan', sub:'43 weeks \u00b7 to June 2027',
-    grad:'linear-gradient(140deg,#2F5D50 0%,#4F8A6B 55%,#A8C0A0 100%)',
-    desc:'Every day from now to the exams: grammar, Quran, Swedish, reading.',
-    go:null },
-  { id:'third', app:null, emoji:'\uD83D\uDD4C',
-    title:'Third course', sub:'waiting for its link',
-    grad:'linear-gradient(140deg,#4A4A3E 0%,#8A6A38 55%,#C9A227 100%)',
-    desc:'Send me the address and it will sit here with the others.',
-    go:null }
 ];
 const $ = s => document.querySelector(s);
 /* two entries only: the courses, and the plan. Everything else is a card. */
@@ -293,6 +287,9 @@ function stats(){
     }
   } catch(e){}
   const s = readJSON('nl4vocab_v1');
+  const iso = isoToday();
+  const gateOpen = !!(s && s.day === iso && (s.today||0) >= 25);
+  out.gate = gateOpen;
   if (s){
     if (s.stats){
       const learned = Object.values(s.stats).filter(x => (x.run||0) >= 3).length;
@@ -322,6 +319,7 @@ function greeting(){
 }
 function paintCards(){
   const st = stats(), box = $('#cards');
+  const locked = st.gate === false;
   box.innerHTML = '';
   COURSES.forEach(c => {
     const s = st[c.id];
@@ -333,7 +331,10 @@ function paintCards(){
         '<span class="ct">' + c.title + '</span><span class="cs">' + c.sub + '</span></div>' +
       '<div class="cbody"><div class="cd">' + c.desc + '</div>' +
         '<div class="bar"><i style="width:' + Math.max(2, s.pct) + '%"></i></div>' +
-        '<div class="cstat"><b>' + s.pct + '%</b> \u00b7 ' + s.line + '</div></div>';
+        '<div class="cstat"><b>' + s.pct + '%</b> \u00b7 ' + s.line + '</div>' +
+        (locked && c.app === 'words'
+          ? '<div class="lockline">\uD83D\uDD12 today\u2019s quiz first \u2014 the card will start it</div>'
+          : '') + '</div>';
     b.onclick = () => go(c.id);
     box.appendChild(b);
   });
@@ -357,8 +358,8 @@ function paintToday(){
   try { status = JSON.parse(localStorage.getItem('task-status-8weeks') || '{}') || {}; } catch(e){}
   const done = day.rows.filter(r => status[r.i]).length;
   const rows = day.rows.map(r =>
-    '<div class="trow' + (status[r.i] ? ' on' : '') + '"><span class="box"></span><span>' +
-    r.t.replace(/[<>]/g,'') + '</span></div>').join('');
+    '<button class="trow' + (status[r.i] ? ' on' : '') + '" data-task="' + r.i + '">' +
+    '<span class="box"></span><span>' + r.t.replace(/[<>]/g,'') + '</span></button>').join('');
   box.innerHTML =
     '<div class="th"><h3>Today</h3>' +
     '<span class="wk">' + day.d + ' \u00b7 week ' + day.w + '</span>' +
@@ -368,6 +369,18 @@ function paintToday(){
     '<button class="more" id="openPlan">Open the whole plan \u203a</button>';
   const b = document.getElementById('openPlan');
   if (b) b.onclick = () => go('plan');
+  /* ticking here writes the same key the schedule reads, so the two stay in step */
+  box.querySelectorAll('.trow').forEach(row => {
+    row.onclick = () => {
+      const id = row.dataset.task;
+      if (!id) return;
+      let st = {};
+      try { st = JSON.parse(localStorage.getItem('task-status-8weeks') || '{}') || {}; } catch(e){}
+      if (st[id]) delete st[id]; else st[id] = 1;   /* 1 = done, the tracker's own code */
+      try { localStorage.setItem('task-status-8weeks', JSON.stringify(st)); } catch(e){}
+      paintToday(); paintCards();
+    };
+  });
 }
 function paintCalendar(){
   const now = new Date(), y = now.getFullYear(), m = now.getMonth();
@@ -411,8 +424,11 @@ function paintNav(){
     mob.appendChild(b);
   });
 }
+/* the schedule is reached from the sidebar, not from a card */
+const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
+  desc:'Every day from now to June 2027 \u2014 tick things off as you go.', go:null };
 function go(id){
-  const c = COURSES.find(x => x.id === id);
+  const c = id === 'plan' ? PLAN_VIEW : COURSES.find(x => x.id === id);
   if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
   const lit = (id === 'plan') ? 'plan' : 'dash';
   document.querySelectorAll('#nav button, #mobbar button')
@@ -440,8 +456,25 @@ function go(id){
     if (fr.dataset.state !== want){
       fr.dataset.state = want;
       /* a short bootstrap is appended so the app opens on the right screen */
-      const jump = c.go ? '<scr'+'ipt>window.addEventListener("load",function(){' +
-        'setTimeout(function(){try{' + c.go + '}catch(e){}},450);});</scr'+'ipt>' : '';
+      /* two fixes in one: retry the jump until the app is ready, and re-measure
+         the schedule once the frame actually has a height */
+      const tries = c.go
+        ? 'var n=0;var t=setInterval(function(){n++;try{' +
+          'if(typeof dayOpen==="function" && !dayOpen()){' +
+          '  var db=document.getElementById("dailyBtn"); if(db){db.click(); clearInterval(t);} }' +
+          'else {' + c.go + ' clearInterval(t);} ' +
+          '}catch(e){} if(n>8)clearInterval(t);},350);'
+        : '';
+      const remeasure = c.app === 'tracker'
+        ? 'function nudge(){try{document.querySelectorAll(".week-card.open").forEach(' +
+          'function(card){var b=card.querySelector(".week-body"),i=card.querySelector(".week-body-inner");' +
+          'if(b&&i)b.style.maxHeight=(i.scrollHeight+40)+"px";});}catch(e){}}' +
+          '[300,900,1800].forEach(function(ms){setTimeout(nudge,ms);});' +
+          'window.addEventListener("resize",nudge);'
+        : '';
+      const jump = (tries || remeasure)
+        ? '<scr'+'ipt>window.addEventListener("load",function(){' + tries + remeasure + '});</scr'+'ipt>'
+        : '';
       if (parked){
         fr.srcdoc = parked.textContent.replace('</body>', jump + '</body>');
       } else if (jump && typeof fetch === 'function'){
