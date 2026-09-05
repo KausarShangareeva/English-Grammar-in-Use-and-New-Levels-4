@@ -209,38 +209,72 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 <script>
 "use strict";
 const COURSES = [
-  { id:'words', file:'trainer.html', emoji:'\uD83D\uDCD7',
-    title:'Words & grammar', sub:'New Levels 4 \u00b7 twelve books',
+  { id:'units', app:'words', emoji:'\uD83D\uDCD8',
+    title:'Words from units', sub:'New Levels 4 \u00b7 13 sections',
     grad:'linear-gradient(140deg,#1E5A66 0%,#2F8A86 55%,#7FA98B 100%)',
-    desc:'Vocabulary, grammar and reading. Twenty-five sections and a daily quiz.' },
-  { id:'oshima', file:'oshima.html', emoji:'\u270D\uFE0F',
+    desc:'The course word lists, 1.1 to 4.3 and the Academic Word List.',
+    go:"var r=document.querySelectorAll('#hub .hubrow'); r[0].click();" +
+       "document.querySelectorAll('#bookchips .chip').forEach(function(c){" +
+       "if(c.getAttribute('aria-pressed')==='true') c.click();});" },
+  { id:'books', app:'words', emoji:'\uD83D\uDCDA',
+    title:'Words from books', sub:'twelve books \u00b7 four series',
+    grad:'linear-gradient(140deg,#5B3A6E 0%,#A8574F 55%,#C9A227 100%)',
+    desc:'Everything you have read, from The 100 to Gatsby, with the idioms.',
+    go:"var r=document.querySelectorAll('#hub .hubrow'); r[0].click();" +
+       "document.querySelectorAll('#units .chip').forEach(function(c){" +
+       "if(c.getAttribute('aria-pressed')==='true') c.click();});" },
+  { id:'grammar', app:'words', emoji:'\uD83D\uDCD0',
+    title:'Grammar', sub:'29 topics \u00b7 essay, speaking, rules',
+    grad:'linear-gradient(140deg,#2B4A6B 0%,#4E7BA8 55%,#8FB0C4 100%)',
+    desc:'Tenses, articles, linkers, the speaking sets and the quick rules.',
+    go:"document.querySelectorAll('#hub .hubrow')[1].click();" },
+  { id:'reading', app:'words', emoji:'\uD83D\uDCD6',
+    title:'Reading', sub:'two series \u00b7 twelve episodes',
+    grad:'linear-gradient(140deg,#7A3B2B 0%,#B4623F 55%,#D9A566 100%)',
+    desc:'Stories written around the words of each unit; tap any word to see it.',
+    go:"document.querySelectorAll('#hub .hubrow')[2].click();" },
+  { id:'essay', app:'oshima', emoji:'\u270D\uFE0F',
     title:'Essay writing', sub:'Oshima & Hogue',
     grad:'linear-gradient(140deg,#7A3B5C 0%,#A85578 55%,#C98BA6 100%)',
-    desc:'Thirty-six model essays, paragraph structure and the quiz gate.' },
-  { id:'third', file:null, emoji:'\uD83D\uDD4C',
+    desc:'Thirty-six model essays, paragraph structure and the quiz gate.',
+    go:null },
+  { id:'third', app:null, emoji:'\uD83D\uDD4C',
     title:'Third course', sub:'waiting for its link',
     grad:'linear-gradient(140deg,#4A4A3E 0%,#8A6A38 55%,#C9A227 100%)',
-    desc:'Send me the address and it will sit here with the others.' }
+    desc:'Send me the address and it will sit here with the others.',
+    go:null }
 ];
 const $ = s => document.querySelector(s);
 const NAV = [{id:'dash',icon:'\u25A6',label:'Dashboard'}]
   .concat(COURSES.map(c => ({id:c.id, icon:c.emoji, label:c.title})));
 
 function readJSON(k){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):null; }catch(e){ return null; } }
+const UNIT_WORDS=966, BOOK_WORDS=1115, GRAM_TOPICS=29, EPISODES=12;
 function stats(){
-  const out = { words:{pct:0,line:'not started yet'},
-                oshima:{pct:0,line:'not started yet'},
-                third:{pct:0,line:'not added yet'} };
+  const out = { units:{pct:0,line:'not started yet'}, books:{pct:0,line:'not started yet'},
+    grammar:{pct:0,line:'not opened yet'}, reading:{pct:0,line:'not opened yet'},
+    essay:{pct:0,line:'not started yet'}, third:{pct:0,line:'not added yet'} };
   const s = readJSON('nl4vocab_v1');
-  if (s && s.stats){
-    const learned = Object.values(s.stats).filter(x => (x.run||0) >= 3).length;
-    out.words = { pct: Math.round(learned/2081*100), line: learned + ' of 2081 words mastered' };
+  if (s){
+    if (s.stats){
+      const learned = Object.values(s.stats).filter(x => (x.run||0) >= 3).length;
+      out.units = { pct: Math.min(100, Math.round(learned/UNIT_WORDS*100)),
+        line: learned + ' words mastered so far' };
+      out.books = { pct: Math.min(100, Math.round(learned/BOOK_WORDS*100)),
+        line: learned + ' words mastered so far' };
+    }
+    const seen = s.seen ? Object.keys(s.seen).length : 0;
+    if (seen) out.grammar = { pct: Math.min(100, Math.round(seen/GRAM_TOPICS*100)),
+      line: seen + ' of ' + GRAM_TOPICS + ' topics opened' };
+    const ep = (s.visited||[]).length;
+    if (ep) out.reading = { pct: Math.min(100, Math.round(ep/EPISODES*100)),
+      line: ep + ' of ' + EPISODES + ' episodes unlocked' };
   }
   const read = readJSON('oshima_essays-read');
   if (read){
     const n = Array.isArray(read) ? read.length
       : Object.keys(read).filter(k => k !== 'savedAt').length;
-    out.oshima = { pct: Math.round(n/36*100), line: n + ' of 36 essays read' };
+    out.essay = { pct: Math.round(n/36*100), line: n + ' of 36 essays read' };
   }
   return out;
 }
@@ -254,7 +288,7 @@ function paintCards(){
   COURSES.forEach(c => {
     const s = st[c.id];
     const b = document.createElement('button');
-    b.className = 'course' + (c.file ? '' : ' soon');
+    b.className = 'course' + (c.app ? '' : ' soon');
     b.innerHTML =
       '<div class="cover" style="background:' + c.grad + '">' +
         '<span class="em">' + c.emoji + '</span>' +
@@ -310,7 +344,7 @@ function paintNav(){
 }
 function go(id){
   const c = COURSES.find(x => x.id === id);
-  if (c && !c.file){ $('#tagline').textContent = c.desc; return; }
+  if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
   document.querySelectorAll('#nav button, #mobbar button')
     .forEach(b => b.setAttribute('aria-current', b.dataset.id === id));
   if (id === 'dash'){
@@ -323,26 +357,38 @@ function go(id){
     $('#view').classList.add('on');
     $('#vtitle').textContent = c.title;
     $('#tagline').textContent = c.desc;
-    $('#openraw').href = c.file;
-    $('#openraw').style.display = document.getElementById('app-' + c.id) ? 'none' : '';
+    const file = c.app === 'oshima' ? 'oshima.html' : 'trainer.html';
+    $('#openraw').href = file;
+    const parked = document.getElementById('app-' + c.app);
+    $('#openraw').style.display = parked ? 'none' : '';
     const load = $('#loading'), fr = $('#fr');
     load.classList.remove('gone');
     load.textContent = 'loading\u2026';
     fr.onload = () => load.classList.add('gone');
-    if (fr.dataset.app !== c.id){
-      fr.dataset.app = c.id;
-      const parked = document.getElementById('app-' + c.id);
+    const want = c.app + '|' + (c.go || '');
+    if (fr.dataset.state !== want){
+      fr.dataset.state = want;
+      /* a short bootstrap is appended so the app opens on the right screen */
+      const jump = c.go ? '<scr'+'ipt>window.addEventListener("load",function(){' +
+        'setTimeout(function(){try{' + c.go + '}catch(e){}},450);});</scr'+'ipt>' : '';
       if (parked){
-        /* the whole app, handed to a frame of its own: nothing inside it can
-           collide with anything inside the other one */
-        fr.srcdoc = parked.textContent;
-      } else if (c.file){
-        fr.src = c.file;
+        fr.srcdoc = parked.textContent.replace('</body>', jump + '</body>');
+      } else if (jump && typeof fetch === 'function'){
+        fetch(file).then(r => r.text())
+          .then(t => { fr.srcdoc = t.replace('</body>', jump + '</body>'); })
+          .catch(() => { fr.src = file; });
+      } else {
+        fr.src = file;
       }
     } else {
       load.classList.add('gone');
     }
-    setTimeout(function(){ load.classList.add('gone'); }, 6000);
+    setTimeout(function(){
+      if (!load.classList.contains('gone'))
+        load.innerHTML = '<div style="max-width:340px"><b>The courses live next to this page.</b><br>' +
+          'Open the hub from its published address, or open <b>' + file +
+          '</b> directly \u2014 a preview window cannot reach it.</div>';
+    }, 5000);
   }
   try { localStorage.setItem('studyhub_last', id); } catch(e){}
   try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
