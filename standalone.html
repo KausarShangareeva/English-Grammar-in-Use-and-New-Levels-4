@@ -226,6 +226,10 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .fitem .fn{font-size:11px;color:var(--mut2);margin-top:2px;line-height:1.45}
 .fitem.soon2 .fd{color:var(--rose)}
 .fitem.open2 .fd{color:var(--mut)}
+.flegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:11px;font-size:11px;
+  color:var(--mut2);font-weight:700}
+.flegend span{display:flex;align-items:center;gap:6px}
+.flegend i{width:9px;height:9px;border-radius:3px;display:block}
 .stream{border-radius:14px;padding:4px 10px 8px;margin-top:10px;background:var(--sbg)}
 .stream:first-child{margin-top:6px}
 .sth{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:1.1px;
@@ -1382,6 +1386,11 @@ function paintFinish(){
     '<div class="ps">Soonest first, worked out from the plan as it stands. ' +
     'Miss a day and the date moves.' +
     (next ? ' Next: <b>' + gEsc(next.label) + '</b>, ' + fmtDate(next.iso) + '.' : '') +
+    '</div>' +
+    '<div class="flegend">' +
+      '<span><i style="background:var(--rose)"></i>within a month</span>' +
+      '<span><i style="background:var(--sea)"></i>further out</span>' +
+      '<span><i style="background:var(--mut2)"></i>no date yet</span>' +
     '</div>' +
     '<div class="fgrid">' + items.map(i => {
       const d = i.iso ? daysTo(i.iso) : null;
