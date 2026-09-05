@@ -212,6 +212,15 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .stream .trow:hover{background:rgba(255,255,255,.65)}
 .stream .trow .box{border-color:var(--sc);opacity:.55}
 .stream .trow.on .box{background:var(--sc);border-color:var(--sc);opacity:1}
+.trow.missed .box{background:var(--rose);border-color:var(--rose);opacity:1;position:relative}
+.trow.missed .box:after{content:'';position:absolute;left:6px;top:3px;width:2px;height:9px;
+  background:#fff;transform:rotate(45deg);box-shadow:0 0 0 0 #fff}
+.trow.missed .box:before{content:'';position:absolute;left:6px;top:3px;width:2px;height:9px;
+  background:#fff;transform:rotate(-45deg)}
+.trow.missed span:last-child{color:var(--mut2);text-decoration:line-through;
+  text-decoration-color:var(--rose)}
+.miss{color:var(--rose)}
+.today .th .miss{font-weight:800}
 .days{display:flex;flex-direction:column;gap:12px}
 .day{background:var(--panel);border-radius:18px;padding:15px 17px 12px;
   box-shadow:0 6px 20px rgba(39,107,122,.06)}
@@ -925,7 +934,7 @@ function stats(){
     const today = PLAN[isoToday()];
     const totalDone = Object.values(st).filter(Boolean).length;
     if (today){
-      const d = today.rows.filter(r => st[r.i]).length;
+      const d = today.rows.filter(r => Number(st[r.i]) === 1).length;
       out.plan = { pct: Math.round(d/today.rows.length*100),
         line: d + ' of ' + today.rows.length + ' done today' };
     } else if (totalDone){
@@ -1008,13 +1017,15 @@ function paintToday(where){
     return;
   }
   const status = readJSON('task-status-8weeks') || {};
-  const done = day.rows.filter(r => status[r.i]).length;
+  const done = day.rows.filter(r => Number(status[r.i]) === 1).length;
+  const missed = day.rows.filter(r => Number(status[r.i]) === 2).length;
   const rows = streamBlocks(day.rows, status);
   box.innerHTML =
     '<div class="th"><h3>Today</h3>' +
     '<span class="wk">' + day.d + ' \u00b7 week ' + day.w + '</span>' +
-    '<span class="done">' + done + ' of ' + day.rows.length + ' done</span></div>' +
-    '<div class="ps">Tick them off inside the plan \u2014 this card follows it.</div>' +
+    '<span class="done">' + done + ' of ' + day.rows.length + ' done' +
+    (missed ? ' \u00b7 <span class="miss">' + missed + ' missed</span>' : '') + '</span></div>' +
+    '<div class="ps">Tap once for \u2713 done, twice for \u2715 could not, again to clear.</div>' +
     '<div class="tlist">' + rows + '</div>' +
     '<button class="more" id="openPlan">Open the whole plan \u203a</button>';
   const b = box.querySelector('#openPlan, .more');
@@ -1022,15 +1033,16 @@ function paintToday(where){
     if (where === '#todayTop'){ b.remove(); }
     else b.onclick = () => go('plan');
   }
-  /* ticking here writes the same key the schedule reads, so the two stay in step */
+  /* one place decides what a tap means, so the card and the week agree */
   box.querySelectorAll('.trow').forEach(row => {
     row.onclick = () => {
       const id = row.dataset.task;
       if (!id) return;
-      const st = readJSON('task-status-8weeks') || {};
-      if (st[id]) delete st[id]; else st[id] = 1;   /* 1 = done, the tracker's own code */
-      writeJSON('task-status-8weeks', st);
-      paintToday(where);
+      toggleTask(id, () => {
+        paintToday(where);
+        if ($('#planView').classList.contains('on')) paintWeek();
+        paintCards();
+      });
     };
   });
 }
@@ -1249,13 +1261,16 @@ function groupRows(rows){
 }
 function streamBlocks(rows, st){
   return groupRows(rows).map(g => {
-    const done = g.rows.filter(r => st[r.i]).length;
+    const done = g.rows.filter(r => Number(st[r.i]) === 1).length;
     return '<div class="stream" style="--sc:' + g.s.c + ';--sbg:' + g.s.bg + '">' +
       '<div class="sth"><span class="ste">' + g.s.e + '</span>' + g.s.t +
       '<span class="stn">' + done + '/' + g.rows.length + '</span></div>' +
-      g.rows.map(r =>
-        '<button class="trow' + (st[r.i] ? ' on' : '') + '" data-task="' + r.i + '">' +
-        '<span class="box"></span><span>' + gEsc(r.t) + '</span></button>').join('') +
+      g.rows.map(r => {
+        const v = Number(st[r.i]) || 0;
+        return '<button class="trow' + (v === 1 ? ' on' : v === 2 ? ' missed' : '') +
+          '" data-task="' + r.i + '" title="tap again for \u2715 could not">' +
+          '<span class="box"></span><span>' + gEsc(r.t) + '</span></button>';
+      }).join('') +
       '</div>';
   }).join('');
 }
@@ -1277,9 +1292,11 @@ function weekOfToday(){
   return ix < 0 ? 0 : ix;
 }
 function taskStatus(){ return readJSON('task-status-8weeks') || {}; }
+/* 0 nothing \u2192 1 done \u2192 2 could not \u2192 0 again, exactly as the tracker stored it */
 function toggleTask(id, then){
   const st = taskStatus();
-  if (st[id]) delete st[id]; else st[id] = 1;
+  const next = ((Number(st[id]) || 0) + 1) % 3;
+  if (next === 0) delete st[id]; else st[id] = next;
   writeJSON('task-status-8weeks', st);
   if (then) then();
 }
@@ -1287,20 +1304,22 @@ function paintWeek(){
   const wk = WEEKS[wkIx]; if (!wk) return;
   const st = taskStatus(), iso = isoToday();
   const all = wk.days.reduce((a,d) => a + d.rows.length, 0);
-  const done = wk.days.reduce((a,d) => a + d.rows.filter(r => st[r.i]).length, 0);
+  const done = wk.days.reduce((a,d) => a + d.rows.filter(r => Number(st[r.i]) === 1).length, 0);
   $('#wkTitle').textContent = 'Week ' + wk.w;
   $('#wkSub').textContent = (wk.ti || '').replace(/^WEEK \d+ \u00b7 /,'') +
     ' \u00b7 ' + done + ' of ' + all + ' done';
   $('#wkPrev').disabled = wkIx === 0;
   $('#wkNext').disabled = wkIx >= WEEKS.length - 1;
   $('#wkDays').innerHTML = wk.days.map(d => {
-    const dn = d.rows.filter(r => st[r.i]).length;
+    const dn = d.rows.filter(r => Number(st[r.i]) === 1).length;
+    const dm = d.rows.filter(r => Number(st[r.i]) === 2).length;
     return '<div class="day' + (d.iso === iso ? ' isnow' : '') +
       (dn === d.rows.length ? ' done' : '') + '">' +
       '<div class="dayh"><span class="dn">' + gEsc(d.d) + '</span>' +
       '<span class="dd">' + d.iso.slice(8) + '.' + d.iso.slice(5,7) +
       (d.iso === iso ? ' \u00b7 today' : '') + '</span>' +
-      '<span class="dc">' + dn + '/' + d.rows.length + '</span></div>' +
+      '<span class="dc">' + dn + '/' + d.rows.length +
+      (dm ? ' <span class="miss">\u2715' + dm + '</span>' : '') + '</span></div>' +
       '<div class="dbar"><i style="width:' + Math.round(dn/d.rows.length*100) + '%"></i></div>' +
       '<div class="tlist">' + streamBlocks(d.rows, st) + '</div></div>';
   }).join('');
