@@ -1370,8 +1370,19 @@ function paintFinish(){
     else items.push({ label:c.k, emoji:c.e, iso:null, note:c.n, cls:'open2', big:'\u2014' });
   });
 
+  /* soonest first: the list is meant to be read from the top and stopped at */
+  items.sort((a,b) => {
+    if (!a.iso && !b.iso) return 0;
+    if (!a.iso) return 1;
+    if (!b.iso) return -1;
+    return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0;
+  });
+  const next = items.find(i => i.iso);
   box.innerHTML = '<h3>When each thing is finished</h3>' +
-    '<div class="ps">Worked out from the plan as it stands. Miss a day and the date moves.</div>' +
+    '<div class="ps">Soonest first, worked out from the plan as it stands. ' +
+    'Miss a day and the date moves.' +
+    (next ? ' Next: <b>' + gEsc(next.label) + '</b>, ' + fmtDate(next.iso) + '.' : '') +
+    '</div>' +
     '<div class="fgrid">' + items.map(i => {
       const d = i.iso ? daysTo(i.iso) : null;
       const cls = i.cls || (d !== null && d < 30 ? 'soon2' : '');
