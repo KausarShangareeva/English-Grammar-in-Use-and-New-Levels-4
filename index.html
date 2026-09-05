@@ -20,6 +20,10 @@
   --disp:"Cormorant Garamond",Georgia,serif;
   --ui:"Nunito",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
+/* a quarter bigger on a real screen; phones stay at their own size */
+@media (min-width:1000px){
+  html{ zoom:1.25 }
+}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webkit-font-smoothing:antialiased}
@@ -2017,12 +2021,22 @@ function showTip(ev, i, fallback){
   tip.classList.add('on');
   moveTip(ev);
 }
+const zoomFactor = () => {
+  const z = parseFloat(getComputedStyle(document.documentElement).zoom);
+  return (z && z > 0) ? z : 1;
+};
 function moveTip(ev){
   const tip = $('#tip');
+  const z = zoomFactor();
   const w = tip.offsetWidth, h = tip.offsetHeight;
-  let x = ev.clientX + 14, y = ev.clientY - h - 12;
-  if (x + w > window.innerWidth - 10) x = window.innerWidth - w - 10;
-  if (y < 8) y = ev.clientY + 18;
+  /* clientX is in screen pixels; a zoomed page thinks in smaller ones */
+  const cx = ev.clientX / z, cy = ev.clientY / z;
+  const vw = window.innerWidth / z, vh = window.innerHeight / z;
+  let x = cx + 14, y = cy - h - 12;
+  if (x + w > vw - 10) x = vw - w - 10;
+  if (x < 8) x = 8;
+  if (y < 8) y = cy + 18;
+  if (y + h > vh - 8) y = vh - h - 8;
   tip.style.left = x + 'px'; tip.style.top = y + 'px';
 }
 function hideTip(){ $('#tip').classList.remove('on'); }
