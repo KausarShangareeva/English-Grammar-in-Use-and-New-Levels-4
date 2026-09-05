@@ -356,6 +356,10 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   padding-bottom:16px;border-bottom:1px solid #EFE4D8}
 .paper.story p{margin:0 0 16px}
 .paper.story m{border-bottom:2.5px solid var(--line2);cursor:pointer;padding-bottom:1px}
+.paper w{cursor:help;border-bottom:1px dotted transparent;transition:border-color .12s,background .12s}
+.paper w:hover{border-bottom-color:#C9B8A8;background:rgba(201,138,155,.10);border-radius:3px}
+.paper.story w{cursor:help;border-bottom:1px dotted transparent;transition:border-color .12s,background .12s}
+.paper.story w:hover{border-bottom-color:#C9B8A8;background:rgba(201,138,155,.10);border-radius:3px}
 .paper.story m.p-v{border-color:#5FC79F}
 .paper.story m.p-n{border-color:#7FB6DA}
 .paper.story m.p-adj{border-color:#B9A6EA}
@@ -1086,6 +1090,22 @@ function openEssay(title, level){
     '</div>' + e.html;
   $('#paper').querySelectorAll('.lvlpick button').forEach(b =>
     b.onclick = () => openEssay(title, b.dataset.l));
+  $('#paper').querySelectorAll('p').forEach(p => markKnownWords(p));
+  $('#paper').addEventListener('mouseover', ev => {
+    const el = ev.target.closest && ev.target.closest('w[data-i]');
+    if (el) showTip(ev, el.dataset.i, el.textContent);
+  });
+  $('#paper').addEventListener('mousemove', ev => {
+    if ($('#tip').classList.contains('on')) moveTip(ev);
+  });
+  $('#paper').addEventListener('mouseout', ev => {
+    const el = ev.target.closest && ev.target.closest('w[data-i]');
+    if (el) hideTip();
+  });
+  $('#paper').addEventListener('click', ev => {
+    const el = ev.target.closest && ev.target.closest('w[data-i]');
+    if (el) speak(el.textContent);
+  });
   $('#paper').querySelectorAll('p').forEach(p => {
     if (p.querySelector('.spk')) return;          /* never twice on the same paragraph */
     p.insertAdjacentHTML('afterbegin', spk(p.textContent.slice(0,320)) + ' ');
@@ -1606,6 +1626,68 @@ function finishGQ(){
 }
 
 /* ---- reading, rendered by the platform itself ---- */
+const BASE = {"the":"определённый артикль","and":"и","a":"неопределённый артикль","an":"неопределённый артикль","it":"оно, это","in":"в","of":"предлог родительного падежа","had":"имел; вспомог. глагол","was":"был, была","that":"что; тот","he":"он","to":"к, в; частица инфинитива","she":"она","not":"не","on":"на","at":"в, у","for":"для, за","her":"её, ей","said":"сказал","you":"ты, вы","with":"с","is":"есть (быть)","his":"его","been":"был (прич. от be)","did":"делал; вспомог. глагол","one":"один","have":"иметь","who":"кто, который","they":"они","as":"как; когда","him":"его, ему","out":"наружу, вне","man":"мужчина, человек","which":"который","there":"там","never":"никогда","would":"бы; вспомог. глагол","about":"о, около","were":"были","no":"нет; никакой","four":"четыре","years":"годы","because":"потому что","what":"что","then":"затем, тогда","them":"их, им","by":"около; посредством","two":"два","once":"однажды; как только","from":"от, из","came":"пришёл","my":"мой","all":"весь, все","has":"имеет","nine":"девять","every":"каждый","me":"меня, мне","whole":"целый, весь","eleven":"одиннадцать","where":"где, куда","up":"вверх","nobody":"никто","be":"быть","when":"когда","nothing":"ничто","went":"пошёл","three":"три","only":"только","into":"в, внутрь","first":"первый","we":"мы","way":"путь; способ","do":"делать","looked":"смотрел; выглядел","could":"мог","room":"комната","down":"вниз","water":"вода","told":"сказал, рассказал","this":"этот","made":"сделал","behind":"позади","without":"без","are":"есть (быть, мн.ч.)","people":"люди","than":"чем","under":"под","hundred":"сто","before":"до, перед","so":"так; поэтому","long":"длинный, долгий","off":"прочь; выключено","old":"старый","town":"город","great":"великий; отличный","house":"дом","knew":"знал","being":"будучи; существо","hand":"рука (кисть)","everything":"всё","come":"приходить","left":"оставил; левый","say":"говорить","last":"последний; длиться","built":"построил","black":"чёрный","something":"что-то","day":"день","somebody":"кто-то","anything":"что-нибудь","year":"год","days":"дни","very":"очень","stopped":"остановился","here":"здесь","stood":"стоял","through":"через","small":"маленький","now":"сейчас","us":"нас, нам","time":"время","ever":"когда-либо","your":"твой, ваш","put":"класть, ставить","its":"его (о предмете)","will":"будет; воля","night":"ночь","thing":"вещь","woman":"женщина","else":"ещё; другой","too":"слишком; тоже","how":"как","door":"дверь","twenty":"двадцать","minutes":"минуты","always":"всегда","name":"имя","food":"еда","most":"больше всего; большинство","took":"взял","go":"идти","gone":"ушедший","six":"шесть","found":"нашёл","still":"всё ещё; неподвижный","after":"после","any":"любой; какой-нибудь","asked":"спросил","father":"отец","someone":"кто-то","turned":"повернул","along":"вдоль","why":"почему","own":"собственный","coast":"побережье","if":"если","across":"через, поперёк","called":"назвал; позвал","ask":"спрашивать","money":"деньги","life":"жизнь","sat":"сидел","end":"конец","wall":"стена","until":"до тех пор пока","can":"мочь","half":"половина","above":"над","standing":"стоящий","over":"над; через","kind":"вид, сорт; добрый","since":"с тех пор как","county":"графство","though":"хотя","everyone":"каждый, все","almost":"почти","hour":"час","more":"больше","their":"их","second":"второй; секунда","anyone":"кто-нибудь","face":"лицо","road":"дорога","grey":"серый","gate":"ворота, калитка","see":"видеть","stop":"останавливать(ся)","cut":"резать","beside":"рядом с","village":"деревня","floor":"пол; этаж","thirty":"тридцать","afterwards":"впоследствии","family":"семья","men":"мужчины","again":"снова","same":"тот же самый","thought":"думал; мысль","watched":"наблюдал","am":"есть (я)","within":"в пределах","walked":"шёл пешком","paid":"заплатил","low":"низкий","running":"бегущий; работающий","does":"делает","know":"знать","or":"или","want":"хотеть","better":"лучше","photograph":"фотография","right":"правый; правильный","used":"использовал; привыкший","wrong":"неправильный","spent":"потратил","lost":"потерял","birds":"птицы","look":"смотреть; вид","glass":"стекло; стакан","things":"вещи","quiet":"тихий","side":"сторона","carried":"нёс","evening":"вечер","began":"начал","held":"держал","moved":"двигал(ся)","kept":"хранил; продолжал","word":"слово","away":"прочь","week":"неделя","between":"между","already":"уже","place":"место","voice":"голос","read":"читать","got":"получил","done":"сделанный","moment":"момент","forty":"сорок","open":"открытый; открывать","month":"месяц","gave":"дал","bad":"плохой","meant":"значил; имел в виду","book":"книга","hands":"руки","afternoon":"вторая половина дня","reserve":"заповедник; запас","outside":"снаружи","problem":"проблема","nineteen":"девятнадцать","empty":"пустой","watching":"наблюдающий","young":"молодой","rather":"довольно; скорее","work":"работа; работать","sand":"песок","story":"история, рассказ","somewhere":"где-то","head":"голова","twice":"дважды","later":"позже","folded":"сложил","care":"забота; заботиться","rain":"дождь","past":"прошлое; мимо","front":"передняя часть","school":"школа","round":"круглый; вокруг","sold":"продал","ago":"тому назад","make":"делать","understand":"понимать","hair":"волосы","became":"стал","city":"город","yes":"да","against":"против","summer":"лето","far":"далеко","itself":"себя (о предмете)","reached":"достиг","eastern":"восточный","everybody":"все","single":"единственный; одиночный","each":"каждый","himself":"себя (о нём)","shed":"сарай","enough":"достаточно","inside":"внутри","dark":"тёмный","doorway":"дверной проём","order":"порядок; приказ","neither":"ни тот ни другой","started":"начал","spring":"весна; пружина","feet":"ноги (ступни); футы","another":"другой","page":"страница","rose":"поднялся; роза","ground":"земля","top":"верх","coat":"пальто","mine":"мой; шахта","office":"офис","middle":"середина","bay":"залив","fourth":"четвёртый","looking":"смотрящий","laughed":"смеялся","cannot":"не могу","born":"рождённый","women":"женщины","other":"другой","deal":"сделка; иметь дело","whether":"ли","noise":"шум","may":"может; май","should":"следует","wanted":"хотел","whose":"чей","clock":"часы","brother":"брат","pools":"водоёмы, лужи","case":"случай; чемодан","showed":"показал","take":"брать","let":"позволять","new":"новый","good":"хороший","back":"назад; спина","think":"думать","just":"просто; только что","even":"даже","much":"много","also":"также","well":"хорошо; колодец","give":"давать","tell":"говорить, рассказывать","little":"маленький; мало","need":"нуждаться","find":"находить","keep":"держать, хранить","seemed":"казался","felt":"чувствовал","heard":"слышал","saw":"видел","brought":"принёс","morning":"утро","winter":"зима","light":"свет; лёгкий","white":"белый","red":"красный","blue":"синий","green":"зелёный","window":"окно","table":"стол","letter":"письмо; буква","paper":"бумага","car":"машина","train":"поезд","boat":"лодка","river":"река","sea":"море","field":"поле","garden":"сад","street":"улица","mother":"мать","sister":"сестра","child":"ребёнок","children":"дети","friend":"друг","boy":"мальчик","girl":"девочка","cold":"холодный","warm":"тёплый","hot":"горячий","big":"большой","true":"правда, истинный","false":"ложный","full":"полный","free":"свободный","sure":"уверенный","real":"настоящий","hard":"трудный; твёрдый","easy":"лёгкий","early":"рано","late":"поздно"};
+/* every form we can reach from a headword, so "frogs" finds "frog" */
+let DICT = null;
+function buildDict(){
+  if (DICT) return DICT;
+  DICT = {};
+  const add = (k, w) => { k = k.toLowerCase(); if (k.length > 1 && !DICT[k]) DICT[k] = w; };
+  WD.forEach(w => {
+    const head = String(w.w).split('/')[0].replace(/\(.*?\)/g,'').trim();
+    if (!head || /\s/.test(head)) { add(head, w); return; }   /* phrases: exact only */
+    add(head, w);
+    const b = head.toLowerCase();
+    const last = b.slice(-1), last2 = b.slice(-2);
+    add(b + 's', w); add(b + 'es', w); add(b + 'ed', w); add(b + 'ing', w);
+    add(b + 'd', w);  add(b + 'r', w);  add(b + 'st', w);
+    if (last === 'y'){ add(b.slice(0,-1) + 'ies', w); add(b.slice(0,-1) + 'ied', w); }
+    if (last === 'e'){ add(b.slice(0,-1) + 'ing', w); add(b + 'd', w); add(b.slice(0,-1) + 'ed', w); }
+    if (/[bdgklmnprt]$/.test(b) && /[aeiou]/.test(b.slice(-2,-1)) && b.length > 2){
+      add(b + last + 'ing', w); add(b + last + 'ed', w);
+    }
+    if (last2 === 'ly') add(b.slice(0,-2), w);
+    else add(b + 'ly', w);
+  });
+  /* the plain words go in last, so a word from her own lists always wins */
+  Object.keys(BASE).forEach(k => {
+    if (!DICT[k]) DICT[k] = { i:'b:'+k, w:k, r:BASE[k], m:'', p:'', base:true };
+  });
+  return DICT;
+}
+/* wrap the known words of a text node so each can be hovered */
+function markKnownWords(root){
+  const dict = buildDict();
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(n){
+      const p = n.parentElement;
+      if (!p || p.closest('m, w, .spk, .legend, .meta, h1, .sq')) return NodeFilter.FILTER_REJECT;
+      return /[A-Za-z]{3}/.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n => {
+    let html = '', changed = false, last = 0;
+    const text = n.nodeValue;
+    const re = /[A-Za-z][A-Za-z'\u2019-]*/g;
+    let m;
+    while ((m = re.exec(text))){
+      const hit = dict[m[0].toLowerCase()];
+      if (!hit) continue;
+      html += gEsc(text.slice(last, m.index)) +
+        '<w data-i="' + hit.i + '">' + gEsc(m[0]) + '</w>';
+      last = m.index + m[0].length;
+      changed = true;
+    }
+    if (!changed) return;
+    html += gEsc(text.slice(last));
+    const span = document.createElement('span');
+    span.innerHTML = html;
+    n.parentNode.replaceChild(span, n);
+  });
+}
+
 const WBY = {};
 let wordIndexBuilt = false;
 function buildWordIndex(){
@@ -1679,6 +1761,23 @@ function openStory(sr, n){
     });
     m.addEventListener('mousemove',  moveTip);
     m.addEventListener('mouseleave', hideTip);
+  });
+  /* every other word we have a translation for */
+  $('#storyPaper').querySelectorAll('p').forEach(p => markKnownWords(p));
+  $('#storyPaper').addEventListener('mouseover', ev => {
+    const el = ev.target.closest && ev.target.closest('w[data-i]');
+    if (el) showTip(ev, el.dataset.i, el.textContent);
+  });
+  $('#storyPaper').addEventListener('mousemove', ev => {
+    if ($('#tip').classList.contains('on')) moveTip(ev);
+  });
+  $('#storyPaper').addEventListener('mouseout', ev => {
+    const el = ev.target.closest && ev.target.closest('w[data-i], m[data-i]');
+    if (el) hideTip();
+  });
+  $('#storyPaper').addEventListener('click', ev => {
+    const el = ev.target.closest && ev.target.closest('w[data-i]');
+    if (el){ speak(el.textContent); showWord(el.dataset.i, el.textContent); }
   });
   /* a speaker at the start of every paragraph */
   $('#storyPaper').querySelectorAll('p').forEach(p => {
@@ -1757,9 +1856,16 @@ function startRead(){
   RS.on = true; RS.i = 0; RS.gen++;
   paintPlay(); speakFrom(RS.gen, ps);
 }
-function showTip(ev, i, fallback){
+function lookup(i){
+  if (String(i).slice(0,2) === 'b:'){
+    const k = String(i).slice(2);
+    return { w:k, r:BASE[k], m:'', base:true };
+  }
   buildWordIndex();
-  const w = WBY[i], tip = $('#tip');
+  return WBY[i];
+}
+function showTip(ev, i, fallback){
+  const w = lookup(i), tip = $('#tip');
   tip.innerHTML = '<b>' + gEsc(w ? w.w : fallback) + '</b>' +
     '<i>' + gEsc(w && w.r ? w.r : '') + '</i>' +
     (w && w.m ? '<u>' + gEsc(w.m) + '</u>' : '');
@@ -1776,8 +1882,7 @@ function moveTip(ev){
 }
 function hideTip(){ $('#tip').classList.remove('on'); }
 function showWord(i, fallback){
-  buildWordIndex();
-  const w = WBY[i];
+  const w = lookup(i);
   const pop = $('#wordPop');
   if (!w){ pop.innerHTML = '<button class="x">&times;</button><div class="hw">' + fallback + '</div>'; }
   else {
