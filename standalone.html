@@ -137,20 +137,24 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 
 .awards{display:none;flex-direction:column;gap:12px}
 .awards.on{display:flex}
-.awhead{background:var(--panel);border-radius:19px;padding:18px 18px 16px;display:flex;
-  align-items:center;gap:16px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.awhead{background:var(--panel);border-radius:19px;padding:20px;display:flex;
+  align-items:center;gap:16px;margin-bottom:2px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
 .awhead h2{font-family:var(--disp);font-size:25px;font-weight:600;margin:0 0 3px}
 .awring{margin-left:auto;text-align:center;flex:0 0 78px}
 .awring .num{font-family:var(--disp);font-size:30px;font-weight:600;color:var(--sea);line-height:1}
 .awring .lb{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
   color:var(--mut2);margin-top:3px}
-.awgroup{background:var(--panel);border-radius:19px;padding:15px 16px 12px;
+#awList{display:flex;flex-direction:column;gap:14px}
+.awgroup{background:var(--panel);border-radius:19px;padding:18px 18px 14px;
   box-shadow:0 6px 20px rgba(39,107,122,.06)}
-.awgroup h4{font-family:var(--disp);font-size:20px;font-weight:600;margin:0 0 2px}
-.awgroup .gs{font-size:11.5px;color:var(--mut2);margin-bottom:10px}
-.aw{display:flex;align-items:flex-start;gap:11px;width:100%;border:none;background:none;
-  padding:9px 8px;border-radius:11px;text-align:left;font-family:var(--ui);font-size:13.5px;
-  color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;line-height:1.45}
+.awgroup h4{font-family:var(--disp);font-size:21px;font-weight:600;margin:0 0 3px}
+.awgroup .gs{font-size:11.5px;color:var(--mut2);margin-bottom:6px;line-height:1.5}
+.aw{display:flex;align-items:flex-start;gap:12px;width:100%;border:none;background:none;
+  border-top:1px solid var(--line);padding:14px 8px;border-radius:0;text-align:left;
+  font-family:var(--ui);font-size:13.5px;color:var(--ink);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;line-height:1.5}
+.awgroup .aw:first-of-type{border-top:none}
+.aw:hover{border-radius:11px}
 .aw:hover{background:var(--sage-l)}
 .aw .box{width:17px;height:17px;flex:0 0 17px;border-radius:6px;border:1.7px solid var(--line2);
   margin-top:1px;position:relative}
@@ -159,7 +163,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .aw .t{display:block;font-weight:700}
 .aw.on .t{color:var(--mut2);text-decoration:line-through}
-.aw .n{display:block;font-size:11.5px;color:var(--mut2);font-weight:400;margin-top:2px}
+.aw .n{display:block;font-size:11.5px;color:var(--mut2);font-weight:400;margin-top:4px;
+  line-height:1.55}
 .aw a{color:var(--sea);text-decoration:none;font-weight:700}
 .aw a:hover{text-decoration:underline}
 .spk{border:none;background:none;cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;
