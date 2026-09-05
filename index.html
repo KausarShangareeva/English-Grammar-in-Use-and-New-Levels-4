@@ -292,7 +292,7 @@ const COURSES = [
        "document.querySelectorAll('#units .chip').forEach(function(c){" +
        "if(c.getAttribute('aria-pressed')==='true') c.click();});" },
   { id:'grammar', app:'words', emoji:'\uD83D\uDCD0',
-    title:'Grammar', sub:'29 topics \u00b7 essay, speaking, rules',
+    title:'Grammar', sub:'31 topics \u00b7 essay, speaking, rules',
     grad:'linear-gradient(140deg,#2B4A6B 0%,#4E7BA8 55%,#8FB0C4 100%)',
     desc:'Tenses, articles, linkers, the speaking sets and the quick rules.',
     go:"document.querySelectorAll('#hub .hubrow')[1].click();" },
@@ -370,7 +370,7 @@ function writeJSON(k, v){
   MEM[k] = v;
   try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
 }
-const UNIT_WORDS=966, BOOK_WORDS=1115, GRAM_TOPICS=29, EPISODES=12;
+const UNIT_WORDS=966, BOOK_WORDS=1115, GRAM_TOPICS=31, EPISODES=12;
 function stats(){
   const out = { units:{pct:0,line:'not started yet'}, books:{pct:0,line:'not started yet'},
     grammar:{pct:0,line:'not opened yet'}, reading:{pct:0,line:'not opened yet'},
