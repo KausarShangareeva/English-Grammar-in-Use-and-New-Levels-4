@@ -162,6 +162,17 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .aw .n{display:block;font-size:11.5px;color:var(--mut2);font-weight:400;margin-top:2px}
 .aw a{color:var(--sea);text-decoration:none;font-weight:700}
 .aw a:hover{text-decoration:underline}
+.spk{border:none;background:none;cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;
+  opacity:.45;-webkit-tap-highlight-color:transparent;vertical-align:2px}
+.spk:hover{opacity:1}
+.paper .spk{margin-left:6px;font-size:12px}
+.tip{position:fixed;z-index:70;background:var(--ink);color:#fff;border-radius:11px;
+  padding:9px 13px;font-family:var(--ui);font-size:13px;line-height:1.45;max-width:280px;
+  pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 8px 22px rgba(0,0,0,.22)}
+.tip.on{opacity:1}
+.tip b{display:block;font-family:var(--disp);font-size:17px;font-weight:600;margin-bottom:2px}
+.tip i{display:block;font-style:normal;color:#F2C9D4;font-weight:700}
+.tip u{display:block;text-decoration:none;color:#C9D9DC;font-size:11.5px;margin-top:4px}
 .wactions{display:flex;flex-wrap:wrap;gap:8px}
 .wactions button{border:1px solid var(--line);background:var(--panel);border-radius:999px;
   padding:10px 18px;font-family:var(--ui);font-size:13px;font-weight:800;color:var(--mut);
@@ -230,8 +241,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .wchips button.bk[aria-pressed="true"]{color:#fff;border-color:transparent}
 .wlist{background:var(--panel);border-radius:19px;padding:6px 4px;
   box-shadow:0 6px 20px rgba(39,107,122,.06)}
-.wrow{display:block;width:100%;text-align:left;border:none;background:none;padding:13px 15px;
-  border-bottom:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wrow{display:block;width:100%;text-align:left;padding:13px 15px;
+  border-bottom:1px solid var(--line);-webkit-tap-highlight-color:transparent}
 .wrow:last-child{border-bottom:none}
 .wrow:hover{background:var(--bg)}
 .wrow .w1{font-family:var(--disp);font-size:20px;font-weight:600;line-height:1.2}
@@ -596,7 +607,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       <div class="viewbar">
         <button class="back" id="backRead">&larr; All episodes</button>
         <div class="spacer"></div>
-        <button class="openraw" id="storyLegend">Colours: what they mark</button>
+        <button class="openraw" id="storyQuiz"></button>
+        <button class="openraw" id="storyLegend">Mark as read</button>
       </div>
       <div class="readbar">
         <button id="hlBtn" aria-pressed="true">Highlights on</button>
@@ -635,6 +647,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       <div class="viewbar">
         <button class="back" id="backEssays">&larr; All essays</button>
         <div class="spacer"></div>
+        <button class="openraw" id="essayQuiz"></button>
         <button class="openraw" id="markRead"></button>
       </div>
       <article class="paper" id="paper"></article>
@@ -658,6 +671,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   </main>
 </div>
 <div class="wordpop" id="wordPop"></div>
+<div class="tip" id="tip"></div>
 
 <script>
 "use strict";
@@ -1002,6 +1016,33 @@ function openEssay(title, level){
     '</div>' + e.html;
   $('#paper').querySelectorAll('.lvlpick button').forEach(b =>
     b.onclick = () => openEssay(title, b.dataset.l));
+  $('#paper').querySelectorAll('p').forEach(p => {
+    p.insertAdjacentHTML('afterbegin', spk(p.textContent.slice(0,300)) + ' ');
+  });
+  buildWordIndex();
+  const byWord = {};
+  WD.forEach(w => { const k = w.w.toLowerCase(); if (!byWord[k]) byWord[k] = w; });
+  $('#paper').querySelectorAll('.voc,.bonus').forEach(v => {
+    v.style.cursor = 'pointer';
+    v.addEventListener('click', () => speak(v.textContent));
+    const w = byWord[v.textContent.trim().toLowerCase()];
+    if (!w) return;
+    v.addEventListener('mouseenter', ev => {
+      const tip = $('#tip');
+      tip.innerHTML = '<b>' + gEsc(w.w) + '</b><i>' + gEsc(w.r || '') + '</i>' +
+        (w.m ? '<u>' + gEsc(w.m) + '</u>' : '');
+      tip.classList.add('on'); moveTip(ev);
+    });
+    v.addEventListener('mousemove', moveTip);
+    v.addEventListener('mouseleave', hideTip);
+  });
+  const evoc = [...new Set([...$('#paper').querySelectorAll('.voc,.bonus')]
+    .map(v => v.textContent.trim().toLowerCase()))];
+  const epool = WD.filter(w => evoc.indexOf(w.w.toLowerCase()) >= 0);
+  const eq = $('#essayQuiz');
+  eq.classList.toggle('hide', epool.length < 6);
+  eq.textContent = 'Practise the ' + epool.length + ' words in this essay';
+  eq.onclick = () => startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
   const mk = $('#markRead');
   const paint = () => { mk.textContent = isRead(key(e)) ? '\u2713 Read \u00b7 ' + e.level
                                                         : 'Mark ' + e.level + ' as read'; };
@@ -1062,6 +1103,39 @@ const BOOKS = [
 ];
 
 
+/* ---- speech: British English wherever a word is shown ---- */
+let VOICE = null;
+function pickVoice(){
+  try {
+    const vs = window.speechSynthesis.getVoices() || [];
+    VOICE = vs.find(v => v.lang === 'en-GB' && /Sonia|Libby|Kate|Serena|Female|Google UK English Female/i.test(v.name))
+         || vs.find(v => v.lang === 'en-GB')
+         || vs.find(v => (v.lang||'').indexOf('en-GB') === 0)
+         || vs.find(v => (v.lang||'').indexOf('en') === 0) || null;
+  } catch(e){}
+}
+try {
+  pickVoice();
+  if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = pickVoice;
+} catch(e){}
+function speak(text){
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(String(text).replace(/\u2026\u2026|____/g,' blank '));
+    u.lang = 'en-GB';
+    if (VOICE) u.voice = VOICE;
+    u.rate = 0.95; u.pitch = 1;
+    window.speechSynthesis.speak(u);
+  } catch(e){}
+}
+const spk = t => '<button class="spk" data-say="' + gEsc(String(t)).replace(/"/g,'&quot;') +
+  '" title="listen (British English)">\uD83D\uDD0A</button>';
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.spk');
+  if (b){ e.preventDefault(); e.stopPropagation(); speak(b.dataset.say); }
+});
+
 /* ---- the quiz engine, sharing progress with the trainer ---- */
 const NLKEY = 'nl4vocab_v1';
 function nlLoad(){
@@ -1083,8 +1157,9 @@ const QMODES = [
 ];
 let Q = [], qi = 0, qRight = 0, qLocked = false, qFrom = 'units';
 
+let quizPool = null, quizTitle = '', quizBack = 'units';
 function currentPool(){
-  return WD.filter(w => w.u === wUnit);
+  return quizPool || WD.filter(w => w.u === wUnit);
 }
 function buildQuestions(pool){
   const usable = pool.filter(w => qMode !== 'cloze' || (w.e && w.e.length));
@@ -1111,17 +1186,20 @@ function buildQuestions(pool){
     return { w, prompt, sub, answer, options, label };
   }).filter(q => q.prompt && q.answer && q.options.length > 1);
 }
-function startQuiz(){
+function startQuiz(pool2, title, back){
+  if (pool2){ quizPool = pool2; quizTitle = title || ''; quizBack = back || 'units'; }
+  else { quizPool = null; quizBack = wMode === 'books' ? 'books' : 'units'; quizTitle = ''; }
   const pool = currentPool();
   Q = buildQuestions(pool);
   if (!Q.length){ alert('This set has nothing to ask in that mode.'); return; }
   qi = 0; qRight = 0; qLocked = false;
-  qFrom = wMode === 'books' ? 'books' : 'units';
+  qFrom = quizBack;
   $('#dash').classList.add('off');
   ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
    '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
   $('#quizView').classList.add('on');
-  $('#tagline').textContent = 'Twenty questions from this set.';
+  $('#tagline').textContent = quizTitle || 'Twenty questions from this set.';
+  toTop();
   renderQ();
 }
 function renderQ(){
@@ -1152,6 +1230,7 @@ function answerQ(chosen, btn){
   const st = s.stats[q.w.i] || (s.stats[q.w.i] = { c:0, w:0, run:0 });
   if (ok){ st.c++; st.run = (st.run||0) + 1; qRight++; s.xp = (s.xp||0) + 10; }
   else   { st.w++; st.run = 0; }
+  speak(q.w.w);
   const today = new Date();
   const key = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') +
               '-' + String(today.getDate()).padStart(2,'0');
@@ -1169,7 +1248,7 @@ function answerQ(chosen, btn){
   const extra = [ w.m ? gEsc(w.m) : '', w.c ? gSafe(w.c) : '', w.n ? gSafe(w.n) : '' ]
     .filter(Boolean).join('<br>');
   $('#qCard').insertAdjacentHTML('beforeend',
-    '<div class="qfb">' + (ok ? '\u2713 ' : '\u2715 ') + '<b>' + gEsc(w.w) + '</b> \u2014 ' +
+    '<div class="qfb">' + (ok ? '\u2713 ' : '\u2715 ') + '<b>' + gEsc(w.w) + '</b>' + spk(w.w) + ' \u2014 ' +
     gEsc(w.r || '') + (extra ? '<br>' + extra : '') + '</div>' +
     '<button class="qnext" id="qNext">' + (qi + 1 >= Q.length ? 'See the result' : 'Next') + '</button>');
   document.getElementById('qNext').onclick = () => { qi++; renderQ(); };
@@ -1188,7 +1267,7 @@ function finishQuiz(){
     '<button class="qnext" id="qAgain">Another round</button>' +
     '<button class="qnext" id="qBack" style="background:var(--panel);color:var(--mut);' +
     'border:1px solid var(--line);margin-top:8px">Back to the words</button></div>';
-  document.getElementById('qAgain').onclick = startQuiz;
+  document.getElementById('qAgain').onclick = () => startQuiz(quizPool, quizTitle, quizBack);
   document.getElementById('qBack').onclick = () => go(qFrom);
   paintCards();
 }
@@ -1204,6 +1283,7 @@ function startCards(){
    '#storyView','#quizView'].forEach(x => $(x).classList.remove('on'));
   $('#cardsView').classList.add('on');
   $('#tagline').textContent = 'Tap the card to turn it over.';
+  toTop();
   renderCard();
 }
 function renderCard(){
@@ -1216,7 +1296,7 @@ function renderCard(){
       (w.m ? '<div class="fm">' + gEsc(w.m) + '</div>' : '') +
       (w.c ? '<div class="fc">' + gSafe(w.c) + '</div>' : '') +
       (ex ? '<div class="fe">' + ex + '</div>' : '')
-    : '<div class="fw">' + gEsc(w.w) + '</div>' +
+    : '<div class="fw">' + gEsc(w.w) + spk(w.w) + '</div>' +
       (w.p ? '<div class="fp">' + gEsc(w.p) + '</div>' : '');
   $('#cFlip').textContent = flipped ? 'Show the word' : 'Show translation';
 }
@@ -1267,8 +1347,8 @@ function paintWordList(){
     const ex = (w.e && w.e.length)
       ? gEsc(String(w.e[0][0])).replace('____', '<b>' + gEsc(w.e[0][1]) + '</b>') : '';
     const fq = w.fq ? '<div class="co1">appears <b>' + w.fq + '</b> times in the book</div>' : '';
-    return '<button class="wrow">' +
-      '<div><span class="w1">' + gEsc(w.w) + '</span>' +
+    return '<div class="wrow">' +
+      '<div><span class="w1">' + gEsc(w.w) + '</span>' + spk(w.w) +
       (w.p ? '<span class="pos2">' + gEsc(w.p) + '</span>' : '') +
       (w.t === 'flag' ? '<span class="tag flag">essay</span>' : '') +
       (w.t === 'red' ? '<span class="tag red">spoken</span>' : '') + '</div>' +
@@ -1277,7 +1357,7 @@ function paintWordList(){
       (w.c ? '<div class="co1">' + gSafe(w.c) + '</div>' : '') + fq +
       (ex ? '<div class="ex1">' + ex + '</div>' : '') +
       (w.n ? '<div class="nt1">' + gSafe(w.n) + '</div>' : '') +
-      '</button>';
+      '</div>';
   }).join('') +
   (ws.length > wShown
     ? '<button class="wmore" id="wMore">Show ' +
@@ -1292,6 +1372,78 @@ function openWords(mode){
   wShown = 60;
   paintWordChips(); paintWordList();
 }
+/* ---- the grammar quiz: the questions written for each topic ---- */
+let GQ = [], gqi = 0, gqRight = 0, gqBack = 'grammar', gqTitle = '';
+function startGramQuiz(ix){
+  const g = GR[ix]; if (!g || !g.items.length) return;
+  GQ = shuffle(g.items).slice(0, 20);
+  gqi = 0; gqRight = 0;
+  gqBack = (g.sec === 'Speaking') ? 'speaking' : 'grammar';
+  gqTitle = g.t;
+  $('#dash').classList.add('off');
+  ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
+   '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
+  $('#quizView').classList.add('on');
+  $('#tagline').textContent = g.t;
+  toTop();
+  renderGQ();
+}
+function renderGQ(){
+  if (gqi >= GQ.length) return finishGQ();
+  const it = GQ[gqi];
+  $('#qBar').style.width = Math.round(gqi / GQ.length * 100) + '%';
+  $('#qCount').textContent = (gqi + 1) + ' / ' + GQ.length;
+  const opts = shuffle((it.o || []).slice());
+  $('#qCard').innerHTML =
+    '<div class="qlabel">' + gEsc(it.lb || 'choose the form') + '</div>' +
+    '<div class="qprompt" style="font-size:24px">' +
+      gSafe(String(it.s).replace(/____/g,'<b style="color:var(--rose)">\u2026\u2026</b>')) + '</div>' +
+    (it.l ? '<div class="qsub">' + gEsc(it.l) + '</div>' : '<div style="height:10px"></div>') +
+    '<div class="qopts">' + opts.map((o,i) =>
+      '<button class="opt" data-i="' + i + '">' + gSafe(o) + '</button>').join('') + '</div>';
+  let locked = false;
+  $('#qCard').querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    if (locked) return; locked = true;
+    const chosen = opts[Number(b.dataset.i)];
+    const ok = String(chosen).trim() === String(it.a).trim();
+    if (ok) gqRight++;
+    const s2 = nlLoad();
+    const today = new Date();
+    const key = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') +
+                '-' + String(today.getDate()).padStart(2,'0');
+    if (s2.day !== key){ s2.day = key; s2.today = 0; }
+    s2.today = (s2.today || 0) + 1;
+    if (ok) s2.xp = (s2.xp || 0) + 10;
+    nlSave(s2);
+    $('#qCard').querySelectorAll('.opt').forEach(x => {
+      x.disabled = true;
+      if (String(opts[Number(x.dataset.i)]).trim() === String(it.a).trim()) x.classList.add('right');
+      else if (x === b) x.classList.add('wrong');
+    });
+    const said = String(it.s).replace(/____/g, String(it.a));
+    $('#qCard').insertAdjacentHTML('beforeend',
+      '<div class="qfb">' + (ok ? '\u2713 ' : '\u2715 ') + '<b>' + gSafe(it.a) + '</b>' +
+      spk(said.replace(/<[^>]+>/g,'')) +
+      (it.e ? '<br>' + gSafe(it.e) : '') + '</div>' +
+      '<button class="qnext" id="qNext">' +
+      (gqi + 1 >= GQ.length ? 'See the result' : 'Next') + '</button>');
+    document.getElementById('qNext').onclick = () => { gqi++; renderGQ(); };
+  });
+}
+function finishGQ(){
+  $('#qBar').style.width = '100%';
+  const pct = Math.round(gqRight / GQ.length * 100);
+  $('#qCard').innerHTML =
+    '<div class="qdone"><div class="big">' + gqRight + '/' + GQ.length + '</div>' +
+    '<div class="lb2">correct</div><div class="msg">' +
+    (pct >= 80 ? 'You can use this one in writing now.'
+     : pct >= 50 ? 'Read the table again \u2014 the rule is nearly there.'
+     : 'Worth reading the whole topic through before another round.') + '</div>' +
+    '<button class="qnext" id="qBack2">Back to ' + gqTitle + '</button></div>';
+  document.getElementById('qBack2').onclick = () => go(gqBack);
+  paintCards();
+}
+
 /* ---- reading, rendered by the platform itself ---- */
 const WBY = {};
 let wordIndexBuilt = false;
@@ -1347,9 +1499,24 @@ function openStory(sr, n){
       ({'p-v':'#5FC79F','p-n':'#7FB6DA','p-adj':'#B9A6EA','p-adv':'#E3B071','p-x':'#D8A0B4'}[k]) +
       '"></i>' + POSNAME[k] + '</span>').join('') +
     '<span style="margin-left:auto">tap any underlined word</span></div>';
-  $('#storyPaper').querySelectorAll('m[data-i]').forEach(m =>
-    m.onclick = () => { if (!$('#storyPaper').classList.contains('plain'))
-                          showWord(m.dataset.i, m.textContent); });
+  buildWordIndex();
+  $('#storyPaper').querySelectorAll('m[data-i]').forEach(m => {
+    m.addEventListener('click', () => {
+      if ($('#storyPaper').classList.contains('plain')) return;
+      speak(m.textContent);
+      showWord(m.dataset.i, m.textContent);
+    });
+    m.addEventListener('mouseenter', ev => {
+      if (!$('#storyPaper').classList.contains('plain'))
+        showTip(ev, m.dataset.i, m.textContent);
+    });
+    m.addEventListener('mousemove',  moveTip);
+    m.addEventListener('mouseleave', hideTip);
+  });
+  /* a speaker at the start of every paragraph */
+  $('#storyPaper').querySelectorAll('p').forEach(p => {
+    p.insertAdjacentHTML('afterbegin', spk(p.textContent.slice(0,300)) + ' ');
+  });
   stopRead();
   $('#rCnt').textContent = e.c + ' words marked \u00b7 ' + e.wc + ' to read';
   const hl = $('#hlBtn');
@@ -1368,6 +1535,14 @@ function openStory(sr, n){
   lb.classList.toggle('hide', !canSpeak);
   lb.setAttribute('aria-pressed', String(RS.loop));
   lb.onclick = () => { RS.loop = !RS.loop; lb.setAttribute('aria-pressed', String(RS.loop)); };
+  const ids = [...new Set([...$('#storyPaper').querySelectorAll('m[data-i]')]
+    .map(m => m.dataset.i))];
+  buildWordIndex();
+  const pool = ids.map(i => WBY[i]).filter(Boolean);
+  const qb = $('#storyQuiz');
+  qb.classList.toggle('hide', pool.length < 6);
+  qb.textContent = 'Practise the ' + pool.length + ' words from this episode';
+  qb.onclick = () => startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
   const lg = $('#storyLegend');
   lg.textContent = done[sr+n] ? '\u2713 Read' : 'Mark as read';
   lg.onclick = () => {
@@ -1414,6 +1589,24 @@ function startRead(){
   RS.on = true; RS.i = 0; RS.gen++;
   paintPlay(); speakFrom(RS.gen, ps);
 }
+function showTip(ev, i, fallback){
+  buildWordIndex();
+  const w = WBY[i], tip = $('#tip');
+  tip.innerHTML = '<b>' + gEsc(w ? w.w : fallback) + '</b>' +
+    '<i>' + gEsc(w && w.r ? w.r : '') + '</i>' +
+    (w && w.m ? '<u>' + gEsc(w.m) + '</u>' : '');
+  tip.classList.add('on');
+  moveTip(ev);
+}
+function moveTip(ev){
+  const tip = $('#tip');
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + 14, y = ev.clientY - h - 12;
+  if (x + w > window.innerWidth - 10) x = window.innerWidth - w - 10;
+  if (y < 8) y = ev.clientY + 18;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip(){ $('#tip').classList.remove('on'); }
 function showWord(i, fallback){
   buildWordIndex();
   const w = WBY[i];
@@ -1421,7 +1614,7 @@ function showWord(i, fallback){
   if (!w){ pop.innerHTML = '<button class="x">&times;</button><div class="hw">' + fallback + '</div>'; }
   else {
     pop.innerHTML = '<button class="x">&times;</button>' +
-      '<div class="hw">' + w.w + '<span class="pos">' + (w.p || '') + '</span></div>' +
+      '<div class="hw">' + w.w + spk(w.w) + '<span class="pos">' + (w.p || '') + '</span></div>' +
       '<div class="ru">' + (w.r || '') + '</div>' +
       (w.m ? '<div class="mn">' + w.m + '</div>' : '') +
       (w.c ? '<div class="cl">' + w.c + '</div>' : '');
@@ -1507,11 +1700,8 @@ function openGramTopic(ix){
   $('#gPaper').innerHTML = html;
   const pb = $('#gramPractise');
   pb.classList.toggle('hide', !g.items.length);
-  pb.textContent = g.items.length + ' practice questions \u2192 in the trainer';
-  pb.onclick = () => openTrainerAt("document.querySelectorAll('#hub .hubrow')[1].click();" +
-    "setTimeout(function(){var r=document.querySelectorAll('#grammar .row');" +
-    "if(r[" + ix + "]) r[" + ix + "].click();" +
-    "setTimeout(function(){var p=document.getElementById('gPractise'); if(p) p.click();},400);},400);");
+  pb.textContent = 'Practise \u00b7 ' + Math.min(20, g.items.length) + ' questions';
+  pb.onclick = () => startGramQuiz(ix);
   window.scrollTo(0,0);
 }
 function paintAwards(){
@@ -1621,7 +1811,9 @@ function paintNav(){
 /* the schedule is reached from the sidebar, not from a card */
 const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
   desc:'Every day from now to June 2027 \u2014 tick things off as you go.', go:null };
+function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 function go(id){
+  toTop();
   const c = id === 'plan' ? PLAN_VIEW : COURSES.find(x => x.id === id);
   if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
   if (id === 'units' || id === 'books'){
@@ -1788,7 +1980,7 @@ let lastGramCard = 'grammar';
 $('#backGram').onclick = () => go(lastGramCard);
 $('#backRead').onclick = () => { stopRead(); go('reading'); };
 $('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
-$('#wQuiz').onclick  = startQuiz;
+$('#wQuiz').onclick  = () => startQuiz();
 $('#wCards').onclick = startCards;
 $('#wMode2').onclick = () => {
   const ix = QMODES.findIndex(m => m[0] === qMode);
