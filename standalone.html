@@ -180,7 +180,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
     <nav class="nav" id="nav"></nav>
     <div class="sidefoot">
       <div class="who"><span class="av">K</span>
-        <span class="txt"><span class="nm">Kausar</span><span class="sub" id="goal"></span></span></div>
+        <span class="txt"><span class="nm">Kausar</span><span class="sub">Student</span></span></div>
     </div>
   </aside>
 
@@ -559,8 +559,7 @@ $('#hello').innerHTML = greeting() + ', <span>Kausar</span>';
 $('#tagline').textContent = dayLine();
 $('#datepill').textContent = new Date().toLocaleDateString('en-GB',
   {weekday:'long',day:'numeric',month:'long'});
-$('#goal').textContent = Math.max(0,
-  Math.round((new Date('2027-04-15') - new Date())/86400000)) + ' days to the SU deadline';
+
 paintNav(); paintToday(); paintCalendar(); paintSchedule(); paintCards();
 let start = 'dash';
 try { start = location.hash.slice(1) || localStorage.getItem('studyhub_last') || 'dash'; } catch(e){}
