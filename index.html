@@ -451,7 +451,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 
     <div class="gramtopic" id="gramTopic">
       <div class="viewbar">
-        <button class="back" id="backGram">&larr; All grammar</button>
+        <button class="back" id="backGram">&larr; Back</button>
         <div class="spacer"></div>
         <button class="openraw" id="gramPractise"></button>
       </div>
@@ -519,15 +519,20 @@ const COURSES = [
        "sel.units=new Set(Object.keys(UNAMES).filter(function(u){return u.slice(0,2)==='BK';}));" +
        "saveSel(); paintUnits(); paintBookChips(); refreshStart();" },
   { id:'grammar', app:'native', emoji:'\uD83D\uDCD0',
-    title:'Grammar', sub:'31 topics \u00b7 essay, speaking, rules',
+    title:'Grammar', sub:'34 topics \u00b7 essay, tenses, rules',
     grad:'linear-gradient(140deg,#2B4A6B 0%,#4E7BA8 55%,#8FB0C4 100%)',
-    desc:'Tenses, articles, linkers, the speaking sets and the quick rules.',
+    desc:'Tenses, articles, linkers and the quick rules \u2014 everything for writing.',
     go:"document.querySelectorAll('#hub .hubrow')[1].click();" },
   { id:'reading', app:'native', emoji:'\uD83D\uDCD6',
     title:'Reading', sub:'two series \u00b7 twelve episodes',
     grad:'linear-gradient(140deg,#7A3B2B 0%,#B4623F 55%,#D9A566 100%)',
     desc:'Stories written around the words of each unit; tap any word to see it.',
     go:"document.querySelectorAll('#hub .hubrow')[2].click();" },
+  { id:'speaking', app:'native', emoji:'\uD83D\uDCAC',
+    title:'Speaking', sub:'4 topics \u00b7 what to ask people',
+    grad:'linear-gradient(140deg,#2F5D50 0%,#4F8A6B 55%,#B7C99E 100%)',
+    desc:'University, jobs, where somebody is from, and how to follow a pitch you do not understand.',
+    go:null },
   { id:'essay', app:'native', emoji:'\u270D\uFE0F',
     title:'Essay writing', sub:'Oshima & Hogue \u00b7 36 essays',
     grad:'linear-gradient(140deg,#7A3B5C 0%,#A85578 55%,#C98BA6 100%)',
@@ -640,10 +645,11 @@ function writeJSON(k, v){
   MEM[k] = v;
   try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
 }
-const UNIT_WORDS=827, BOOK_WORDS=1254, GRAM_TOPICS=31, EPISODES=12;
+const UNIT_WORDS=827, BOOK_WORDS=1254, GRAM_TOPICS=34, EPISODES=12;
 function stats(){
   const out = { units:{pct:0,line:'not started yet'}, books:{pct:0,line:'not started yet'},
-    grammar:{pct:0,line:'not opened yet'}, reading:{pct:0,line:'not opened yet'},
+    grammar:{pct:0,line:'not opened yet'}, speaking:{pct:0,line:'not opened yet'},
+    reading:{pct:0,line:'not opened yet'},
     essay:{pct:0,line:'not started yet'}, plan:{pct:0,line:'nothing ticked yet'},
     third:{pct:0,line:'not added yet'} };
   /* how far the whole plan has come — shown in the schedule, not on the cards */
@@ -941,10 +947,13 @@ function gHi(sent, forms){
   try { return gEsc(sent).replace(new RegExp('\\b(' + forms + ')\\b','i'), '<b>$1</b>'); }
   catch(e){ return gEsc(sent); }
 }
+let gramOnly = null;          /* null = everything except Speaking */
 function paintGramList(){
   const box = $('#gramList'); if (!box) return;
   const secs = [];
   GR.forEach((g,i) => {
+    const keep = gramOnly ? (g.sec === gramOnly) : (g.sec !== 'Speaking');
+    if (!keep) return;
     let s2 = secs.find(x => x.k === g.sec);
     if (!s2){ s2 = { k:g.sec, items:[] }; secs.push(s2); }
     s2.items.push([g,i]);
@@ -1142,7 +1151,8 @@ function go(id){
   $('#readList').classList.remove('on');
   $('#storyView').classList.remove('on');
   /* grammar is part of the platform too */
-  if (id === 'grammar'){
+  if (id === 'grammar' || id === 'speaking'){
+    gramOnly = (id === 'speaking') ? 'Speaking' : null;
     $('#dash').classList.add('off');
     $('#view').classList.remove('on');
     $('#awards').classList.remove('on');
@@ -1154,6 +1164,7 @@ function go(id){
     document.querySelectorAll('#nav button, #mobbar button')
       .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'dash'));
     paintGramList();
+    lastGramCard = id;
     try { localStorage.setItem('studyhub_last', id); } catch(e){}
     try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
     return;
@@ -1268,7 +1279,8 @@ function go(id){
 }
 $('#back').onclick = () => go('dash');
 $('#backEssays').onclick = () => go('essay');
-$('#backGram').onclick = () => go('grammar');
+let lastGramCard = 'grammar';
+$('#backGram').onclick = () => go(lastGramCard);
 $('#backRead').onclick = () => go('reading');
 function openTrainerAt(code){
   const c = { id:'grammar-quiz', app:'words', title:'Grammar practice',
