@@ -225,7 +225,6 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 
     <div class="dash" id="dash">
       <div>
-        <div class="panelcard today" id="todayCard"></div>
         <div class="sec">Your courses</div>
         <div class="cards" id="cards"></div>
       </div>
@@ -375,7 +374,7 @@ function stats(){
     grammar:{pct:0,line:'not opened yet'}, reading:{pct:0,line:'not opened yet'},
     essay:{pct:0,line:'not started yet'}, plan:{pct:0,line:'nothing ticked yet'},
     third:{pct:0,line:'not added yet'} };
-  /* the plan: how much of today is done, and how far the whole thing has come */
+  /* how far the whole plan has come — shown in the schedule, not on the cards */
   try {
     const st = readJSON('task-status-8weeks') || {};
     const today = PLAN[isoToday()];
@@ -461,7 +460,7 @@ function isoToday(){
          '-' + String(d.getDate()).padStart(2,'0');
 }
 function paintToday(where){
-  const box = $(where || '#todayCard'); if (!box) return;
+  const box = $(where || '#todayTop'); if (!box) return;
   const iso = isoToday(), day = PLAN[iso];
   if (!day){
     box.innerHTML = '<div class="th"><h3>Today</h3></div>' +
@@ -493,7 +492,7 @@ function paintToday(where){
       const st = readJSON('task-status-8weeks') || {};
       if (st[id]) delete st[id]; else st[id] = 1;   /* 1 = done, the tracker's own code */
       writeJSON('task-status-8weeks', st);
-      paintToday(); paintCards();
+      paintToday(where);
     };
   });
 }
@@ -622,7 +621,7 @@ function go(id){
     $('#dash').classList.remove('off');
     $('#view').classList.remove('on');
     $('#tagline').textContent = dayLine();
-    paintToday(); paintCards();
+    paintCards();
   } else if (c){
     $('#dash').classList.add('off');
     $('#view').classList.add('on');
@@ -697,7 +696,7 @@ $('#tagline').textContent = dayLine();
 $('#datepill').textContent = new Date().toLocaleDateString('en-GB',
   {weekday:'long',day:'numeric',month:'long'});
 
-paintNav(); paintToday(); paintCalendar(); paintSchedule(); paintCards();
+paintNav(); paintCalendar(); paintSchedule(); paintCards();
 let start = 'dash';
 try { start = location.hash.slice(1) || localStorage.getItem('studyhub_last') || 'dash'; } catch(e){}
 if (!NAV.some(n => n.id === start)) start = 'dash';
