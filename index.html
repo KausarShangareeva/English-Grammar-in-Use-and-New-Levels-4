@@ -433,9 +433,6 @@ function stats(){
     }
   } catch(e){}
   const s = readJSON('nl4vocab_v1');
-  const iso = isoToday();
-  const gateOpen = !!(s && s.day === iso && (s.today||0) >= 25);
-  out.gate = gateOpen;
   if (s){
     if (s.stats){
       const learned = Object.values(s.stats).filter(x => (x.run||0) >= 3).length;
@@ -477,7 +474,7 @@ function greeting(){
 }
 function paintCards(){
   const st = stats(), box = $('#cards');
-  const locked = st.gate === false;
+
   box.innerHTML = '';
   COURSES.forEach(c => {
     const s = st[c.id];
@@ -490,9 +487,7 @@ function paintCards(){
       '<div class="cbody"><div class="cd">' + c.desc + '</div>' +
         '<div class="bar"><i style="width:' + Math.max(2, s.pct) + '%"></i></div>' +
         '<div class="cstat"><b>' + s.pct + '%</b> \u00b7 ' + s.line + '</div>' +
-        (locked && c.app === 'words'
-          ? '<div class="lockline">\uD83D\uDD12 today\u2019s quiz first \u2014 the card will start it</div>'
-          : '') + '</div>';
+        '</div>';
     b.onclick = () => go(c.id);
     box.appendChild(b);
   });
@@ -697,11 +692,8 @@ function go(id){
       /* two fixes in one: retry the jump until the app is ready, and re-measure
          the schedule once the frame actually has a height */
       const tries = c.go
-        ? 'var n=0;var t=setInterval(function(){n++;try{' +
-          'if(typeof dayOpen==="function" && !dayOpen()){' +
-          '  var db=document.getElementById("dailyBtn"); if(db){db.click(); clearInterval(t);} }' +
-          'else {' + c.go + ' clearInterval(t);} ' +
-          '}catch(e){} if(n>8)clearInterval(t);},350);'
+        ? 'var n=0;var t=setInterval(function(){n++;try{' + c.go +
+          ' clearInterval(t);}catch(e){} if(n>8)clearInterval(t);},350);'
         : '';
       const remeasure = c.app === 'tracker'
         ? 'function nudge(){try{document.querySelectorAll(".week-card.open").forEach(' +
