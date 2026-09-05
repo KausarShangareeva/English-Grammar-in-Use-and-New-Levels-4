@@ -1176,11 +1176,12 @@ const BOOKS = [
 
 /* ---- the plan, rendered by the platform itself ---- */
 /* which of the three the task belongs to */
+/* in the order the day actually happens: you get up, then the Quran, then study */
 const STREAMS = [
+  { k:'other',   t:'The day itself', e:'\uD83C\uDF05', c:'#B08968', bg:'#F6EFE7' },
   { k:'quran',   t:'Quran',   e:'\uD83D\uDD4B', c:'#4F8A6B', bg:'#E9F2EC' },
   { k:'english', t:'English', e:'\uD83D\uDCD8', c:'#276B7A', bg:'#E4EFF1' },
-  { k:'swedish', t:'Svenska', e:'\uD83C\uDDF8\uD83C\uDDEA', c:'#C9A227', bg:'#F7F0DC' },
-  { k:'other',   t:'The day itself', e:'\u2600\uFE0F', c:'#B08968', bg:'#F6EFE7' }
+  { k:'swedish', t:'Svenska', e:'\uD83C\uDDF8\uD83C\uDDEA', c:'#C9A227', bg:'#F7F0DC' }
 ];
 /* the task id already names the stream: sv-* is Swedish, quran-* is Quran */
 function streamOf(row){
