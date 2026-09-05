@@ -98,6 +98,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .panelcard{background:var(--panel);border-radius:19px;padding:16px 16px 14px;
   box-shadow:0 6px 20px rgba(39,107,122,.06);margin-bottom:14px}
 .today{margin-bottom:16px}
+.hide{display:none !important}
+#todayTop{margin-bottom:0}
 .today .th{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:2px}
 .today .th h3{margin:0}
 .today .wk{font-size:11px;font-weight:800;color:var(--mut2);letter-spacing:.4px}
@@ -254,6 +256,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
     </div>
 
     <div class="view" id="view">
+      <div class="panelcard today hide" id="todayTop"></div>
       <div class="viewbar">
         <button class="back" id="back">&larr; All courses</button>
         <div class="vtitle" id="vtitle"></div>
@@ -457,8 +460,8 @@ function isoToday(){
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') +
          '-' + String(d.getDate()).padStart(2,'0');
 }
-function paintToday(){
-  const box = $('#todayCard'); if (!box) return;
+function paintToday(where){
+  const box = $(where || '#todayCard'); if (!box) return;
   const iso = isoToday(), day = PLAN[iso];
   if (!day){
     box.innerHTML = '<div class="th"><h3>Today</h3></div>' +
@@ -477,8 +480,11 @@ function paintToday(){
     '<div class="ps">Tick them off inside the plan \u2014 this card follows it.</div>' +
     '<div class="tlist">' + rows + '</div>' +
     '<button class="more" id="openPlan">Open the whole plan \u203a</button>';
-  const b = document.getElementById('openPlan');
-  if (b) b.onclick = () => go('plan');
+  const b = box.querySelector('#openPlan, .more');
+  if (b){
+    if (where === '#todayTop'){ b.remove(); }
+    else b.onclick = () => go('plan');
+  }
   /* ticking here writes the same key the schedule reads, so the two stay in step */
   box.querySelectorAll('.trow').forEach(row => {
     row.onclick = () => {
@@ -622,6 +628,12 @@ function go(id){
     $('#view').classList.add('on');
     $('#vtitle').textContent = c.title;
     $('#tagline').textContent = c.desc;
+    /* the plan for today, right above the schedule */
+    const tt = $('#todayTop');
+    if (tt){
+      tt.classList.toggle('hide', c.app !== 'tracker');
+      if (c.app === 'tracker') paintToday('#todayTop');
+    }
     const file = c.app === 'oshima' ? 'oshima.html'
                : c.app === 'tracker' ? 'tracker.html' : 'trainer.html';
     $('#openraw').href = file;
@@ -655,7 +667,10 @@ function go(id){
         ? '<scr'+'ipt>window.addEventListener("load",function(){' + tries + remeasure + '});</scr'+'ipt>'
         : '';
       if (parked){
-        fr.srcdoc = parked.textContent.replace('</body>', jump + '</body>');
+        /* the closing tags were escaped so the browser would not run the parked
+           app early; put them back before handing it over */
+        const src = parked.textContent.split('<\\/script').join('<\/script');
+        fr.srcdoc = src.replace(/<\/body>(?![\s\S]*<\/body>)/, jump + '</body>');
       } else if (jump && typeof fetch === 'function'){
         fetch(file).then(r => r.text())
           .then(t => { fr.srcdoc = t.replace('</body>', jump + '</body>'); })
