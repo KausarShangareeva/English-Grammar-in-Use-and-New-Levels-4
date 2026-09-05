@@ -196,6 +196,16 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .wkmid{flex:1;min-width:0;text-align:center}
 .wkt{font-family:var(--disp);font-size:21px;font-weight:600;line-height:1.15}
 .wks{font-size:11.5px;color:var(--mut2);margin-top:2px}
+.stream{border-radius:14px;padding:4px 10px 8px;margin-top:10px;background:var(--sbg)}
+.stream:first-child{margin-top:6px}
+.sth{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:1.1px;
+  text-transform:uppercase;color:var(--sc);padding:9px 4px 6px}
+.sth .ste{font-size:14px;letter-spacing:0}
+.sth .stn{margin-left:auto;font-size:10.5px;letter-spacing:.3px;opacity:.75}
+.stream .trow{padding:8px 6px}
+.stream .trow:hover{background:rgba(255,255,255,.65)}
+.stream .trow .box{border-color:var(--sc);opacity:.55}
+.stream .trow.on .box{background:var(--sc);border-color:var(--sc);opacity:1}
 .days{display:flex;flex-direction:column;gap:12px}
 .day{background:var(--panel);border-radius:18px;padding:15px 17px 12px;
   box-shadow:0 6px 20px rgba(39,107,122,.06)}
@@ -978,9 +988,7 @@ function paintToday(where){
   }
   const status = readJSON('task-status-8weeks') || {};
   const done = day.rows.filter(r => status[r.i]).length;
-  const rows = day.rows.map(r =>
-    '<button class="trow' + (status[r.i] ? ' on' : '') + '" data-task="' + r.i + '">' +
-    '<span class="box"></span><span>' + r.t.replace(/[<>]/g,'') + '</span></button>').join('');
+  const rows = streamBlocks(day.rows, status);
   box.innerHTML =
     '<div class="th"><h3>Today</h3>' +
     '<span class="wk">' + day.d + ' \u00b7 week ' + day.w + '</span>' +
@@ -1167,6 +1175,44 @@ const BOOKS = [
 
 
 /* ---- the plan, rendered by the platform itself ---- */
+/* which of the three the task belongs to */
+const STREAMS = [
+  { k:'quran',   t:'Quran',   e:'\uD83D\uDD4B', c:'#4F8A6B', bg:'#E9F2EC' },
+  { k:'english', t:'English', e:'\uD83D\uDCD8', c:'#276B7A', bg:'#E4EFF1' },
+  { k:'swedish', t:'Svenska', e:'\uD83C\uDDF8\uD83C\uDDEA', c:'#C9A227', bg:'#F7F0DC' },
+  { k:'other',   t:'The day itself', e:'\u2600\uFE0F', c:'#B08968', bg:'#F6EFE7' }
+];
+/* the task id already names the stream: sv-* is Swedish, quran-* is Quran */
+function streamOf(row){
+  const id = String(row.i || '').split('--')[1] || '';
+  const t  = String(row.t || '');
+  /* listening-2 is the Swedish listening hour: it appears only on Swedish days */
+  if (/^sv-/.test(id) || id === 'listening-2') return 'swedish';
+  if (/^quran/.test(id) || /\uD83D\uDD4B|Quran|Tafsir|Juz|Ustadha|Qaida/i.test(t)) return 'quran';
+  if (/\uD83C\uDDF8\uD83C\uDDEA|Svenska|Duolingo|Spr\u00e5kcaf|L\u00e4sning|SFI/i.test(t)) return 'swedish';
+  if (/^(udemy|grammar|listening|oshima|essay|movie|ejoy|book|words|ielts|speaking)/.test(id) ||
+      /English|Grammar in Use|Oshima|ESSAY|eJOY|New Level|IELTS|Book reading/i.test(t))
+    return 'english';
+  return 'other';
+}
+function groupRows(rows){
+  const by = {};
+  rows.forEach(r => { const k = streamOf(r); (by[k] = by[k] || []).push(r); });
+  return STREAMS.filter(s => by[s.k] && by[s.k].length).map(s => ({ s:s, rows:by[s.k] }));
+}
+function streamBlocks(rows, st){
+  return groupRows(rows).map(g => {
+    const done = g.rows.filter(r => st[r.i]).length;
+    return '<div class="stream" style="--sc:' + g.s.c + ';--sbg:' + g.s.bg + '">' +
+      '<div class="sth"><span class="ste">' + g.s.e + '</span>' + g.s.t +
+      '<span class="stn">' + done + '/' + g.rows.length + '</span></div>' +
+      g.rows.map(r =>
+        '<button class="trow' + (st[r.i] ? ' on' : '') + '" data-task="' + r.i + '">' +
+        '<span class="box"></span><span>' + gEsc(r.t) + '</span></button>').join('') +
+      '</div>';
+  }).join('');
+}
+
 const WEEKS = (() => {
   const map = {};
   Object.keys(PLAN).sort().forEach(iso => {
@@ -1209,10 +1255,7 @@ function paintWeek(){
       (d.iso === iso ? ' \u00b7 today' : '') + '</span>' +
       '<span class="dc">' + dn + '/' + d.rows.length + '</span></div>' +
       '<div class="dbar"><i style="width:' + Math.round(dn/d.rows.length*100) + '%"></i></div>' +
-      '<div class="tlist">' + d.rows.map(r =>
-        '<button class="trow' + (st[r.i] ? ' on' : '') + '" data-task="' + r.i + '">' +
-        '<span class="box"></span><span>' + gEsc(r.t) + '</span></button>').join('') +
-      '</div></div>';
+      '<div class="tlist">' + streamBlocks(d.rows, st) + '</div></div>';
   }).join('');
   $('#wkDays').querySelectorAll('.trow').forEach(b => b.onclick = () =>
     toggleTask(b.dataset.task, () => { paintWeek(); paintToday('#todayTop2'); paintCards(); }));
