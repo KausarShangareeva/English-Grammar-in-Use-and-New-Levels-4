@@ -184,6 +184,29 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   cursor:pointer;-webkit-tap-highlight-color:transparent}
 .wactions button:hover{color:var(--sea)}
 .wactions button.pri{background:var(--sea);border-color:var(--sea);color:#fff}
+.planview{display:none;flex-direction:column;gap:12px}
+.planview.on{display:flex}
+.weekbar{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:19px;
+  padding:13px 15px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.wkbtn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 14px;
+  font-family:var(--ui);font-size:14px;font-weight:800;color:var(--mut);cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.wkbtn:hover{color:var(--sea);border-color:var(--line2)}
+.wkbtn.today2{font-size:12px}
+.wkmid{flex:1;min-width:0;text-align:center}
+.wkt{font-family:var(--disp);font-size:21px;font-weight:600;line-height:1.15}
+.wks{font-size:11.5px;color:var(--mut2);margin-top:2px}
+.days{display:flex;flex-direction:column;gap:12px}
+.day{background:var(--panel);border-radius:18px;padding:15px 17px 12px;
+  box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.day.isnow{box-shadow:0 0 0 2px var(--sea),0 8px 22px rgba(39,107,122,.14)}
+.dayh{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.dayh .dn{font-family:var(--disp);font-size:20px;font-weight:600}
+.dayh .dd{font-size:11.5px;color:var(--mut2);font-weight:700}
+.dayh .dc{margin-left:auto;font-size:11px;font-weight:800;color:var(--mut2)}
+.day.done .dayh .dc{color:var(--sage)}
+.dbar{height:5px;background:var(--bg);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.dbar i{display:block;height:100%;background:var(--sage);border-radius:99px;transition:width .25s}
 .quizview,.cardsview{display:none;flex-direction:column;gap:14px;align-items:center}
 .quizview.on,.cardsview.on{display:flex}
 .qtop{display:flex;align-items:center;gap:12px;width:100%;max-width:620px}
@@ -565,6 +588,20 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
         <div class="awring" id="awRing"></div>
       </div>
       <div id="awList"></div>
+    </div>
+
+    <div class="planview" id="planView">
+      <div class="panelcard today" id="todayTop2"></div>
+      <div class="weekbar">
+        <button class="wkbtn" id="wkPrev">&larr;</button>
+        <div class="wkmid">
+          <div class="wkt" id="wkTitle"></div>
+          <div class="wks" id="wkSub"></div>
+        </div>
+        <button class="wkbtn" id="wkNext">&rarr;</button>
+        <button class="wkbtn today2" id="wkToday">Today</button>
+      </div>
+      <div class="days" id="wkDays"></div>
     </div>
 
     <div class="quizview" id="quizView">
@@ -1108,6 +1145,57 @@ const BOOKS = [
 ];
 
 
+/* ---- the plan, rendered by the platform itself ---- */
+const WEEKS = (() => {
+  const map = {};
+  Object.keys(PLAN).sort().forEach(iso => {
+    const p = PLAN[iso];
+    if (!map[p.w]) map[p.w] = { w:p.w, ti:p.ti, days:[] };
+    map[p.w].days.push(Object.assign({ iso:iso }, p));
+  });
+  return Object.keys(map).map(k => map[k]).sort((a,b) => a.w - b.w);
+})();
+let wkIx = 0;
+function weekOfToday(){
+  const iso = isoToday();
+  let ix = WEEKS.findIndex(w => w.days.some(d => d.iso === iso));
+  if (ix < 0) ix = WEEKS.findIndex(w => w.days[w.days.length-1].iso >= iso);
+  return ix < 0 ? 0 : ix;
+}
+function taskStatus(){ return readJSON('task-status-8weeks') || {}; }
+function toggleTask(id, then){
+  const st = taskStatus();
+  if (st[id]) delete st[id]; else st[id] = 1;
+  writeJSON('task-status-8weeks', st);
+  if (then) then();
+}
+function paintWeek(){
+  const wk = WEEKS[wkIx]; if (!wk) return;
+  const st = taskStatus(), iso = isoToday();
+  const all = wk.days.reduce((a,d) => a + d.rows.length, 0);
+  const done = wk.days.reduce((a,d) => a + d.rows.filter(r => st[r.i]).length, 0);
+  $('#wkTitle').textContent = 'Week ' + wk.w;
+  $('#wkSub').textContent = (wk.ti || '').replace(/^WEEK \d+ \u00b7 /,'') +
+    ' \u00b7 ' + done + ' of ' + all + ' done';
+  $('#wkPrev').disabled = wkIx === 0;
+  $('#wkNext').disabled = wkIx >= WEEKS.length - 1;
+  $('#wkDays').innerHTML = wk.days.map(d => {
+    const dn = d.rows.filter(r => st[r.i]).length;
+    return '<div class="day' + (d.iso === iso ? ' isnow' : '') +
+      (dn === d.rows.length ? ' done' : '') + '">' +
+      '<div class="dayh"><span class="dn">' + gEsc(d.d) + '</span>' +
+      '<span class="dd">' + d.iso.slice(8) + '.' + d.iso.slice(5,7) +
+      (d.iso === iso ? ' \u00b7 today' : '') + '</span>' +
+      '<span class="dc">' + dn + '/' + d.rows.length + '</span></div>' +
+      '<div class="dbar"><i style="width:' + Math.round(dn/d.rows.length*100) + '%"></i></div>' +
+      '<div class="tlist">' + d.rows.map(r =>
+        '<button class="trow' + (st[r.i] ? ' on' : '') + '" data-task="' + r.i + '">' +
+        '<span class="box"></span><span>' + gEsc(r.t) + '</span></button>').join('') +
+      '</div></div>';
+  }).join('');
+  $('#wkDays').querySelectorAll('.trow').forEach(b => b.onclick = () =>
+    toggleTask(b.dataset.task, () => { paintWeek(); paintToday('#todayTop2'); paintCards(); }));
+}
 /* ---- speech: British English wherever a word is shown ---- */
 let VOICE = null;
 function pickVoice(){
@@ -1819,7 +1907,22 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
 function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 function go(id){
   toTop();
-  const c = id === 'plan' ? PLAN_VIEW : COURSES.find(x => x.id === id);
+  if (id === 'plan'){
+    $('#dash').classList.add('off');
+    ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList','#storyView',
+     '#wordsView','#quizView','#cardsView'].forEach(x => $(x).classList.remove('on'));
+    $('#planView').classList.add('on');
+    $('#tagline').textContent = 'Every day to June 2027 \u2014 tick things off as you go.';
+    document.querySelectorAll('#nav button, #mobbar button')
+      .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'plan'));
+    if (!$('#planView').dataset.started){ wkIx = weekOfToday(); $('#planView').dataset.started = '1'; }
+    paintToday('#todayTop2'); paintWeek();
+    try { localStorage.setItem('studyhub_last', id); } catch(e){}
+    try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
+    return;
+  }
+  $('#planView').classList.remove('on');
+  const c = COURSES.find(x => x.id === id);
   if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
   if (id === 'units' || id === 'books'){
     $('#dash').classList.add('off');
@@ -1983,6 +2086,9 @@ $('#back').onclick = () => go('dash');
 $('#backEssays').onclick = () => go('essay');
 let lastGramCard = 'grammar';
 $('#backGram').onclick = () => go(lastGramCard);
+$('#wkPrev').onclick  = () => { if (wkIx > 0){ wkIx--; paintWeek(); toTop(); } };
+$('#wkNext').onclick  = () => { if (wkIx < WEEKS.length-1){ wkIx++; paintWeek(); toTop(); } };
+$('#wkToday').onclick = () => { wkIx = weekOfToday(); paintWeek(); toTop(); };
 $('#backRead').onclick = () => { stopRead(); go('reading'); };
 $('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
 $('#wQuiz').onclick  = () => startQuiz();
