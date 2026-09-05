@@ -266,7 +266,17 @@ const NAV = [
   { id:'plan', icon:'\uD83D\uDDD3\uFE0F', label:'Schedule' }
 ];
 
-function readJSON(k){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):null; }catch(e){ return null; } }
+/* some browsers refuse storage to a file opened from disk; keep a copy in memory
+   so ticking still works for the session */
+const MEM = {};
+function readJSON(k){
+  try{ const t = localStorage.getItem(k); if (t) return JSON.parse(t); }catch(e){}
+  return MEM[k] || null;
+}
+function writeJSON(k, v){
+  MEM[k] = v;
+  try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
+}
 const UNIT_WORDS=966, BOOK_WORDS=1115, GRAM_TOPICS=29, EPISODES=12;
 function stats(){
   const out = { units:{pct:0,line:'not started yet'}, books:{pct:0,line:'not started yet'},
@@ -275,7 +285,7 @@ function stats(){
     third:{pct:0,line:'not added yet'} };
   /* the plan: how much of today is done, and how far the whole thing has come */
   try {
-    const st = JSON.parse(localStorage.getItem('task-status-8weeks') || '{}') || {};
+    const st = readJSON('task-status-8weeks') || {};
     const today = PLAN[isoToday()];
     const totalDone = Object.values(st).filter(Boolean).length;
     if (today){
@@ -354,8 +364,7 @@ function paintToday(){
       '<div class="ps">Nothing is scheduled for ' + iso + '. The plan runs to June 2027.</div>';
     return;
   }
-  let status = {};
-  try { status = JSON.parse(localStorage.getItem('task-status-8weeks') || '{}') || {}; } catch(e){}
+  const status = readJSON('task-status-8weeks') || {};
   const done = day.rows.filter(r => status[r.i]).length;
   const rows = day.rows.map(r =>
     '<button class="trow' + (status[r.i] ? ' on' : '') + '" data-task="' + r.i + '">' +
@@ -374,10 +383,9 @@ function paintToday(){
     row.onclick = () => {
       const id = row.dataset.task;
       if (!id) return;
-      let st = {};
-      try { st = JSON.parse(localStorage.getItem('task-status-8weeks') || '{}') || {}; } catch(e){}
+      const st = readJSON('task-status-8weeks') || {};
       if (st[id]) delete st[id]; else st[id] = 1;   /* 1 = done, the tracker's own code */
-      try { localStorage.setItem('task-status-8weeks', JSON.stringify(st)); } catch(e){}
+      writeJSON('task-status-8weeks', st);
       paintToday(); paintCards();
     };
   });
