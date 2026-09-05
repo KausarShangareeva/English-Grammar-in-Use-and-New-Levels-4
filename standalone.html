@@ -290,25 +290,36 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   font-weight:800;color:var(--sea);cursor:pointer}
 .readlist,.storyview{display:none;flex-direction:column;gap:12px}
 .readlist.on,.storyview.on{display:flex}
-.serieshead{background:var(--panel);border-radius:19px;padding:16px 18px;
-  box-shadow:0 6px 20px rgba(39,107,122,.06);margin-bottom:2px}
-.serieshead h3{font-family:var(--disp);font-size:23px;font-weight:600;margin:0 0 2px}
-.serieshead .ps{font-size:12px;color:var(--mut2);margin:0}
+.serieshead{background:var(--panel);border-radius:19px;padding:19px 20px 17px;
+  box-shadow:0 6px 20px rgba(39,107,122,.06);margin-bottom:4px}
+.serieshead h3{font-family:var(--disp);font-size:26px;font-weight:600;margin:0 0 4px;
+  letter-spacing:.2px}
+.serieshead .ps{font-size:12.5px;color:var(--mut);margin:0;line-height:1.6;max-width:62ch}
+.serprog{height:5px;background:var(--bg);border-radius:99px;overflow:hidden;margin-top:12px;
+  max-width:280px}
+.serprog i{display:block;height:100%;background:var(--rose);border-radius:99px}
+.sern{font-size:11px;color:var(--mut2);font-weight:700;margin-top:6px}
 .epcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px;margin-bottom:6px}
 @supports not (display:grid){ .epcards{display:flex;flex-wrap:wrap} .epcards>*{flex:1 1 250px} }
-.epcard{background:var(--panel);border:none;border-radius:16px;padding:0;overflow:hidden;
-  text-align:left;cursor:pointer;box-shadow:0 5px 16px rgba(39,107,122,.05);
-  transition:transform .14s,box-shadow .14s;-webkit-tap-highlight-color:transparent;
-  display:flex;flex-direction:column}
-.epcard:hover{transform:translateY(-2px);box-shadow:0 11px 24px rgba(39,107,122,.11)}
-.epcard .cap{height:74px;display:flex;align-items:flex-end;padding:11px 14px;color:#fff}
-.epcard .cap .no{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:1.3px;
-  text-transform:uppercase;opacity:.85}
-.epcard .bd{padding:12px 14px 13px}
-.epcard .et2{font-family:var(--disp);font-size:20px;font-weight:600;line-height:1.15}
-.epcard .es{font-size:11.5px;color:var(--mut);line-height:1.5;margin-top:5px}
-.epcard .em3{display:flex;gap:8px;margin-top:9px;font-size:10.5px;color:var(--mut2);font-weight:700}
-.epcard .un{background:var(--sea-l);color:var(--sea);border-radius:999px;padding:3px 9px}
+.epcard{background:linear-gradient(160deg,#FFFDFA 0%,#FBF6EF 100%);border:none;border-radius:14px;
+  padding:0;overflow:hidden;text-align:left;cursor:pointer;display:flex;position:relative;
+  box-shadow:0 6px 18px rgba(60,40,30,.09);transition:transform .16s,box-shadow .16s;
+  -webkit-tap-highlight-color:transparent}
+.epcard:hover{transform:translateY(-3px) rotate(-.25deg);box-shadow:0 14px 30px rgba(60,40,30,.16)}
+.epcard .spine{width:9px;flex:0 0 9px}
+.epcard .bd{padding:16px 17px 15px;min-width:0}
+.epcard .rom{font-family:var(--disp);font-size:12px;font-weight:700;letter-spacing:2px;
+  color:var(--rose);margin-bottom:5px}
+.epcard .et2{font-family:var(--disp);font-size:23px;font-weight:600;line-height:1.15;
+  color:#3A2B25}
+.epcard .es{font-size:12px;color:#7A6A62;line-height:1.6;margin-top:7px;font-style:italic}
+.epcard .em3{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;font-size:10.5px;
+  color:#9A8A80;font-weight:700}
+.epcard .em3 span{margin-right:7px}
+.epcard .em3 span:last-child{margin-right:0}
+.epcard .un{background:#F1E7DC;color:#8A6A50;border-radius:999px;padding:3px 9px}
+.epcard.read:after{content:'✓ read';position:absolute;top:12px;right:14px;font-size:10px;
+  font-weight:800;color:var(--sage);letter-spacing:.4px}
 .readbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);
   border-radius:16px;padding:10px 12px;box-shadow:0 5px 16px rgba(39,107,122,.05)}
 .readbar button{border:1px solid var(--line);background:var(--panel);border-radius:999px;
@@ -320,10 +331,19 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .paper.story.plain m{border-bottom:none!important;cursor:default}
 .paper.story p.saying{background:var(--sand-l);border-radius:8px;
   box-shadow:0 0 0 6px var(--sand-l)}
-.paper.story{font-size:16px;line-height:1.85;max-width:720px}
-.paper.story h1{font-family:var(--disp);font-size:32px;font-weight:600;margin:0 0 4px;line-height:1.15}
-.paper.story .sq{font-size:13px;color:var(--mut);font-style:italic;margin-bottom:6px;line-height:1.55}
-.paper.story .meta{font-size:11.5px;color:var(--mut2);font-weight:700;margin-bottom:20px}
+.paper.story{font-size:16.5px;line-height:1.9;max-width:none;
+  background:linear-gradient(175deg,#FFFEFB 0%,#FDF9F3 100%);
+  padding:34px 38px 38px;box-shadow:0 8px 30px rgba(60,40,30,.10)}
+.paper.story > *{max-width:66ch;margin-left:auto;margin-right:auto}
+.paper.story p:first-of-type::first-letter{font-family:var(--disp);font-size:52px;
+  float:left;line-height:.86;padding:4px 9px 0 0;color:var(--rose)}
+.paper.story h1{font-family:var(--disp);font-size:37px;font-weight:600;margin:0 0 6px;
+  line-height:1.12;text-align:center;color:#33241F}
+.paper.story .sq{font-size:13.5px;color:#7A6A62;font-style:italic;margin-bottom:10px;
+  line-height:1.65;text-align:center}
+.paper.story .meta{font-size:10.5px;color:#A08C80;font-weight:800;letter-spacing:1.2px;
+  text-transform:uppercase;margin-bottom:26px;text-align:center;
+  padding-bottom:16px;border-bottom:1px solid #EFE4D8}
 .paper.story p{margin:0 0 16px}
 .paper.story m{border-bottom:2.5px solid var(--line2);cursor:pointer;padding-bottom:1px}
 .paper.story m.p-v{border-color:#5FC79F}
@@ -1059,7 +1079,8 @@ function openEssay(title, level){
   $('#paper').querySelectorAll('.lvlpick button').forEach(b =>
     b.onclick = () => openEssay(title, b.dataset.l));
   $('#paper').querySelectorAll('p').forEach(p => {
-    p.insertAdjacentHTML('afterbegin', spk(p.textContent.slice(0,300)) + ' ');
+    if (p.querySelector('.spk')) return;          /* never twice on the same paragraph */
+    p.insertAdjacentHTML('afterbegin', spk(p.textContent.slice(0,320)) + ' ');
   });
   buildWordIndex();
   const byWord = {};
@@ -1215,18 +1236,21 @@ function speak(text){
   try {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(String(text).replace(/\u2026\u2026|____/g,' blank '));
+    const u = new SpeechSynthesisUtterance(clean(String(text).replace(/\u2026\u2026|____/g,' blank ')));
     u.lang = 'en-GB';
     if (VOICE) u.voice = VOICE;
     u.rate = 0.95; u.pitch = 1;
     window.speechSynthesis.speak(u);
   } catch(e){}
 }
-const spk = t => '<button class="spk" data-say="' + gEsc(String(t)).replace(/"/g,'&quot;') +
+const clean = t => String(t)
+  .replace(/[\uD83D\uDD0A\u{1F508}-\u{1F50A}\u{1F507}]/gu,'')   /* the speaker icon itself */
+  .replace(/\s+/g,' ').trim();
+const spk = t => '<button class="spk" data-say="' + gEsc(clean(t)).replace(/"/g,'&quot;') +
   '" title="listen (British English)">\uD83D\uDD0A</button>';
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('.spk');
-  if (b){ e.preventDefault(); e.stopPropagation(); speak(b.dataset.say); }
+  if (b){ e.preventDefault(); e.stopPropagation(); speak(clean(b.dataset.say)); }
 });
 
 /* ---- the quiz engine, sharing progress with the trainer ---- */
@@ -1556,19 +1580,25 @@ function readEpisodes(){ return readJSON('story-read') || {}; }
 function paintReadList(){
   const box = $('#readList'); if (!box) return;
   const done = readEpisodes();
+  const ROMAN = { One:'I', Two:'II', Three:'III', Four:'IV', Five:'V', Six:'VI' };
   box.innerHTML = ['A','B'].map(sr => {
     const eps = ST.filter(e => e.sr === sr);
     const n = eps.filter(e => done[sr + e.n]).length;
     return '<div class="serieshead"><h3>' + SERIES[sr].t + '</h3><p class="ps">' +
-      SERIES[sr].s + ' \u00b7 <b>' + n + ' of ' + eps.length + '</b> read</p></div>' +
+      SERIES[sr].s + '</p><div class="serprog"><i style="width:' +
+      Math.round(n/eps.length*100) + '%"></i></div>' +
+      '<div class="sern"><b>' + n + '</b> of ' + eps.length + ' read</div></div>' +
       '<div class="epcards">' + eps.map(e =>
-        '<button class="epcard" data-sr="' + sr + '" data-n="' + e.n + '">' +
-        '<div class="cap" style="background:' + SERIES[sr].g + '">' +
-        '<span class="no">Episode ' + e.n + (done[sr+e.n] ? ' \u00b7 read' : '') + '</span></div>' +
-        '<div class="bd"><div class="et2">' + e.t + '</div>' +
-        '<div class="es">' + e.s + '</div>' +
-        '<div class="em3"><span class="un">unit ' + e.u + '</span>' +
-        '<span>' + e.wc + ' words</span><span>' + e.c + ' marked</span></div></div></button>').join('') +
+        '<button class="epcard' + (done[sr+e.n] ? ' read' : '') +
+        '" data-sr="' + sr + '" data-n="' + e.n + '">' +
+        '<div class="spine" style="background:' + SERIES[sr].g + '"></div>' +
+        '<div class="bd">' +
+          '<div class="rom">' + (ROMAN[e.n] || e.n) + '</div>' +
+          '<div class="et2">' + e.t + '</div>' +
+          '<div class="es">' + e.s + '</div>' +
+          '<div class="em3"><span class="un">unit ' + e.u + '</span>' +
+          '<span>' + e.wc + ' words</span><span>' + e.c + ' to learn</span></div>' +
+        '</div></button>').join('') +
       '</div>';
   }).join('');
   box.querySelectorAll('.epcard').forEach(b =>
@@ -1608,7 +1638,8 @@ function openStory(sr, n){
   });
   /* a speaker at the start of every paragraph */
   $('#storyPaper').querySelectorAll('p').forEach(p => {
-    p.insertAdjacentHTML('afterbegin', spk(p.textContent.slice(0,300)) + ' ');
+    if (p.querySelector('.spk')) return;          /* never twice on the same paragraph */
+    p.insertAdjacentHTML('afterbegin', spk(p.textContent.slice(0,320)) + ' ');
   });
   stopRead();
   $('#rCnt').textContent = e.c + ' words marked \u00b7 ' + e.wc + ' to read';
