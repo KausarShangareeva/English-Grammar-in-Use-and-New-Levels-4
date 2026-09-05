@@ -237,6 +237,12 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .opt.right{background:var(--sage-l);border-color:var(--sage);color:var(--sage)}
 .opt.wrong{background:var(--rose-l);border-color:var(--rose);color:var(--rose)}
 .opt[disabled]{cursor:default}
+.tin{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:15px 16px;
+  font-family:var(--disp);font-size:24px;font-weight:600;color:var(--ink);background:var(--bg);
+  outline:none;text-align:center}
+.tin:focus{border-color:var(--sea);background:var(--panel)}
+.tin.right{border-color:var(--sage);background:var(--sage-l);color:var(--sage)}
+.tin.wrong{border-color:var(--rose);background:var(--rose-l);color:var(--rose)}
 .qfb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;
   line-height:1.6;color:var(--mut)}
 .qfb b{color:var(--ink)}
@@ -670,9 +676,9 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       </div>
       <div class="wchips" id="wChips"></div>
       <div class="wactions">
-        <button class="pri" id="wQuiz">▶ Quiz · 20 questions</button>
+        <button class="pri" id="wQuiz">▶ Quiz · everything mixed</button>
         <button id="wCards">🃏 Flashcards</button>
-        <button id="wMode2">Mode: translation &rarr; word</button>
+        <button id="wMode2">Mode: everything mixed</button>
       </div>
       <div class="wlist" id="wList"></div>
     </div>
@@ -1330,13 +1336,42 @@ const shuffle = a => { const b = a.slice();
   for (let i = b.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1));
     [b[i],b[j]] = [b[j],b[i]]; } return b; };
 
-let qMode = 'ru2en';
+let qMode = 'mix';
+/* in the mixed round each question picks its own kind, and falls back when a
+   word cannot carry that kind */
+window.qModeFor = function(w, ix){
+  let t = (window.__qmode === 'mix') ? MIXABLE[ix % MIXABLE.length] : window.__qmode;
+  if (t === 'cloze' && !(w.e && w.e.length)) t = 'ru2en';
+  if (t === 'reg'   && !w.t)                 t = 'def2en';
+  if (t === 'type'  && !(w.m || w.r))        t = 'ru2en';
+  return t;
+};
 const QMODES = [
-  ['ru2en','translation → word'],
-  ['en2ru','word → translation'],
+  ['mix',   'everything mixed'],
+  ['ru2en', 'translation → word'],
+  ['type',  'type the word'],
+  ['en2ru', 'word → translation'],
   ['def2en','definition → word'],
-  ['cloze','fill the gap']
+  ['cloze', 'fill the gap'],
+  ['reg',   'essay-safe or not?']
 ];
+const MIXABLE = ['ru2en','cloze','en2ru','def2en','type','ru2en','cloze','reg'];
+/* the spellings a typed answer may take: adapt/s → adapt, adapts */
+function variants(w){
+  const head = String(w.w).replace(/\(.*?\)/g,'').trim();
+  const out = new Set();
+  if (head.indexOf('/') >= 0){
+    const [base, ...ends] = head.split('/');
+    out.add(base.trim());
+    ends.forEach(e => {
+      e = e.trim();
+      if (e.slice(0,1) === '-') out.add(base.trim().replace(/y$/,'') + e.slice(1));
+      else if (e.length <= 3) out.add(base.trim() + e);
+      else out.add(e);
+    });
+  } else out.add(head);
+  return [...out].filter(Boolean);
+}
 let Q = [], qi = 0, qRight = 0, qLocked = false, qFrom = 'units';
 
 let quizPool = null, quizTitle = '', quizBack = 'units';
@@ -1344,12 +1379,23 @@ function currentPool(){
   return quizPool || WD.filter(w => w.u === wUnit);
 }
 function buildQuestions(pool){
-  const usable = pool.filter(w => qMode !== 'cloze' || (w.e && w.e.length));
+  const usable = pool.filter(w =>
+    (qMode !== 'cloze' || (w.e && w.e.length)) &&
+    (qMode !== 'reg'   || w.t));
   const list = shuffle(usable).slice(0, 20);
-  return list.map(w => {
+  return list.map((w, ix) => {
+    let qMode = window.qModeFor ? window.qModeFor(w, ix) : null;
     const others = shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3);
-    let prompt, sub, answer, options, label;
-    if (qMode === 'en2ru'){
+    let prompt, sub, answer, options, label, kind = qMode;
+    if (qMode === 'type'){
+      label = 'type the word'; prompt = w.m || w.r || ''; sub = (w.p || '') + ' \u00b7 unit ' + w.u;
+      answer = variants(w)[0]; options = null;
+    } else if (qMode === 'reg'){
+      label = 'essay-safe or not?'; prompt = w.w; sub = w.r || '';
+      answer = w.t === 'flag' ? 'Safe in an essay'
+             : w.t === 'red'  ? 'Spoken only' : 'Neutral';
+      options = ['Safe in an essay','Spoken only','Neutral'];
+    } else if (qMode === 'en2ru'){
       label = 'what does it mean?'; prompt = w.w; sub = w.p || '';
       answer = w.r || ''; options = shuffle([w].concat(others).map(x => x.r || ''));
     } else if (qMode === 'def2en'){
@@ -1365,13 +1411,14 @@ function buildQuestions(pool){
       label = 'which word is this?'; prompt = w.r || ''; sub = w.m || '';
       answer = w.w; options = shuffle([w].concat(others).map(x => x.w));
     }
-    return { w, prompt, sub, answer, options, label };
-  }).filter(q => q.prompt && q.answer && q.options.length > 1);
+    return { w, prompt, sub, answer, options, label, kind };
+  }).filter(q => q.prompt && q.answer && (q.kind === 'type' || (q.options && q.options.length > 1)));
 }
 function startQuiz(pool2, title, back){
   if (pool2){ quizPool = pool2; quizTitle = title || ''; quizBack = back || 'units'; }
   else { quizPool = null; quizBack = wMode === 'books' ? 'books' : 'units'; quizTitle = ''; }
   const pool = currentPool();
+  window.__qmode = qMode;
   Q = buildQuestions(pool);
   if (!Q.length){ alert('This set has nothing to ask in that mode.'); return; }
   qi = 0; qRight = 0; qLocked = false;
@@ -1390,24 +1437,38 @@ function renderQ(){
   const q = Q[qi];
   $('#qBar').style.width = Math.round(qi / Q.length * 100) + '%';
   $('#qCount').textContent = (qi + 1) + ' / ' + Q.length;
-  const promptHtml = qMode === 'cloze'
+  const promptHtml = q.kind === 'cloze'
     ? gEsc(q.prompt).replace('____', '<b style="color:var(--rose)">\u2026\u2026</b>')
     : gEsc(q.prompt);
   $('#qCard').innerHTML =
     '<div class="qlabel">' + q.label + '</div>' +
     '<div class="qprompt">' + promptHtml + '</div>' +
     (q.sub ? '<div class="qsub">' + gEsc(q.sub) + '</div>' : '<div style="height:12px"></div>') +
-    '<div class="qopts">' + q.options.map((o,ix) =>
-      '<button class="opt" data-ix="' + ix + '">' + gEsc(o) + '</button>').join('') + '</div>';
+    (q.kind === 'type'
+      ? '<input class="tin" id="tIn" autocomplete="off" autocapitalize="off" ' +
+        'spellcheck="false" placeholder="type it in English">' +
+        '<button class="qnext" id="tGo">Check</button>'
+      : '<div class="qopts">' + q.options.map((o,ix) =>
+          '<button class="opt" data-ix="' + ix + '">' + gEsc(o) + '</button>').join('') + '</div>');
   qLocked = false;
-  $('#qCard').querySelectorAll('.opt').forEach(b =>
-    b.onclick = () => answerQ(q.options[Number(b.dataset.ix)], b));
+  if (q.kind === 'type'){
+    const go = () => answerQ($('#tIn').value, null);
+    $('#tGo').onclick = go;
+    $('#tIn').onkeydown = ev => { if (ev.key === 'Enter') go(); };
+    try { $('#tIn').focus(); } catch(e){}
+  } else {
+    $('#qCard').querySelectorAll('.opt').forEach(b =>
+      b.onclick = () => answerQ(q.options[Number(b.dataset.ix)], b));
+  }
 }
 function answerQ(chosen, btn){
   if (qLocked) return;
   qLocked = true;
   const q = Q[qi];
-  const ok = String(chosen).trim().toLowerCase() === String(q.answer).trim().toLowerCase();
+  const norm = t => String(t).trim().toLowerCase().replace(/\s+/g,' ');
+  const ok = q.kind === 'type'
+    ? variants(q.w).some(v => norm(v) === norm(chosen))
+    : norm(chosen) === norm(q.answer);
   /* the same shape the trainer writes, so the two stay in step */
   const s = nlLoad();
   const st = s.stats[q.w.i] || (s.stats[q.w.i] = { c:0, w:0, run:0 });
@@ -1421,6 +1482,12 @@ function answerQ(chosen, btn){
   s.today = (s.today || 0) + 1;
   nlSave(s);
 
+  if (q.kind === 'type'){
+    const inp = $('#tIn');
+    if (inp){ inp.disabled = true; inp.classList.add(ok ? 'right' : 'wrong'); }
+    const go = document.getElementById('tGo');
+    if (go) go.remove();
+  }
   $('#qCard').querySelectorAll('.opt').forEach(b => {
     b.disabled = true;
     const v = q.options[Number(b.dataset.ix)];
@@ -1428,7 +1495,10 @@ function answerQ(chosen, btn){
     else if (b === btn) b.classList.add('wrong');
   });
   const w = q.w;
-  const extra = [ w.m ? gEsc(w.m) : '', w.c ? gSafe(w.c) : '', w.n ? gSafe(w.n) : '' ]
+  const vs = q.kind === 'type' ? variants(w) : [];
+  const extra = [
+    q.kind === 'type' && vs.length > 1 ? 'accepted: ' + gEsc(vs.join(', ')) : '',
+    w.m ? gEsc(w.m) : '', w.c ? gSafe(w.c) : '', w.n ? gSafe(w.n) : '' ]
     .filter(Boolean).join('<br>');
   $('#qCard').insertAdjacentHTML('beforeend',
     '<div class="qfb">' + (ok ? '\u2713 ' : '\u2715 ') + '<b>' + gEsc(w.w) + '</b>' + spk(w.w) + ' \u2014 ' +
@@ -2301,6 +2371,7 @@ $('#wMode2').onclick = () => {
   const nx = QMODES[(ix + 1) % QMODES.length];
   qMode = nx[0];
   $('#wMode2').textContent = 'Mode: ' + nx[1];
+  $('#wQuiz').textContent = '▶ Quiz · ' + nx[1];
   $('#wQuiz').textContent = '▶ Quiz · ' + nx[1];
 };
 $('#qQuit').onclick = () => go(qFrom);
