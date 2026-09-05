@@ -126,6 +126,9 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .rowline .t1{font-size:12.5px;font-weight:700}
 .rowline .t2{font-size:11px;color:var(--mut2)}
 .rowline .rt{margin-left:auto;font-size:11px;font-weight:800;color:var(--mut2)}
+.goalnote{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+  font-size:12px;line-height:1.6;color:var(--mut)}
+.goalnote b{color:var(--sea);font-weight:800}
 
 .view{display:none;flex-direction:column;gap:10px;flex:1;min-height:0}
 .view.on{display:flex}
@@ -202,9 +205,10 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
           <div class="cal" id="cal"></div>
         </div>
         <div class="panelcard">
-          <h3>What is next</h3>
-          <div class="ps">The dates that actually matter</div>
+          <h3 id="goalHead"></h3>
+          <div class="ps" id="goalSub"></div>
           <div id="sched"></div>
+          <div class="goalnote" id="goalNote"></div>
         </div>
       </div>
     </div>
@@ -323,6 +327,18 @@ function stats(){
   }
   return out;
 }
+function dayLine(){
+  const lines = [
+    'Pick something and start \u2014 the hardest part is the first ten minutes.',
+    'A quiet hour today is worth three panicked ones in April.',
+    'You are not behind. You are early, which is a very different thing.',
+    'Two thousand words in, and none of them were free.',
+    'Small day, small progress, still progress.',
+    'Whatever you finish today, tomorrow you get to build on it.',
+    'The plan already knows what to do. You just have to turn up.'
+  ];
+  return lines[new Date().getDay()];
+}
 function greeting(){
   const h = new Date().getHours();
   return h < 5 ? 'Still awake' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
@@ -403,18 +419,49 @@ function paintCalendar(){
     {weekday:'long',day:'numeric',month:'long'});
 }
 function paintSchedule(){
-  const items = [
-    {d:'2027-04-15', t:'Stockholm University', s:'application deadline', c:'var(--sea)'},
-    {d:'2027-02-08', t:'Ramadan begins',       s:'plan the study load',  c:'var(--sand)'},
-    {d:'2027-06-18', t:'Quran memorisation',   s:'projected finish',     c:'var(--sage)'}
-  ];
   const now = new Date();
-  $('#sched').innerHTML = items.map(i => {
-    const days = Math.max(0, Math.round((new Date(i.d) - now)/86400000));
-    return '<div class="rowline"><span class="dot" style="background:'+i.c+'"></span>' +
-      '<span><div class="t1">'+i.t+'</div><div class="t2">'+i.s+'</div></span>' +
-      '<span class="rt">'+days+' d</span></div>';
-  }).join('');
+  const days = d => Math.max(0, Math.round((new Date(d) - now)/86400000));
+  const su = days('2027-04-15');
+
+  $('#goalHead').textContent = 'Where this is going';
+  $('#goalSub').innerHTML =
+    'Two universities, one of which is going to say yes. Everything on this page ' +
+    'is aimed at that.';
+
+  const items = [
+    { d:'2027-04-15', c:'var(--sea)',
+      t:'Stockholm University \u00b7 Plan A',
+      s:'BSc Computer Science, taught in Swedish \u2014 applications close' },
+    { d:'2027-10-15', c:'var(--rose)',
+      t:'KTH \u00b7 Plan B',
+      s:'BSc Information and Communication Technology, in English' },
+    { d:'2027-02-08', c:'var(--sand)',
+      t:'Ramadan',
+      s:'lighter weeks planned in advance, on purpose' },
+    { d:'2027-06-18', c:'var(--sage)',
+      t:'Quran \u00b7 the last page',
+      s:'the finish line you set yourself' }
+  ];
+  $('#sched').innerHTML = items.map(i =>
+    '<div class="rowline"><span class="dot" style="background:'+i.c+'"></span>' +
+    '<span><div class="t1">'+i.t+'</div><div class="t2">'+i.s+'</div></span>' +
+    '<span class="rt">'+days(i.d)+' d</span></div>').join('');
+
+  /* the note changes as the deadline gets closer, so it never reads like wallpaper */
+  let note;
+  if (su > 180)
+    note = '<b>' + su + ' days.</b> That sounds like plenty, and it is \u2014 which is exactly ' +
+           'why the work happens now, while it is still calm.';
+  else if (su > 90)
+    note = '<b>' + su + ' days.</b> Close enough to feel it, far enough to fix anything. ' +
+           'This is the useful part of the year.';
+  else if (su > 30)
+    note = '<b>' + su + ' days.</b> The learning is mostly done; what is left is keeping ' +
+           'your nerve and finishing the paperwork early.';
+  else
+    note = '<b>' + su + ' days.</b> Everything you needed, you have already been doing ' +
+           'for months. Submit early and go for a walk.';
+  $('#goalNote').innerHTML = note;
 }
 function paintNav(){
   const nav = $('#nav'), mob = $('#mobbar');
@@ -444,7 +491,7 @@ function go(id){
   if (id === 'dash'){
     $('#dash').classList.remove('off');
     $('#view').classList.remove('on');
-    $('#tagline').textContent = 'Welcome back \u2014 pick a course and carry on.';
+    $('#tagline').textContent = dayLine();
     paintToday(); paintCards();
   } else if (c){
     $('#dash').classList.add('off');
@@ -507,6 +554,7 @@ function go(id){
 }
 $('#back').onclick = () => go('dash');
 $('#hello').innerHTML = greeting() + ', <span>Kausar</span>';
+$('#tagline').textContent = dayLine();
 $('#datepill').textContent = new Date().toLocaleDateString('en-GB',
   {weekday:'long',day:'numeric',month:'long'});
 $('#goal').textContent = Math.max(0,
