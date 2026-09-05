@@ -132,6 +132,33 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   font-size:12px;line-height:1.6;color:var(--mut)}
 .goalnote b{color:var(--sea);font-weight:800}
 
+.awards{display:none;flex-direction:column;gap:12px}
+.awards.on{display:flex}
+.awhead{background:var(--panel);border-radius:19px;padding:18px 18px 16px;display:flex;
+  align-items:center;gap:16px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.awhead h2{font-family:var(--disp);font-size:25px;font-weight:600;margin:0 0 3px}
+.awring{margin-left:auto;text-align:center;flex:0 0 78px}
+.awring .num{font-family:var(--disp);font-size:30px;font-weight:600;color:var(--sea);line-height:1}
+.awring .lb{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  color:var(--mut2);margin-top:3px}
+.awgroup{background:var(--panel);border-radius:19px;padding:15px 16px 12px;
+  box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.awgroup h4{font-family:var(--disp);font-size:20px;font-weight:600;margin:0 0 2px}
+.awgroup .gs{font-size:11.5px;color:var(--mut2);margin-bottom:10px}
+.aw{display:flex;align-items:flex-start;gap:11px;width:100%;border:none;background:none;
+  padding:9px 8px;border-radius:11px;text-align:left;font-family:var(--ui);font-size:13.5px;
+  color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;line-height:1.45}
+.aw:hover{background:var(--sage-l)}
+.aw .box{width:17px;height:17px;flex:0 0 17px;border-radius:6px;border:1.7px solid var(--line2);
+  margin-top:1px;position:relative}
+.aw.on .box{background:var(--sage);border-color:var(--sage)}
+.aw.on .box:after{content:'';position:absolute;left:5px;top:1.5px;width:4px;height:9px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.aw .t{display:block;font-weight:700}
+.aw.on .t{color:var(--mut2);text-decoration:line-through}
+.aw .n{display:block;font-size:11.5px;color:var(--mut2);font-weight:400;margin-top:2px}
+.aw a{color:var(--sea);text-decoration:none;font-weight:700}
+.aw a:hover{text-decoration:underline}
 .view{display:none;flex-direction:column;gap:10px;flex:1;min-height:0}
 .view.on{display:flex}
 .dash.off{display:none}
@@ -215,6 +242,17 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       </div>
     </div>
 
+    <div class="awards" id="awards">
+      <div class="awhead">
+        <div>
+          <h2 id="awTitle"></h2>
+          <div class="ps" id="awSub"></div>
+        </div>
+        <div class="awring" id="awRing"></div>
+      </div>
+      <div id="awList"></div>
+    </div>
+
     <div class="view" id="view">
       <div class="viewbar">
         <button class="back" id="back">&larr; All courses</button>
@@ -265,11 +303,56 @@ const COURSES = [
     desc:'Thirty-six model essays, paragraph structure and the quiz gate.',
     go:null },
 ];
+const AWARDS = [
+  { g:'Certificates', s:'Proof you can show a recruiter',
+    items:[
+      { id:'ms-fundamentals', t:'Microsoft Azure Fundamentals (AZ-900)',
+        n:'Free learning path on <a href="https://learn.microsoft.com" target="_blank" rel="noopener">learn.microsoft.com</a>, paid exam.' },
+      { id:'ms-python', t:'Microsoft: Introduction to Python',
+        n:'A short path, and the first badge is the hardest one to start.' },
+      { id:'ms-data', t:'Microsoft Azure Data Fundamentals (DP-900)',
+        n:'Useful if the KTH data track stays on the list.' },
+      { id:'ielts', t:'IELTS Academic \u2014 the band you need',
+        n:'The one certificate both universities actually require.' },
+      { id:'swedish', t:'Svenska som andraspr\u00e5k 3 \u2014 passed',
+        n:'Plan A is taught in Swedish; this is the gate.' }
+    ] },
+  { g:'Building things', s:'The part that convinces people, not the paperwork',
+    items:[
+      { id:'hackathon-1', t:'Finish a hackathon with a working demo',
+        n:'Finishing counts. Winning is a bonus.' },
+      { id:'hackathon-win', t:'Win a prize at a hackathon', n:'' },
+      { id:'github-5', t:'Five public repositories that actually run',
+        n:'You already have three. <a href="https://github.com/KausarShangareeva" target="_blank" rel="noopener">github.com/KausarShangareeva</a>' },
+      { id:'opensource', t:'One accepted pull request to somebody else\u2019s project',
+        n:'Small fixes count \u2014 typos in documentation are a real start.' }
+    ] },
+  { g:'People', s:'Almost every opportunity arrives through a person',
+    items:[
+      { id:'kth-community', t:'Join a KTH student IT community',
+        n:'Most run open events before you are a student.' },
+      { id:'talk', t:'Give a talk or a demo in front of a room', n:'Even five minutes at a meetup.' },
+      { id:'volunteer', t:'Volunteer at a tech event',
+        n:'The fastest way into a room you were not invited to.' },
+      { id:'mentor', t:'Find one person a year ahead of you to ask questions',
+        n:'' }
+    ] },
+  { g:'Work', s:'The long game \u2014 and none of it is out of reach',
+    items:[
+      { id:'internship-any', t:'A first paid internship, anywhere',
+        n:'The first one is the hard one; the rest follow.' },
+      { id:'lovable', t:'Internship or project with Lovable', n:'' },
+      { id:'spotify', t:'Spotify internship (Stockholm)', n:'Applications usually open in the autumn.' },
+      { id:'microsoft', t:'Microsoft internship', n:'' },
+      { id:'google', t:'Google internship', n:'' }
+    ] }
+];
 const $ = s => document.querySelector(s);
 /* two entries only: the courses, and the plan. Everything else is a card. */
 const NAV = [
   { id:'dash', icon:'\u25A6',            label:'Courses'  },
-  { id:'plan', icon:'\uD83D\uDDD3\uFE0F', label:'Schedule' }
+  { id:'plan',   icon:'\uD83D\uDDD3\uFE0F', label:'Schedule' },
+  { id:'awards', icon:'\uD83C\uDFC5',        label:'IT goals'  }
 ];
 
 /* some browsers refuse storage to a file opened from disk; keep a copy in memory
@@ -408,6 +491,34 @@ function paintToday(){
     };
   });
 }
+function paintAwards(){
+  const box = $('#awList'); if (!box) return;
+  const done = readJSON('awards-done') || {};
+  const all = AWARDS.reduce((a,g) => a + g.items.length, 0);
+  const n = AWARDS.reduce((a,g) => a + g.items.filter(i => done[i.id]).length, 0);
+  $('#awTitle').textContent = 'What I am collecting';
+  $('#awSub').innerHTML =
+    'Not a wish list \u2014 a list of things that are actually reachable from where you are ' +
+    'standing. Tick one and it stays ticked.';
+  $('#awRing').innerHTML = '<div class="num">' + n + '/' + all + '</div><div class="lb">done</div>';
+  box.innerHTML = AWARDS.map(g =>
+    '<div class="awgroup"><h4>' + g.g + '</h4><div class="gs">' + g.s + '</div>' +
+    g.items.map(i =>
+      '<button class="aw' + (done[i.id] ? ' on' : '') + '" data-aw="' + i.id + '">' +
+      '<span class="box"></span><span><span class="t">' + i.t + '</span>' +
+      (i.n ? '<span class="n">' + i.n + '</span>' : '') + '</span></button>').join('') +
+    '</div>').join('');
+  box.querySelectorAll('.aw').forEach(b => {
+    b.onclick = e => {
+      if (e.target.tagName === 'A') return;      /* let the links open */
+      const d = readJSON('awards-done') || {};
+      const id = b.dataset.aw;
+      if (d[id]) delete d[id]; else d[id] = 1;
+      writeJSON('awards-done', d);
+      paintAwards();
+    };
+  });
+}
 function paintCalendar(){
   const now = new Date(), y = now.getFullYear(), m = now.getMonth();
   $('#calTitle').textContent = now.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
@@ -487,9 +598,20 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
 function go(id){
   const c = id === 'plan' ? PLAN_VIEW : COURSES.find(x => x.id === id);
   if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
-  const lit = (id === 'plan') ? 'plan' : 'dash';
+  const lit = (id === 'plan' || id === 'awards') ? id : 'dash';
   document.querySelectorAll('#nav button, #mobbar button')
     .forEach(b => b.setAttribute('aria-current', b.dataset.id === lit));
+  if (id === 'awards'){
+    $('#dash').classList.add('off');
+    $('#view').classList.remove('on');
+    $('#awards').classList.add('on');
+    $('#tagline').textContent = 'Certificates, projects, people, work \u2014 in that order.';
+    paintAwards();
+    try { localStorage.setItem('studyhub_last', id); } catch(e){}
+    try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
+    return;
+  }
+  $('#awards').classList.remove('on');
   if (id === 'dash'){
     $('#dash').classList.remove('off');
     $('#view').classList.remove('on');
