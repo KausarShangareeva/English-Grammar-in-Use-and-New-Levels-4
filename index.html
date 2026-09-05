@@ -162,6 +162,56 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .aw .n{display:block;font-size:11.5px;color:var(--mut2);font-weight:400;margin-top:2px}
 .aw a{color:var(--sea);text-decoration:none;font-weight:700}
 .aw a:hover{text-decoration:underline}
+.wactions{display:flex;flex-wrap:wrap;gap:8px}
+.wactions button{border:1px solid var(--line);background:var(--panel);border-radius:999px;
+  padding:10px 18px;font-family:var(--ui);font-size:13px;font-weight:800;color:var(--mut);
+  cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wactions button:hover{color:var(--sea)}
+.wactions button.pri{background:var(--sea);border-color:var(--sea);color:#fff}
+.quizview,.cardsview{display:none;flex-direction:column;gap:14px;align-items:center}
+.quizview.on,.cardsview.on{display:flex}
+.qtop{display:flex;align-items:center;gap:12px;width:100%;max-width:620px}
+.qbar{flex:1;height:7px;background:var(--panel);border-radius:99px;overflow:hidden}
+.qbar i{display:block;height:100%;background:var(--sea);border-radius:99px;transition:width .3s}
+.qcount{font-size:12px;font-weight:800;color:var(--mut2);white-space:nowrap}
+.qcard{background:var(--panel);border-radius:22px;padding:26px 24px 22px;width:100%;max-width:620px;
+  box-shadow:0 8px 26px rgba(39,107,122,.08)}
+.qlabel{font-size:10.5px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;
+  color:var(--mut2);margin-bottom:9px}
+.qprompt{font-family:var(--disp);font-size:31px;font-weight:600;line-height:1.2;margin-bottom:4px}
+.qsub{font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5}
+.qopts{display:flex;flex-direction:column;gap:9px}
+.opt{border:1.5px solid var(--line);background:var(--panel);border-radius:14px;padding:14px 16px;
+  font-family:var(--ui);font-size:15px;font-weight:700;color:var(--ink);text-align:left;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.opt:hover{border-color:var(--line2);background:var(--bg)}
+.opt.right{background:var(--sage-l);border-color:var(--sage);color:var(--sage)}
+.opt.wrong{background:var(--rose-l);border-color:var(--rose);color:var(--rose)}
+.opt[disabled]{cursor:default}
+.qfb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;
+  line-height:1.6;color:var(--mut)}
+.qfb b{color:var(--ink)}
+.qnext{margin-top:14px;width:100%;border:none;background:var(--sea);color:#fff;border-radius:14px;
+  padding:14px;font-family:var(--ui);font-size:14px;font-weight:800;cursor:pointer}
+.qdone{text-align:center}
+.qdone .big{font-family:var(--disp);font-size:46px;font-weight:600;color:var(--sea);line-height:1}
+.qdone .lb2{font-size:12px;color:var(--mut2);font-weight:800;letter-spacing:1px;
+  text-transform:uppercase;margin-top:4px}
+.qdone .msg{font-size:14px;color:var(--mut);margin-top:14px;line-height:1.6}
+.flip{background:var(--panel);border-radius:22px;padding:40px 24px;width:100%;max-width:560px;
+  min-height:250px;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;box-shadow:0 8px 26px rgba(39,107,122,.08);cursor:pointer}
+.flip .fw{font-family:var(--disp);font-size:40px;font-weight:600;line-height:1.15}
+.flip .fp{font-size:12px;color:var(--mut2);font-weight:700;margin-top:6px}
+.flip .fr{font-size:20px;color:var(--rose);font-weight:700;margin-top:10px}
+.flip .fm{font-size:14px;color:var(--mut);margin-top:10px;line-height:1.55;max-width:420px}
+.flip .fc{font-size:13px;color:var(--sea);font-weight:700;margin-top:12px}
+.flip .fe{font-size:13.5px;margin-top:14px;line-height:1.55;max-width:440px;color:var(--ink)}
+.cnav{display:flex;gap:9px;width:100%;max-width:560px}
+.cnav button{flex:0 0 64px;border:1px solid var(--line);background:var(--panel);border-radius:14px;
+  padding:13px;font-size:16px;color:var(--mut);cursor:pointer}
+.cnav button.pri{flex:1;background:var(--sea);border-color:var(--sea);color:#fff;
+  font-family:var(--ui);font-size:14px;font-weight:800}
 .wordsview{display:none;flex-direction:column;gap:12px}
 .wordsview.on{display:flex}
 .whead{background:var(--panel);border-radius:19px;padding:17px 18px;display:flex;gap:16px;
@@ -484,6 +534,28 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       <div id="awList"></div>
     </div>
 
+    <div class="quizview" id="quizView">
+      <div class="qtop">
+        <button class="back" id="qQuit">&larr; Back</button>
+        <div class="qbar"><i id="qBar"></i></div>
+        <span class="qcount" id="qCount"></span>
+      </div>
+      <div class="qcard" id="qCard"></div>
+    </div>
+
+    <div class="cardsview" id="cardsView">
+      <div class="qtop">
+        <button class="back" id="cQuit">&larr; Back</button>
+        <span class="qcount" id="cCount"></span>
+      </div>
+      <div class="flip" id="flipCard"></div>
+      <div class="cnav">
+        <button id="cPrev">&larr;</button>
+        <button class="pri" id="cFlip">Show translation</button>
+        <button id="cNext">&rarr;</button>
+      </div>
+    </div>
+
     <div class="wordsview" id="wordsView">
       <div class="whead">
         <div>
@@ -493,6 +565,11 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
         <input class="wsearch" id="wSearch" type="search" placeholder="search a word or a translation">
       </div>
       <div class="wchips" id="wChips"></div>
+      <div class="wactions">
+        <button class="pri" id="wQuiz">Practise this set</button>
+        <button id="wCards">Flashcards</button>
+        <button id="wMode2">Mode: translation &rarr; word</button>
+      </div>
       <div class="wlist" id="wList"></div>
     </div>
 
@@ -967,6 +1044,166 @@ const BOOKS = [
   g:'linear-gradient(140deg,#0F1E3C 0%,#2E4E7E 50%,#D4AF37 100%)', yr:'1925'}
 ];
 
+
+/* ---- the quiz engine, sharing progress with the trainer ---- */
+const NLKEY = 'nl4vocab_v1';
+function nlLoad(){
+  const s = readJSON(NLKEY) || {};
+  if (!s.stats) s.stats = {};
+  return s;
+}
+function nlSave(s){ writeJSON(NLKEY, s); }
+const shuffle = a => { const b = a.slice();
+  for (let i = b.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1));
+    [b[i],b[j]] = [b[j],b[i]]; } return b; };
+
+let qMode = 'ru2en';
+const QMODES = [
+  ['ru2en','translation → word'],
+  ['en2ru','word → translation'],
+  ['def2en','definition → word'],
+  ['cloze','fill the gap']
+];
+let Q = [], qi = 0, qRight = 0, qLocked = false, qFrom = 'units';
+
+function currentPool(){
+  return WD.filter(w => w.u === wUnit);
+}
+function buildQuestions(pool){
+  const usable = pool.filter(w => qMode !== 'cloze' || (w.e && w.e.length));
+  const list = shuffle(usable).slice(0, 20);
+  return list.map(w => {
+    const others = shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3);
+    let prompt, sub, answer, options, label;
+    if (qMode === 'en2ru'){
+      label = 'what does it mean?'; prompt = w.w; sub = w.p || '';
+      answer = w.r || ''; options = shuffle([w].concat(others).map(x => x.r || ''));
+    } else if (qMode === 'def2en'){
+      label = 'which word is this?'; prompt = w.m || w.r || ''; sub = w.p || '';
+      answer = w.w; options = shuffle([w].concat(others).map(x => x.w));
+    } else if (qMode === 'cloze'){
+      label = 'fill the gap';
+      prompt = String(w.e[0][0]); sub = w.r || '';
+      answer = w.e[0][1];
+      options = shuffle([w.e[0][1]].concat(others.map(x =>
+        (x.e && x.e.length) ? x.e[0][1] : x.w)));
+    } else {
+      label = 'which word is this?'; prompt = w.r || ''; sub = w.m || '';
+      answer = w.w; options = shuffle([w].concat(others).map(x => x.w));
+    }
+    return { w, prompt, sub, answer, options, label };
+  }).filter(q => q.prompt && q.answer && q.options.length > 1);
+}
+function startQuiz(){
+  const pool = currentPool();
+  Q = buildQuestions(pool);
+  if (!Q.length){ alert('This set has nothing to ask in that mode.'); return; }
+  qi = 0; qRight = 0; qLocked = false;
+  qFrom = wMode === 'books' ? 'books' : 'units';
+  $('#dash').classList.add('off');
+  ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
+   '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
+  $('#quizView').classList.add('on');
+  $('#tagline').textContent = 'Twenty questions from this set.';
+  renderQ();
+}
+function renderQ(){
+  if (qi >= Q.length) return finishQuiz();
+  const q = Q[qi];
+  $('#qBar').style.width = Math.round(qi / Q.length * 100) + '%';
+  $('#qCount').textContent = (qi + 1) + ' / ' + Q.length;
+  const promptHtml = qMode === 'cloze'
+    ? gEsc(q.prompt).replace('____', '<b style="color:var(--rose)">\u2026\u2026</b>')
+    : gEsc(q.prompt);
+  $('#qCard').innerHTML =
+    '<div class="qlabel">' + q.label + '</div>' +
+    '<div class="qprompt">' + promptHtml + '</div>' +
+    (q.sub ? '<div class="qsub">' + gEsc(q.sub) + '</div>' : '<div style="height:12px"></div>') +
+    '<div class="qopts">' + q.options.map((o,ix) =>
+      '<button class="opt" data-ix="' + ix + '">' + gEsc(o) + '</button>').join('') + '</div>';
+  qLocked = false;
+  $('#qCard').querySelectorAll('.opt').forEach(b =>
+    b.onclick = () => answerQ(q.options[Number(b.dataset.ix)], b));
+}
+function answerQ(chosen, btn){
+  if (qLocked) return;
+  qLocked = true;
+  const q = Q[qi];
+  const ok = String(chosen).trim().toLowerCase() === String(q.answer).trim().toLowerCase();
+  /* the same shape the trainer writes, so the two stay in step */
+  const s = nlLoad();
+  const st = s.stats[q.w.i] || (s.stats[q.w.i] = { c:0, w:0, run:0 });
+  if (ok){ st.c++; st.run = (st.run||0) + 1; qRight++; s.xp = (s.xp||0) + 10; }
+  else   { st.w++; st.run = 0; }
+  const today = new Date();
+  const key = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') +
+              '-' + String(today.getDate()).padStart(2,'0');
+  if (s.day !== key){ s.day = key; s.today = 0; }
+  s.today = (s.today || 0) + 1;
+  nlSave(s);
+
+  $('#qCard').querySelectorAll('.opt').forEach(b => {
+    b.disabled = true;
+    const v = q.options[Number(b.dataset.ix)];
+    if (String(v).toLowerCase() === String(q.answer).toLowerCase()) b.classList.add('right');
+    else if (b === btn) b.classList.add('wrong');
+  });
+  const w = q.w;
+  const extra = [ w.m ? gEsc(w.m) : '', w.c ? gSafe(w.c) : '', w.n ? gSafe(w.n) : '' ]
+    .filter(Boolean).join('<br>');
+  $('#qCard').insertAdjacentHTML('beforeend',
+    '<div class="qfb">' + (ok ? '\u2713 ' : '\u2715 ') + '<b>' + gEsc(w.w) + '</b> \u2014 ' +
+    gEsc(w.r || '') + (extra ? '<br>' + extra : '') + '</div>' +
+    '<button class="qnext" id="qNext">' + (qi + 1 >= Q.length ? 'See the result' : 'Next') + '</button>');
+  document.getElementById('qNext').onclick = () => { qi++; renderQ(); };
+}
+function finishQuiz(){
+  $('#qBar').style.width = '100%';
+  $('#qCount').textContent = Q.length + ' / ' + Q.length;
+  const pct = Math.round(qRight / Q.length * 100);
+  const msg = pct >= 90 ? 'That set is close to done. Try another one.'
+            : pct >= 70 ? 'Solid. The ones you missed will come back to you sooner.'
+            : pct >= 40 ? 'Worth reading the list again before the next round.'
+            : 'This set is still new. Read it through, then come back.';
+  $('#qCard').innerHTML =
+    '<div class="qdone"><div class="big">' + qRight + '/' + Q.length + '</div>' +
+    '<div class="lb2">correct</div><div class="msg">' + msg + '</div>' +
+    '<button class="qnext" id="qAgain">Another round</button>' +
+    '<button class="qnext" id="qBack" style="background:var(--panel);color:var(--mut);' +
+    'border:1px solid var(--line);margin-top:8px">Back to the words</button></div>';
+  document.getElementById('qAgain').onclick = startQuiz;
+  document.getElementById('qBack').onclick = () => go(qFrom);
+  paintCards();
+}
+
+/* ---- flashcards ---- */
+let CD = [], ci = 0, flipped = false;
+function startCards(){
+  CD = shuffle(currentPool());
+  if (!CD.length) return;
+  ci = 0; flipped = false;
+  $('#dash').classList.add('off');
+  ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
+   '#storyView','#quizView'].forEach(x => $(x).classList.remove('on'));
+  $('#cardsView').classList.add('on');
+  $('#tagline').textContent = 'Tap the card to turn it over.';
+  renderCard();
+}
+function renderCard(){
+  const w = CD[ci]; if (!w) return;
+  $('#cCount').textContent = (ci + 1) + ' / ' + CD.length;
+  const ex = (w.e && w.e.length)
+    ? gEsc(String(w.e[0][0])).replace('____', '<b>' + gEsc(w.e[0][1]) + '</b>') : '';
+  $('#flipCard').innerHTML = flipped
+    ? '<div class="fr">' + gEsc(w.r || '') + '</div>' +
+      (w.m ? '<div class="fm">' + gEsc(w.m) + '</div>' : '') +
+      (w.c ? '<div class="fc">' + gSafe(w.c) + '</div>' : '') +
+      (ex ? '<div class="fe">' + ex + '</div>' : '')
+    : '<div class="fw">' + gEsc(w.w) + '</div>' +
+      (w.p ? '<div class="fp">' + gEsc(w.p) + '</div>' : '');
+  $('#cFlip').textContent = flipped ? 'Show the word' : 'Show translation';
+}
+
 /* ---- the word list, rendered by the platform itself ---- */
 let wMode = 'units', wUnit = null, wShown = 60, wQuery = '';
 function wUnitsFor(mode){
@@ -1384,6 +1621,8 @@ function go(id){
     return;
   }
   $('#wordsView').classList.remove('on');
+  $('#quizView').classList.remove('on');
+  $('#cardsView').classList.remove('on');
   if (id === 'reading'){
     $('#dash').classList.add('off');
     ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#storyView']
@@ -1532,6 +1771,20 @@ let lastGramCard = 'grammar';
 $('#backGram').onclick = () => go(lastGramCard);
 $('#backRead').onclick = () => { stopRead(); go('reading'); };
 $('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
+$('#wQuiz').onclick  = startQuiz;
+$('#wCards').onclick = startCards;
+$('#wMode2').onclick = () => {
+  const ix = QMODES.findIndex(m => m[0] === qMode);
+  const nx = QMODES[(ix + 1) % QMODES.length];
+  qMode = nx[0];
+  $('#wMode2').textContent = 'Mode: ' + nx[1];
+};
+$('#qQuit').onclick = () => go(qFrom);
+$('#cQuit').onclick = () => go(wMode === 'books' ? 'books' : 'units');
+$('#flipCard').onclick = () => { flipped = !flipped; renderCard(); };
+$('#cFlip').onclick    = () => { flipped = !flipped; renderCard(); };
+$('#cPrev').onclick = () => { ci = (ci - 1 + CD.length) % CD.length; flipped = false; renderCard(); };
+$('#cNext').onclick = () => { ci = (ci + 1) % CD.length; flipped = false; renderCard(); };
 function openTrainerAt(code){
   const c = { id:'grammar-quiz', app:'words', title:'Grammar practice',
               desc:'Practice questions run in the trainer.', go:code };
