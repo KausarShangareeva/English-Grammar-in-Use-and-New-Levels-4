@@ -266,8 +266,11 @@ const COURSES = [
     go:null }
 ];
 const $ = s => document.querySelector(s);
-const NAV = [{id:'dash',icon:'\u25A6',label:'Dashboard'}]
-  .concat(COURSES.map(c => ({id:c.id, icon:c.emoji, label:c.title})));
+/* two entries only: the courses, and the plan. Everything else is a card. */
+const NAV = [
+  { id:'dash', icon:'\u25A6',            label:'Courses'  },
+  { id:'plan', icon:'\uD83D\uDDD3\uFE0F', label:'Schedule' }
+];
 
 function readJSON(k){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):null; }catch(e){ return null; } }
 const UNIT_WORDS=966, BOOK_WORDS=1115, GRAM_TOPICS=29, EPISODES=12;
@@ -403,7 +406,7 @@ function paintNav(){
     nav.appendChild(a);
     const b = document.createElement('button');
     b.dataset.id = n.id;
-    b.innerHTML = '<span class="ic">'+n.icon+'</span>'+n.label.split(' ')[0];
+    b.innerHTML = '<span class="ic">'+n.icon+'</span>'+n.label;
     b.onclick = () => go(n.id);
     mob.appendChild(b);
   });
@@ -411,8 +414,9 @@ function paintNav(){
 function go(id){
   const c = COURSES.find(x => x.id === id);
   if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
+  const lit = (id === 'plan') ? 'plan' : 'dash';
   document.querySelectorAll('#nav button, #mobbar button')
-    .forEach(b => b.setAttribute('aria-current', b.dataset.id === id));
+    .forEach(b => b.setAttribute('aria-current', b.dataset.id === lit));
   if (id === 'dash'){
     $('#dash').classList.remove('off');
     $('#view').classList.remove('on');
