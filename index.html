@@ -220,6 +220,17 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .epcard .es{font-size:11.5px;color:var(--mut);line-height:1.5;margin-top:5px}
 .epcard .em3{display:flex;gap:8px;margin-top:9px;font-size:10.5px;color:var(--mut2);font-weight:700}
 .epcard .un{background:var(--sea-l);color:var(--sea);border-radius:999px;padding:3px 9px}
+.readbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);
+  border-radius:16px;padding:10px 12px;box-shadow:0 5px 16px rgba(39,107,122,.05)}
+.readbar button{border:1px solid var(--line);background:var(--panel);border-radius:999px;
+  padding:8px 14px;font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut);
+  cursor:pointer;-webkit-tap-highlight-color:transparent}
+.readbar button[aria-pressed="true"]{background:var(--sage-l);border-color:#CFE3D6;color:var(--sage)}
+.readbar button.playing{background:var(--sea);border-color:var(--sea);color:#fff}
+.readbar .rcnt{margin-left:auto;font-size:11.5px;color:var(--mut2);font-weight:700}
+.paper.story.plain m{border-bottom:none!important;cursor:default}
+.paper.story p.saying{background:var(--sand-l);border-radius:8px;
+  box-shadow:0 0 0 6px var(--sand-l)}
 .paper.story{font-size:16px;line-height:1.85;max-width:720px}
 .paper.story h1{font-family:var(--disp);font-size:32px;font-weight:600;margin:0 0 4px;line-height:1.15}
 .paper.story .sq{font-size:13px;color:var(--mut);font-style:italic;margin-bottom:6px;line-height:1.55}
@@ -492,6 +503,12 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
         <button class="back" id="backRead">&larr; All episodes</button>
         <div class="spacer"></div>
         <button class="openraw" id="storyLegend">Colours: what they mark</button>
+      </div>
+      <div class="readbar">
+        <button id="hlBtn" aria-pressed="true">Highlights on</button>
+        <button id="playBtn">&#9654; Read aloud</button>
+        <button id="loopBtn" aria-pressed="false">Loop</button>
+        <span class="rcnt" id="rCnt"></span>
       </div>
       <article class="paper story" id="storyPaper"></article>
     </div>
@@ -1077,7 +1094,26 @@ function openStory(sr, n){
       '"></i>' + POSNAME[k] + '</span>').join('') +
     '<span style="margin-left:auto">tap any underlined word</span></div>';
   $('#storyPaper').querySelectorAll('m[data-i]').forEach(m =>
-    m.onclick = () => showWord(m.dataset.i, m.textContent));
+    m.onclick = () => { if (!$('#storyPaper').classList.contains('plain'))
+                          showWord(m.dataset.i, m.textContent); });
+  stopRead();
+  $('#rCnt').textContent = e.c + ' words marked \u00b7 ' + e.wc + ' to read';
+  const hl = $('#hlBtn');
+  $('#storyPaper').classList.remove('plain');
+  hl.setAttribute('aria-pressed','true');
+  hl.textContent = 'Highlights on';
+  hl.onclick = () => {
+    const off = $('#storyPaper').classList.toggle('plain');
+    hl.setAttribute('aria-pressed', String(!off));
+    hl.textContent = off ? 'Highlights off' : 'Highlights on';
+  };
+  const pb = $('#playBtn');
+  pb.classList.toggle('hide', !canSpeak);
+  pb.onclick = () => { RS.on ? stopRead() : startRead(); };
+  const lb = $('#loopBtn');
+  lb.classList.toggle('hide', !canSpeak);
+  lb.setAttribute('aria-pressed', String(RS.loop));
+  lb.onclick = () => { RS.loop = !RS.loop; lb.setAttribute('aria-pressed', String(RS.loop)); };
   const lg = $('#storyLegend');
   lg.textContent = done[sr+n] ? '\u2713 Read' : 'Mark as read';
   lg.onclick = () => {
@@ -1088,6 +1124,41 @@ function openStory(sr, n){
     paintCards();
   };
   window.scrollTo(0,0);
+}
+/* ---- reading aloud ---- */
+const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
+const RS = { on:false, i:0, gen:0, loop:false };
+function storyParas(){ return [...document.querySelectorAll('#storyPaper p')]; }
+function paintPlay(){
+  const b = $('#playBtn'); if (!b) return;
+  b.classList.toggle('playing', RS.on);
+  b.innerHTML = RS.on ? '&#10073;&#10073; Stop' : '&#9654; Read aloud';
+}
+function stopRead(){
+  RS.on = false; RS.gen++;
+  try { window.speechSynthesis.cancel(); } catch(e){}
+  storyParas().forEach(p => p.classList.remove('saying'));
+  paintPlay();
+}
+function speakFrom(gen, ps){
+  if (gen !== RS.gen || !RS.on) return;
+  if (RS.i >= ps.length){
+    if (RS.loop){ RS.i = 0; } else { stopRead(); return; }
+  }
+  const p = ps[RS.i];
+  ps.forEach(x => x.classList.remove('saying'));
+  p.classList.add('saying');
+  if (p.scrollIntoView) p.scrollIntoView({ block:'center', behavior:'smooth' });
+  const u = new SpeechSynthesisUtterance(p.textContent);
+  u.lang = 'en-GB'; u.rate = 0.95;
+  u.onend = () => { if (gen === RS.gen && RS.on){ RS.i++; speakFrom(gen, ps); } };
+  try { window.speechSynthesis.speak(u); } catch(e){ stopRead(); }
+}
+function startRead(){
+  const ps = storyParas();
+  if (!canSpeak || !ps.length) return;
+  RS.on = true; RS.i = 0; RS.gen++;
+  paintPlay(); speakFrom(RS.gen, ps);
 }
 function showWord(i, fallback){
   buildWordIndex();
@@ -1459,7 +1530,7 @@ $('#back').onclick = () => go('dash');
 $('#backEssays').onclick = () => go('essay');
 let lastGramCard = 'grammar';
 $('#backGram').onclick = () => go(lastGramCard);
-$('#backRead').onclick = () => go('reading');
+$('#backRead').onclick = () => { stopRead(); go('reading'); };
 $('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
 function openTrainerAt(code){
   const c = { id:'grammar-quiz', app:'words', title:'Grammar practice',
