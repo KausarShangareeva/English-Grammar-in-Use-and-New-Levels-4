@@ -483,6 +483,11 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .tsp{color:var(--mut2);font-weight:700}
 .tsonly{color:var(--rose);font-weight:700}
 .tsnote{display:block;font-size:11.5px;color:var(--mut2);margin-top:3px}
+.tsseen{display:block;font-size:10.5px;font-weight:700;color:var(--mut2);margin-top:5px}
+.tsseen.done{color:var(--sage)} .tsseen.sad{color:var(--sea)} .tsseen.hot{color:var(--rose)}
+.seenl{font-size:10.5px;font-weight:700;color:var(--mut2);margin-top:6px}
+.wseen{font-size:11.5px;font-weight:700;color:var(--mut2);margin-top:5px}
+.wseen.done{color:var(--sage)} .wseen.sad{color:var(--sea)} .wseen.hot{color:var(--rose)}
 .tsrow .ch{margin-left:auto;color:var(--mut2);font-size:19px;flex:0 0 14px;text-align:right}
 .mood{display:flex;align-items:center;gap:7px;flex:0 0 auto;background:var(--bg);
   border-radius:999px;padding:6px 12px 6px 9px;margin-left:auto}
@@ -810,6 +815,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
         <div>
           <h2 id="wTitle"></h2>
           <div class="ps" id="wSub"></div>
+          <div class="wseen" id="wSeen"></div>
         </div>
         <input class="wsearch" id="wSearch" type="search" placeholder="search a word or a translation">
       </div>
@@ -1232,6 +1238,7 @@ function paintEssays(){
         mood('essay:' + t.title)[0] + '</span>' + t.levels.map(e =>
           '<span class="lvl' + (isRead(key(e)) ? ' on' : '') + '">' + e.level + '</span>').join('') +
         '<span class="wcs">' + t.levels[0].wc.replace('\u2248 ','') + '</span></div>' +
+        '<div class="seenl">' + seenLine('essay:' + t.title) + '</div>' +
         '</button>';
     }).join('') + '</div></div>').join('');
   box.querySelectorAll('.ecard').forEach(b =>
@@ -1938,12 +1945,23 @@ function mood(id){
   const t = isoToday();
   if (r.q === t) return ['\uD83E\uDD29', 'great work today', 'done'];
   if (r.d === t) return ['\uD83D\uDE42', 'opened today \u00b7 quiz waiting', ''];
-  const base = r.q || r.d;
+  const base = (r.q && r.d) ? (r.q > r.d ? r.q : r.d) : (r.q || r.d);
   const d = daysSince(base);
   if (d === null)  return ['\uD83D\uDE42', 'not opened yet', ''];
   if (d <= 1)      return ['\uD83D\uDE42', 'I am waiting', ''];
   if (d === 2)     return ['\uD83D\uDE2D', 'you have been away 2 days', 'sad'];
   return ['\uD83E\uDD75', d + ' days \u2014 you may forget this', 'hot'];
+}
+function seenLine(id){
+  const r = seenAll()[id] || {};
+  /* whichever happened later: opening it, or actually practising it */
+  const last = (r.q && r.d) ? (r.q > r.d ? r.q : r.d) : (r.q || r.d);
+  if (!last) return 'never opened';
+  const d = daysSince(last);
+  const when = new Date(last + 'T00:00:00')
+    .toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  const ago = d === 0 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago';
+  return 'last opened ' + when + ' \u00b7 ' + ago + (r.q === last ? ' \u00b7 quiz done' : '');
 }
 function moodChip(id){
   const m = mood(id);
@@ -1962,7 +1980,7 @@ function moodCounts(courseId){
     if (COURSE_OF[i.where] !== courseId) return;
     c.total++;
     const r = seen[i.id] || {};
-    const days = daysSince(r.q || r.d);
+    const days = daysSince((r.q && r.d) ? (r.q > r.d ? r.q : r.d) : (r.q || r.d));
     if (r.q === t) c.done++;
     else if (r.d === t) c.open++;
     else if (days === null || days <= 1) c.wait++;
@@ -2038,6 +2056,12 @@ function paintWordList(){
   $('#wTitle').textContent = wMode === 'books'
     ? (bk ? (bk.e || '') + ' ' + bk.t : 'Words from books')
     : 'Unit ' + wUnit;
+  const sl = $('#wSeen');
+  if (sl){
+    const m = mood('set:' + wUnit);
+    sl.className = 'wseen ' + m[2];
+    sl.textContent = m[0] + '  ' + seenLine('set:' + wUnit);
+  }
   $('#wSub').textContent = bk
     ? bk.a + ' \u00b7 ' + bk.yr + ' \u00b7 ' + WD.filter(w => w.u === wUnit).length + ' words'
     : (UNAMES[wUnit] || '') + ' \u00b7 ' + WD.filter(w => w.u === wUnit).length + ' words';
@@ -2260,6 +2284,7 @@ function paintReadList(){
           '<span>' + e.wc + ' words</span><span>' + e.c + ' to learn</span>' +
           '<span class="epmood" title="' + mood('story:' + sr + e.n)[1] + '">' +
           mood('story:' + sr + e.n)[0] + '</span></div>' +
+          '<div class="seenl">' + seenLine('story:' + sr + e.n) + '</div>' +
         '</div></button>').join('') +
       '</div>';
   }).join('');
@@ -2531,13 +2556,18 @@ function tenseBlock(){
     '<div class="tsg">' + g + ' tenses</div>' +
     TENSES.filter(t => t.g === g).map(t => {
       const ix = GR.findIndex(x => x.id === t.topic);
+      const mid = 'gram:' + t.topic;
+      const m = mood(mid);
       return '<button class="tsrow"' + (ix >= 0 ? ' data-i="' + ix + '"' : '') + '>' +
         '<span class="tsdot" style="background:' + t.c + '"></span>' +
         '<span class="tsmid"><span class="tsn">' + t.n + '</span>' +
         '<span class="tsf">' + t.a +
         (t.p ? ' <span class="tsp">\u00b7 passive:</span> ' + t.p
              : ' <span class="tsonly">\u00b7 active only</span>') + '</span>' +
-        '<span class="tsnote">' + t.note + '</span></span>' +
+        '<span class="tsnote">' + t.note + '</span>' +
+        '<span class="tsseen ' + m[2] + '">' + seenLine(mid) + '</span></span>' +
+        '<span class="mood ' + m[2] + '" title="' + m[1] + '"><span class="em">' + m[0] +
+        '</span><span class="tx2">' + m[1] + '</span></span>' +
         (ix >= 0 ? '<span class="ch">\u203a</span>' : '<span class="ch"></span>') +
         '</button>';
     }).join('')).join('');
@@ -2551,7 +2581,8 @@ function paintGramList(){
   const box = $('#gramList'); if (!box) return;
   const secs = [];
   GR.forEach((g,i) => {
-    const keep = gramOnly ? (g.sec === gramOnly) : (g.sec !== 'Speaking');
+    const keep = gramOnly ? (g.sec === gramOnly)
+                          : (g.sec !== 'Speaking' && g.sec !== 'Verb tenses');
     if (!keep) return;
     let s2 = secs.find(x => x.k === g.sec);
     if (!s2){ s2 = { k:g.sec, items:[] }; secs.push(s2); }
@@ -2565,7 +2596,9 @@ function paintGramList(){
       return '<button class="grow" data-i="' + i + '"><span><span class="k">' + gEsc(g.t) + '</span>' +
         '<div class="d">' + gEsc(g.sub) + '</div>' +
         '<div class="m">' + nv + ' cards \u00b7 ' + nex + ' examples \u00b7 ' +
-        g.items.length + ' questions</div></span>' + moodChip('gram:' + g.id) +
+        g.items.length + ' questions</div>' +
+        '<div class="seenl">' + seenLine('gram:' + g.id) + '</div></span>' +
+        moodChip('gram:' + g.id) +
         '<span class="ch">\u203a</span></button>';
     }).join('')).join('');
   box.querySelectorAll('.grow, .tsrow').forEach(b => {
