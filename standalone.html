@@ -96,6 +96,19 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .bar i{display:block;height:100%;background:var(--sea);border-radius:99px}
 .cstat{display:flex;gap:6px;margin-top:8px;font-size:11px;color:var(--mut2);font-weight:700}
 .cstat b{color:var(--ink)}
+.mrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:9px;
+  border-top:1px solid var(--line);padding-top:9px}
+.mtot{font-size:10.5px;font-weight:800;color:var(--mut2);margin-right:auto}
+.mp{display:flex;align-items:center;gap:4px;border-radius:999px;padding:3px 8px 3px 6px;
+  font-size:11px;font-weight:800}
+.mp i{font-style:normal;font-size:12px;line-height:1}
+.mp.done{background:var(--sage-l);color:var(--sage)}
+.mp.open{background:var(--sea-l);color:var(--sea)}
+.mp.wait{background:var(--bg);color:var(--mut2)}
+.mp.sad{background:#E8EFF1;color:var(--sea)}
+.mp.hot{background:var(--rose-l);color:var(--rose)}
+.mworst{margin-top:7px;font-size:10.5px;color:var(--mut2);line-height:1.5}
+.mworst b{color:var(--rose)}
 .lockline{margin-top:7px;font-size:10.5px;font-weight:700;color:var(--rose)}
 .course.soon{opacity:.62;cursor:default}
 .course.soon:hover{transform:none;box-shadow:0 6px 20px rgba(39,107,122,.06)}
@@ -718,7 +731,6 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 
     <div class="dash" id="dash">
       <div>
-        <div class="moodbar" id="moodBar"></div>
         <div class="sec">Your courses</div>
         <div class="cards" id="cards"></div>
       </div>
@@ -1087,49 +1099,24 @@ function greeting(){
   const h = new Date().getHours();
   return h < 5 ? 'Still awake' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 }
-function paintMoodBar(){
-  const box = $('#moodBar'); if (!box) return;
-  const seen = seenAll(), t = isoToday();
-  const g = { done:[], open:[], wait:[], sad:[], hot:[] };
-  allTrackables().forEach(i => {
-    const r = seen[i.id] || {};
-    const days = daysSince(r.q || r.d);
-    const item = Object.assign({ days: days }, i);
-    if (r.q === t) g.done.push(item);
-    else if (r.d === t) g.open.push(item);
-    else if (days === null || days <= 1) g.wait.push(item);
-    else if (days === 2) g.sad.push(item);
-    else g.hot.push(item);
-  });
-  const n = k => g[k].length;
-  let line;
-  if (n('done') + n('open') + n('sad') + n('hot') === 0)
-    line = 'Nothing opened yet. Pick any card below and the faces will start moving.';
-  else if (n('hot') + n('sad') === 0)
-    line = '<b>Nothing left behind.</b> ' + n('done') + ' finished today' +
-           (n('open') ? ', ' + n('open') + ' opened and waiting for a quiz' : '') + '.';
-  else
-    line = 'You have <b>' + (n('hot') + n('sad')) + '</b> \uD83E\uDD75 waiting for you' +
-           (n('hot') ? ' \u2014 <b>' + n('hot') + '</b> of them for three days or more' : '') +
-           ', <b>' + n('done') + '</b> done today' +
-           (n('open') ? ' and <b>' + n('open') + '</b> opened but not practised' : '') + '.';
-  const worst = g.hot.slice().sort((a,b) => (b.days||0) - (a.days||0)).slice(0,3);
-  box.innerHTML =
-    '<h3>Where you stand</h3><div class="mline">' + line + '</div>' +
-    '<div class="mtags">' +
-      '<span class="mtag done"><i>\uD83E\uDD29</i>' + n('done') + ' practised today</span>' +
-      '<span class="mtag open"><i>\uD83D\uDE42</i>' + n('open') + ' opened today</span>' +
-      '<span class="mtag wait"><i>\uD83D\uDE42</i>' + n('wait') + ' waiting</span>' +
-      '<span class="mtag sad"><i>\uD83D\uDE2D</i>' + n('sad') + ' two days</span>' +
-      '<span class="mtag hot"><i>\uD83E\uDD75</i>' + n('hot') + ' three days or more</span>' +
+/* the same faces as inside the course, counted for the whole card */
+function moodRow(courseId){
+  const c = moodCounts(courseId);
+  if (!c.total) return '';
+  const pill = (cls, em, n, title) => n
+    ? '<span class="mp ' + cls + '" title="' + title + '"><i>' + em + '</i>' + n + '</span>' : '';
+  return '<div class="mrow">' +
+    '<span class="mtot">' + c.total + ' in here</span>' +
+    pill('done', '\uD83E\uDD29', c.done, 'practised today') +
+    pill('open', '\uD83D\uDE42', c.open,  'opened today, quiz waiting') +
+    pill('wait', '\uD83D\uDE42', c.wait,  'waiting') +
+    pill('sad',  '\uD83D\uDE2D', c.sad,   'two days untouched') +
+    pill('hot',  '\uD83E\uDD75', c.hot,   'three days or more') +
     '</div>' +
-    (worst.length
-      ? '<div class="worst">Longest untouched: ' + worst.map(w =>
-          '<b>' + gEsc(w.t) + '</b> (' + w.days + ' d, ' + w.where + ')').join(' \u00b7 ') + '</div>'
-      : '');
+    (c.worst ? '<div class="mworst">\uD83E\uDD75 <b>' + gEsc(c.worst) + '</b> \u2014 ' +
+      c.worstDays + ' days</div>' : '');
 }
 function paintCards(){
-  paintMoodBar();
   const st = stats(), box = $('#cards');
 
   box.innerHTML = '';
@@ -1144,7 +1131,7 @@ function paintCards(){
       '<div class="cbody"><div class="cd">' + c.desc + '</div>' +
         '<div class="bar"><i style="width:' + Math.max(2, s.pct) + '%"></i></div>' +
         '<div class="cstat"><b>' + s.pct + '%</b> \u00b7 ' + s.line + '</div>' +
-        '</div>';
+        moodRow(c.id) + '</div>';
     b.onclick = () => go(c.id);
     box.appendChild(b);
   });
@@ -1965,6 +1952,28 @@ function moodChip(id){
     '<span class="tx2">' + m[1] + '</span></span>';
 }
 /* every trackable thing in one list, so the dashboard can count them */
+const COURSE_OF = { 'Grammar':'grammar', 'Speaking':'speaking',
+  'Words from units':'units', 'Words from books':'books',
+  'Reading':'reading', 'Essay writing':'essay' };
+function moodCounts(courseId){
+  const seen = seenAll(), t = isoToday();
+  const c = { total:0, done:0, open:0, wait:0, sad:0, hot:0, worst:null, worstDays:0 };
+  allTrackables().forEach(i => {
+    if (COURSE_OF[i.where] !== courseId) return;
+    c.total++;
+    const r = seen[i.id] || {};
+    const days = daysSince(r.q || r.d);
+    if (r.q === t) c.done++;
+    else if (r.d === t) c.open++;
+    else if (days === null || days <= 1) c.wait++;
+    else if (days === 2) c.sad++;
+    else {
+      c.hot++;
+      if (days > c.worstDays){ c.worstDays = days; c.worst = i.t; }
+    }
+  });
+  return c;
+}
 function allTrackables(){
   const out = [];
   GR.forEach((g,i) => out.push({ id:'gram:' + g.id, t:g.t,
