@@ -542,6 +542,19 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .gramtopic .tapme{display:none}
 .gramtopic .cty{font-size:8.4px;font-weight:700;fill:#31434A;font-family:var(--ui)}
 .gramtopic .dot2{fill:#2B3D44}
+
+/* the example list is a table: two columns, and no engine can misplace them */
+.gramtopic .extab{width:100%;border-collapse:collapse;margin:10px 0 2px}
+.gramtopic .extab td{border-top:1px solid var(--line);padding:11px 0;vertical-align:top;
+  font-size:14.5px;line-height:1.65}
+.gramtopic .extab tr:first-child td{border-top:none}
+.gramtopic .extab td.lv{font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--mut2);text-align:right;padding:14px 16px 11px 0;line-height:1.45;white-space:normal}
+.gramtopic .extab td.ls .spk{margin-left:6px}
+@media (max-width:640px){
+  .gramtopic .extab col{width:auto !important}
+  .gramtopic .extab td.lv{width:78px;padding-right:11px}
+}
 .essays,.reader{display:none;flex-direction:column;gap:12px}
 .essays.on,.reader.on{display:flex}
 .ehead{background:var(--panel);border-radius:19px;padding:18px;display:flex;gap:16px;
@@ -2309,12 +2322,11 @@ function addSpeakers(root){
     const cyr = (t.match(/[\u0400-\u04FF]/g) || []).length;
     return cyr / letters.length < 0.2;
   };
-  root.querySelectorAll('li').forEach(li => {
-    if (li.querySelector('.spk')) return;
-    /* the label sits in its own span; only the sentence should be read */
-    const lab = li.querySelector('.lv');
-    const t = say(lab ? li.textContent.slice(lab.textContent.length) : li.textContent);
-    if (latin(t)) li.insertAdjacentHTML('beforeend', ' ' + spk(t));
+  root.querySelectorAll('td.ls, li').forEach(el => {
+    if (el.querySelector('.spk')) return;
+    const lab = el.querySelector('.lv');
+    const t = say(lab ? el.textContent.slice(lab.textContent.length) : el.textContent);
+    if (latin(t)) el.insertAdjacentHTML('beforeend', ' ' + spk(t));
   });
   root.querySelectorAll('table.vtab td').forEach(td => {
     if (td.querySelector('.spk')) return;
@@ -2424,7 +2436,8 @@ function openGramTopic(ix){
     html += '<div class="ggroup">' + gEsc(gr.g) + '</div>';
     gr.vs.forEach(v => {
       const li = (v.ex || []).map(e =>
-        '<li><span class="lv">' + gEsc(e.l || '') + '</span>' + gHi(e.s, v.f) + '</li>').join('');
+        '<tr><td class="lv">' + gEsc(e.l || '') + '</td>' +
+        '<td class="ls">' + gHi(e.s, v.f) + '</td></tr>').join('');
       const TH = v.th || ['infinitive','past simple','past participle','\u043f\u0435\u0440\u0435\u0432\u043e\u0434'];
       const CW = v.cw || ['24%','24%','25%','27%'];
       let tb = '';
@@ -2448,7 +2461,8 @@ function openGramTopic(ix){
       html += '<div class="gverb">' + head +
         (v.n ? '<div class="gn">' + gSafe(v.n) + '</div>' : '') +
         (v.svg ? '<div class="gmap">' + v.svg + '</div>' : '') +
-        tb + (li ? '<ul>' + li + '</ul>' : '') + '</div>';
+        tb + (li ? '<table class="extab"><col style="width:112px"><col>' + li + '</table>' : '') +
+        '</div>';
     });
   });
   $('#gPaper').innerHTML = html;
