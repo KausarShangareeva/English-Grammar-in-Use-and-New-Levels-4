@@ -30,18 +30,24 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .shell{display:flex;min-height:100vh;min-height:100dvh;padding:14px;gap:14px}
 
 .side{width:216px;flex:0 0 216px;background:var(--panel);border-radius:22px;padding:20px 13px;
+  overflow:visible;
   display:flex;flex-direction:column;position:sticky;top:14px;height:calc(100dvh - 28px);
   box-shadow:0 6px 22px rgba(39,107,122,.06)}
 .langbtn{border:none;background:none;padding:0;text-align:left;cursor:pointer;font-family:var(--ui)}
 .langbtn .carr{font-size:9px;margin-left:4px;opacity:.7}
-.langmenu{display:none;position:absolute;z-index:80;margin-top:6px;background:var(--panel);
-  border-radius:16px;padding:7px;box-shadow:0 14px 40px rgba(39,107,122,.22);min-width:190px}
+.langbtn .bt{display:flex;align-items:center;gap:7px}
+.curflag{font-size:15px;line-height:1;margin-right:2px}
+.langmenu button .fl{font-size:16px;width:20px;margin-right:6px;text-align:center;flex:0 0 20px}
+.langmenu{display:none;position:absolute;top:100%;left:0;margin-top:-14px;z-index:90;
+  background:var(--panel);border-radius:16px;padding:7px;min-width:198px;
+  box-shadow:0 16px 44px rgba(39,107,122,.26);border:1px solid var(--line)}
 .langmenu.on{display:block}
-.langmenu button{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;
+.langmenu button{display:flex;align-items:center;gap:0;width:100%;border:none;background:none;
   padding:10px 12px;border-radius:11px;font-family:var(--ui);font-size:13px;font-weight:700;
   color:var(--mut);cursor:pointer;text-align:left}
 .langmenu button:hover{background:var(--bg);color:var(--sea)}
 .langmenu button[aria-current="true"]{background:var(--sea-l);color:var(--sea)}
+.langmenu .lcheck{margin-left:auto;font-size:12px;font-weight:800}
 .langmenu .fl{font-size:15px}
 .brand{position:relative;display:flex;align-items:center;gap:11px;padding:0 6px 22px}
 .brand .mark{width:36px;height:36px;flex:0 0 36px;display:block;border-radius:10px}
@@ -841,7 +847,9 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   <aside class="side">
     <div class="brand">
       <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#276B7A"/><path d="M13 47V17h6.2v24.4h13.1V47z" fill="#FAF7F2"/><path d="M53 39.9h-4.6V47h-5.7v-7.1H30.6v-4.4L43.1 17h5.3v17.7H53zM36.4 34.7h6.6V24.4z" fill="#E8B4BC"/></svg>
-      <button class="btext langbtn" id="langBtn"><b class="bt" id="langName">Study English</b>
+      <button class="btext langbtn" id="langBtn">
+        <b class="bt"><span class="curflag" id="langFlag">\uD83C\uDDEC\uD83C\uDDE7</span>
+          <span id="langName">Study English</span></b>
         <i class="bs">Kausar <span class="carr">\u25be</span></i></button>
       <div class="langmenu" id="langMenu"></div>
     </div>
@@ -1737,6 +1745,7 @@ function applyLang(l){
   try { localStorage.setItem('studyhub_lang', l); } catch(e){}
   MEM['studyhub_lang'] = l;
   $('#langName').textContent = l === 'en' ? 'Study English' : PACKS[l].label;
+  $('#langFlag').textContent = l === 'en' ? '\uD83C\uDDEC\uD83C\uDDE7' : PACKS[l].flag;
   paintLangMenu();
   refreshGuide();
   go('dash');
@@ -1747,7 +1756,8 @@ function paintLangMenu(){
     .concat(Object.keys(PACKS).map(k => [k, PACKS[k].label, PACKS[k].flag]));
   box.innerHTML = list.map(x =>
     '<button data-l="' + x[0] + '"' + (x[0] === LANG ? ' aria-current="true"' : '') + '>' +
-    '<span class="fl">' + x[2] + '</span>' + x[1] + '</button>').join('');
+    '<span class="fl">' + x[2] + '</span>' + x[1] +
+    (x[0] === LANG ? '<span class="lcheck">\u2713</span>' : '') + '</button>').join('');
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     box.classList.remove('on');
     if (b.dataset.l !== LANG) applyLang(b.dataset.l);
