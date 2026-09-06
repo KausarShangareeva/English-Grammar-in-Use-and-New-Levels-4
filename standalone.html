@@ -205,6 +205,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   cursor:pointer;-webkit-tap-highlight-color:transparent}
 .wactions button:hover{color:var(--sea)}
 .wactions button.pri{background:var(--sea);border-color:var(--sea);color:#fff}
+.wactions button .qn{margin-left:7px;font-size:10.5px;font-weight:800;opacity:.65}
+.wactions button.pri .qn{opacity:.9}
 .wactions button.cards{background:var(--rose-l);border-color:#F0DCE2;color:var(--rose)}
 .wactions button.cards:hover{color:var(--rose)}
 .planview{display:none;flex-direction:column;gap:12px}
@@ -1748,7 +1750,8 @@ function buildQuestions(pool){
   const usable = pool.filter(w =>
     (qMode !== 'cloze' || (w.e && w.e.length)) &&
     (qMode !== 'reg'   || w.t));
-  const list = shuffle(usable).slice(0, 20);
+  /* the whole set, not a sample: 51 words means 51 questions */
+  const list = shuffle(usable);
   return list.map((w, ix) => {
     let qMode = window.qModeFor ? window.qModeFor(w, ix) : null;
     const others = shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3);
@@ -1803,7 +1806,8 @@ function renderQ(){
   if (qi >= Q.length) return finishQuiz();
   const q = Q[qi];
   $('#qBar').style.width = Math.round(qi / Q.length * 100) + '%';
-  $('#qCount').textContent = (qi + 1) + ' / ' + Q.length;
+  $('#qCount').textContent = (qi + 1) + ' / ' + Q.length +
+    (Q.length > 25 ? '  \u00b7  ' + qRight + ' right' : '');
   const promptHtml = q.kind === 'cloze'
     ? gEsc(q.prompt).replace('____', '<b style="color:var(--rose)">\u2026\u2026</b>')
     : gEsc(q.prompt);
@@ -2037,17 +2041,24 @@ function paintPractise(){
   const ICON = { mix:'\u25b6', ru2en:'\uD83C\uDDF7\uD83C\uDDFA', type:'\u2328\uFE0F',
                  en2ru:'\uD83C\uDDEC\uD83C\uDDE7', def2en:'\uD83D\uDCAC',
                  cloze:'\u2712\uFE0F', reg:'\uD83D\uDEA9' };
-  box.innerHTML = QMODES.map(m =>
-      '<button class="' + (m[0] === 'mix' ? 'pri' : '') + '" data-m="' + m[0] + '">' +
-      (ICON[m[0]] || '') + ' ' + m[1] + '</button>').join('') +
-    '<button class="cards" data-m="cards">\uD83C\uDCCF Flashcards</button>';
+  const pool = currentPool();
+  const countFor = mode => pool.filter(w =>
+      (mode !== 'cloze' || (w.e && w.e.length)) && (mode !== 'reg' || w.t)).length;
+  box.innerHTML = QMODES.map(m => {
+      const n = m[0] === 'mix' ? pool.length : countFor(m[0]);
+      return '<button class="' + (m[0] === 'mix' ? 'pri' : '') + '" data-m="' + m[0] + '">' +
+        (ICON[m[0]] || '') + ' ' + m[1] +
+        '<span class="qn">' + n + '</span></button>';
+    }).join('') +
+    '<button class="cards" data-m="cards">\uD83C\uDCCF Flashcards<span class="qn">' +
+    pool.length + '</span></button>';
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     if (b.dataset.m === 'cards') return startCards();
     qMode = b.dataset.m;
     startQuiz();
   });
   const hint = $('#wHint');
-  if (hint) hint.textContent = 'twenty questions from whatever set is open';
+  if (hint) hint.textContent = 'the whole set, every word, in the order the shuffle gives';
 }
 function paintWordList(){
   const box = $('#wList'); if (!box) return;
