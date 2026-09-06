@@ -1054,61 +1054,17 @@ function writeJSON(k, v){
   MEM[k] = v;
   try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
 }
-const UNIT_WORDS=827, BOOK_WORDS=1254, GRAM_TOPICS=34, EPISODES=12;
 function stats(){
-  const out = { units:{pct:0,line:'not started yet'}, books:{pct:0,line:'not started yet'},
-    grammar:{pct:0,line:'not opened yet'}, speaking:{pct:0,line:'not opened yet'},
-    reading:{pct:0,line:'not opened yet'},
-    essay:{pct:0,line:'not started yet'}, plan:{pct:0,line:'nothing ticked yet'},
-    third:{pct:0,line:'not added yet'} };
-  /* how far the whole plan has come — shown in the schedule, not on the cards */
-  try {
-    const st = readJSON('task-status-8weeks') || {};
-    const today = PLAN[isoToday()];
-    const totalDone = Object.values(st).filter(Boolean).length;
-    if (today){
-      const d = today.rows.filter(r => Number(st[r.i]) === 1).length;
-      out.plan = { pct: Math.round(d/today.rows.length*100),
-        line: d + ' of ' + today.rows.length + ' done today' };
-    } else if (totalDone){
-      out.plan = { pct: 0, line: totalDone + ' tasks ticked so far' };
-    }
-  } catch(e){}
-  const s = readJSON('nl4vocab_v1');
-  if (s){
-    if (s.stats){
-      const learned = Object.values(s.stats).filter(x => (x.run||0) >= 3).length;
-      out.units = { pct: Math.min(100, Math.round(learned/UNIT_WORDS*100)),
-        line: learned + ' words mastered so far' };
-      out.books = { pct: Math.min(100, Math.round(learned/BOOK_WORDS*100)),
-        line: learned + ' words mastered so far' };
-    }
-    const seen = s.seen ? Object.keys(s.seen).length : 0;
-    if (seen) out.grammar = { pct: Math.min(100, Math.round(seen/GRAM_TOPICS*100)),
-      line: seen + ' of ' + GRAM_TOPICS + ' topics opened' };
-    const ep = (s.visited||[]).length;
-    if (ep) out.reading = { pct: Math.min(100, Math.round(ep/EPISODES*100)),
-      line: ep + ' of ' + EPISODES + ' episodes unlocked' };
-  }
-  const read = readJSON('oshima_essays-read');
-  if (read){
-    const n = Array.isArray(read) ? read.length
-      : Object.keys(read).filter(k => k !== 'savedAt').length;
-    out.essay = { pct: Math.round(n/36*100), line: n + ' of 36 essays read' };
-  }
+  const out = {};
+  ['units','books','grammar','speaking','reading','essay'].forEach(id => {
+    const p = courseProgress(id);
+    out[id] = { pct: p.pct,
+      line: p.total
+        ? p.done + ' of ' + p.total + ' quizzes fresh' +
+          (p.fading ? ' \u00b7 ' + p.fading + ' fading' : '')
+        : 'nothing to practise yet' };
+  });
   return out;
-}
-function dayLine(){
-  const lines = [
-    'Pick something and start \u2014 the hardest part is the first ten minutes.',
-    'A quiet hour today is worth three panicked ones in April.',
-    'You are not behind. You are early, which is a very different thing.',
-    'Two thousand words in, and none of them were free.',
-    'Small day, small progress, still progress.',
-    'Whatever you finish today, tomorrow you get to build on it.',
-    'The plan already knows what to do. You just have to turn up.'
-  ];
-  return lines[new Date().getDay()];
 }
 function greeting(){
   const h = new Date().getHours();
@@ -1146,7 +1102,8 @@ function paintCards(){
         '<span class="em">' + c.emoji + '</span>' +
         '<span class="ct">' + c.title + '</span><span class="cs">' + c.sub + '</span></div>' +
       '<div class="cbody"><div class="cd">' + c.desc + '</div>' +
-        '<div class="bar"><i style="width:' + Math.max(2, s.pct) + '%"></i></div>' +
+        '<div class="bar"><i style="width:' + Math.max(2, s.pct) + '%;background:' +
+        barColour(s.pct) + '"></i></div>' +
         '<div class="cstat"><b>' + s.pct + '%</b> \u00b7 ' + s.line + '</div>' +
         moodRow(c.id) + '</div>';
     b.onclick = () => go(c.id);
@@ -1319,7 +1276,8 @@ function openEssay(title, level){
   const eq = $('#essayQuiz');
   eq.className = 'openraw quiz' + (epool.length < 6 ? ' hide' : '');
   eq.textContent = '\u25b6 Practise the ' + epool.length + ' words';
-  const backToEssay = () => { startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
+  const backToEssay = () => { essayKeyNow = 'essay:' + title;
+                              startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
                               quizExit = () => openEssay(title, e.level); };
   eq.onclick = backToEssay;
   if (epool.length >= 6){
@@ -1663,6 +1621,67 @@ function paintWeek(){
       paintWeek(); paintToday('#todayTop2'); paintFinish(); paintCards();
     }));
 }
+
+/* Progress is the number of quizzes you have actually finished, not the words
+   you have seen. One quiz counts once, however often you repeat it — the point
+   is to get round all of them. And a pass goes stale: after three days it starts
+   losing value, so the bar falls back and reddens until you return. */
+const PASS_KEY = 'quiz_passed';
+const FRESH_DAYS = 3, STALE_DAYS = 10;
+function passes(){ return readJSON(PASS_KEY) || {}; }
+function markPassed(key){
+  const all = passes();
+  all[key] = isoToday();
+  writeJSON(PASS_KEY, all);
+}
+function passValue(key){
+  const d = daysSince(passes()[key]);
+  if (d === null) return 0;
+  if (d <= FRESH_DAYS) return 1;
+  if (d >= STALE_DAYS) return 0;
+  return (STALE_DAYS - d) / (STALE_DAYS - FRESH_DAYS);
+}
+/* every quiz that exists, per course */
+function quizKeys(courseId){
+  const out = [];
+  if (courseId === 'units' || courseId === 'books'){
+    wUnitsFor(courseId === 'books' ? 'books' : 'units').forEach(u =>
+      QMODES.forEach(m => out.push('set:' + u + '|' + m[0])));
+  } else if (courseId === 'grammar' || courseId === 'speaking'){
+    GR.forEach(g => {
+      const mine = (courseId === 'speaking') === (g.sec === 'Speaking');
+      if (mine && g.items.length) out.push('gram:' + g.id);
+    });
+  } else if (courseId === 'reading'){
+    ST.forEach(e => out.push('story:' + e.sr + e.n));
+  } else if (courseId === 'essay'){
+    const seen = {};
+    ESSAYS.forEach(e => { if (!seen[e.title]){ seen[e.title] = 1;
+      out.push('essay:' + e.title); } });
+  }
+  return out;
+}
+function courseProgress(courseId){
+  const keys = quizKeys(courseId);
+  if (!keys.length) return { pct:0, done:0, fading:0, total:0, value:0 };
+  let value = 0, done = 0, fading = 0;
+  keys.forEach(k => {
+    const v = passValue(k);
+    value += v;
+    if (v >= 1) done++;
+    else if (v > 0) fading++;
+  });
+  return { pct: Math.round(value / keys.length * 100),
+           done: done, fading: fading, total: keys.length, value: value };
+}
+/* rose when little is fresh, sand in the middle, sage when most of it is */
+function barColour(pct){
+  if (pct >= 70) return '#4F8A6B';
+  if (pct >= 45) return '#7FA86B';
+  if (pct >= 25) return '#C9A227';
+  if (pct >= 10) return '#C98A5B';
+  return '#C98A9B';
+}
 /* ---- speech: British English wherever a word is shown ---- */
 let VOICE = null;
 function pickVoice(){
@@ -1752,6 +1771,7 @@ let Q = [], qi = 0, qRight = 0, qLocked = false, qFrom = 'units';
 let quizExit = () => go(qFrom);
 
 let quizPool = null, quizTitle = '', quizBack = 'units';
+let storyKeyNow = '', essayKeyNow = '';
 function currentPool(){
   return quizPool || WD.filter(w => w.u === wUnit);
 }
@@ -1888,6 +1908,8 @@ function answerQ(chosen, btn){
 }
 function finishQuiz(){
   clearResume();          /* this set and this mode only */
+  markPassed(quizPool ? (quizBack === 'reading' ? storyKeyNow : essayKeyNow)
+                      : ('set:' + wUnit + '|' + qMode));
   $('#qBar').style.width = '100%';
   $('#qCount').textContent = Q.length + ' / ' + Q.length;
   const pct = Math.round(qRight / Q.length * 100);
@@ -2248,6 +2270,7 @@ function renderGQ(){
   });
 }
 function finishGQ(){
+  markPassed('gram:' + GR[gqIx].id);
   $('#qBar').style.width = '100%';
   const pct = Math.round(gqRight / GQ.length * 100);
   $('#qCard').innerHTML =
@@ -2451,7 +2474,8 @@ function openStory(sr, n){
   const qb = $('#storyQuiz');
   qb.className = 'openraw quiz' + (pool.length < 6 ? ' hide' : '');
   qb.textContent = '\u25b6 Practise the ' + pool.length + ' words';
-  const backToStory = () => { startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
+  const backToStory = () => { storyKeyNow = 'story:' + sr + n;
+                              startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
                               quizExit = () => openStory(sr, n); };
   qb.onclick = backToStory;
   if (pool.length >= 6){
