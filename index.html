@@ -489,6 +489,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   font-size:11.5px;font-weight:800}
 .moodbar .mtag i{font-style:normal;font-size:14px}
 .mtag.done{background:var(--sage-l);color:var(--sage)}
+.mtag.open{background:var(--sea-l);color:var(--sea)}
 .mtag.wait{background:var(--bg);color:var(--mut)}
 .mtag.sad{background:var(--sea-l);color:var(--sea)}
 .mtag.hot{background:var(--rose-l);color:var(--rose)}
@@ -1088,29 +1089,36 @@ function greeting(){
 }
 function paintMoodBar(){
   const box = $('#moodBar'); if (!box) return;
-  const items = allTrackables();
-  const g = { done:[], wait:[], sad:[], hot:[] };
-  items.forEach(i => {
-    const m = mood(i.id);
-    const k = m[2] === 'done' ? 'done' : m[2] === 'sad' ? 'sad' : m[2] === 'hot' ? 'hot' : 'wait';
-    g[k].push(Object.assign({ days: daysSince((seenAll()[i.id]||{}).q ||
-                                              (seenAll()[i.id]||{}).d) }, i));
+  const seen = seenAll(), t = isoToday();
+  const g = { done:[], open:[], wait:[], sad:[], hot:[] };
+  allTrackables().forEach(i => {
+    const r = seen[i.id] || {};
+    const days = daysSince(r.q || r.d);
+    const item = Object.assign({ days: days }, i);
+    if (r.q === t) g.done.push(item);
+    else if (r.d === t) g.open.push(item);
+    else if (days === null || days <= 1) g.wait.push(item);
+    else if (days === 2) g.sad.push(item);
+    else g.hot.push(item);
   });
   const n = k => g[k].length;
   let line;
-  if (n('done') === 0 && n('sad') + n('hot') === 0)
+  if (n('done') + n('open') + n('sad') + n('hot') === 0)
     line = 'Nothing opened yet. Pick any card below and the faces will start moving.';
-  else if (n('hot') === 0 && n('sad') === 0)
-    line = '<b>Everything is warm.</b> ' + n('done') + ' finished today, nothing left behind.';
+  else if (n('hot') + n('sad') === 0)
+    line = '<b>Nothing left behind.</b> ' + n('done') + ' finished today' +
+           (n('open') ? ', ' + n('open') + ' opened and waiting for a quiz' : '') + '.';
   else
-    line = 'You have <b>' + (n('hot') + n('sad')) + '</b> waiting for you' +
+    line = 'You have <b>' + (n('hot') + n('sad')) + '</b> \uD83E\uDD75 waiting for you' +
            (n('hot') ? ' \u2014 <b>' + n('hot') + '</b> of them for three days or more' : '') +
-           ', and <b>' + n('done') + '</b> done today.';
+           ', <b>' + n('done') + '</b> done today' +
+           (n('open') ? ' and <b>' + n('open') + '</b> opened but not practised' : '') + '.';
   const worst = g.hot.slice().sort((a,b) => (b.days||0) - (a.days||0)).slice(0,3);
   box.innerHTML =
     '<h3>Where you stand</h3><div class="mline">' + line + '</div>' +
     '<div class="mtags">' +
-      '<span class="mtag done"><i>\uD83E\uDD29</i>' + n('done') + ' done today</span>' +
+      '<span class="mtag done"><i>\uD83E\uDD29</i>' + n('done') + ' practised today</span>' +
+      '<span class="mtag open"><i>\uD83D\uDE42</i>' + n('open') + ' opened today</span>' +
       '<span class="mtag wait"><i>\uD83D\uDE42</i>' + n('wait') + ' waiting</span>' +
       '<span class="mtag sad"><i>\uD83D\uDE2D</i>' + n('sad') + ' two days</span>' +
       '<span class="mtag hot"><i>\uD83E\uDD75</i>' + n('hot') + ' three days or more</span>' +
