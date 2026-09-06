@@ -1066,6 +1066,18 @@ function stats(){
   });
   return out;
 }
+function dayLine(){
+  const lines = [
+    'Pick something and start \u2014 the hardest part is the first ten minutes.',
+    'A quiet hour today is worth three panicked ones in April.',
+    'You are not behind. You are early, which is a very different thing.',
+    'Two thousand words in, and none of them were free.',
+    'Small day, small progress, still progress.',
+    'Whatever you finish today, tomorrow you get to build on it.',
+    'The plan already knows what to do. You just have to turn up.'
+  ];
+  return lines[new Date().getDay()];
+}
 function greeting(){
   const h = new Date().getHours();
   return h < 5 ? 'Still awake' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
