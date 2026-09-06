@@ -632,6 +632,14 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .voicewarn{margin-top:10px;background:var(--rose-l);border:1px solid #F0DCE2;border-radius:13px;
   padding:10px 13px;font-size:11.5px;line-height:1.6;color:var(--ink)}
 .voicewarn b{color:var(--rose)}
+.voicepick{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.voicepick:empty{display:none}
+.vlab{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut2)}
+.voicepick select{border:1px solid var(--line);background:var(--panel);border-radius:10px;
+  padding:7px 10px;font-family:var(--ui);font-size:12px;font-weight:700;color:var(--mut);
+  max-width:280px}
+.vtry{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 13px;
+  font-family:var(--ui);font-size:11.5px;font-weight:800;color:var(--sea);cursor:pointer}
 .wseen.done{color:var(--sage)} .wseen.sad{color:var(--sea)} .wseen.hot{color:var(--rose)}
 .tsrow .ch{margin-left:auto;color:var(--mut2);font-size:19px;flex:0 0 14px;text-align:right}
 .mood{display:flex;align-items:center;gap:7px;flex:0 0 auto;background:var(--bg);
@@ -971,6 +979,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
           <div class="ps" id="wSub"></div>
           <div class="wseen" id="wSeen"></div>
           <div class="voicewarn hide" id="voiceWarn"></div>
+          <div class="voicepick" id="voicePick"></div>
         </div>
         <input class="wsearch" id="wSearch" type="search" placeholder="search a word or a translation">
         <button class="wview" id="wView">▦ Table</button>
@@ -2138,38 +2147,78 @@ let VOICE = null;
 /* Each platform speaks its own language: a Swedish word read by a British voice
    is worse than no sound at all. */
 const VOICE_FOR = {
-  en: { lang:'en-GB', pref:/Sonia|Libby|Kate|Serena|Google UK English Female|Female/i,
-        fall:['en-GB','en'] },
-  sv: { lang:'sv-SE', pref:/Alva|Klara|Bengt|Google svenska|Female/i,
-        fall:['sv-SE','sv'] },
-  ar: { lang:'ar-SA', pref:/Maged|Laila|Tarik|Google \u0627\u0644\u0639\u0631\u0628\u064a\u0629/i,
-        fall:['ar-SA','ar-EG','ar'] }
+  en: { lang:'en-GB', fall:['en-GB','en'] },
+  sv: { lang:'sv-SE', fall:['sv-SE','sv'] },
+  ar: { lang:'ar-SA', fall:['ar-SA','ar-EG','ar'] }
 };
-let VOICES = {};
+/* The default system voices are the old robotic ones. The neural voices \u2014 the
+   ones whose names carry Natural, Online or Google \u2014 sound like people, so they
+   are picked first whenever the device has them. */
+const VOICE_RANK = [
+  [/natural/i, 100], [/online/i, 80], [/google/i, 70], [/neural/i, 90], [/premium|enhanced/i, 60],
+  [/sofie|mattias|alva|klara/i, 40],           /* the better Swedish ones */
+  [/sonia|libby|kate|serena|aria|jenny/i, 40], /* the better English ones */
+  [/hamed|zariyah|laila|maged/i, 40],          /* the better Arabic ones */
+  [/bengt|david|zira|hazel|george/i, -20]      /* the old robotic ones */
+];
+function scoreVoice(v){
+  let sc = 0;
+  VOICE_RANK.forEach(r => { if (r[0].test(v.name || '')) sc += r[1]; });
+  if (v.localService === false) sc += 15;       /* network voices are the good ones */
+  return sc;
+}
+let VOICES = {}, VOICE_LIST = {};
 function pickVoice(){
   try {
     const vs = window.speechSynthesis.getVoices() || [];
     Object.keys(VOICE_FOR).forEach(k => {
       const c = VOICE_FOR[k];
-      let v = vs.find(x => x.lang === c.lang && c.pref.test(x.name));
-      if (!v) v = vs.find(x => x.lang === c.lang);
-      if (!v) for (const f of c.fall){
-        v = vs.find(x => (x.lang || '').replace('_','-').indexOf(f) === 0);
-        if (v) break;
+      let list = [];
+      for (const f of c.fall){
+        list = vs.filter(x => (x.lang || '').replace('_','-').toLowerCase().indexOf(f.toLowerCase()) === 0);
+        if (list.length) break;
       }
-      VOICES[k] = v || null;
+      list = list.slice().sort((a, b) => scoreVoice(b) - scoreVoice(a));
+      VOICE_LIST[k] = list;
+      const saved = (readJSON('voice_' + k) || '');
+      const chosen = list.find(v => v.name === saved);
+      VOICES[k] = chosen || list[0] || null;
     });
     VOICE = VOICES.en || null;
   } catch(e){}
 }
 try {
   pickVoice();
-  if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = pickVoice;
+  if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = () => { pickVoice(); paintVoicePick(); };
 } catch(e){}
-/* does this device actually have the voice we need? */
 function voiceMissing(){
   const l = (typeof LANG === 'undefined') ? 'en' : LANG;
   return l !== 'en' && !VOICES[l];
+}
+/* let her hear the alternatives and keep the one she likes */
+function paintVoicePick(){
+  const box = document.getElementById('voicePick'); if (!box) return;
+  const l = (typeof LANG === 'undefined') ? 'en' : LANG;
+  const list = VOICE_LIST[l] || [];
+  if (list.length < 2){ box.innerHTML = ''; return; }
+  const cur = VOICES[l] ? VOICES[l].name : '';
+  box.innerHTML = '<span class="vlab">voice</span><select id="voiceSel">' +
+    list.map(v => '<option value="' + gEsc(v.name) + '"' +
+      (v.name === cur ? ' selected' : '') + '>' + gEsc(v.name) +
+      (scoreVoice(v) >= 60 ? ' \u2605' : '') + '</option>').join('') +
+    '</select><button class="vtry" id="voiceTry">\u25b6 hear it</button>';
+  document.getElementById('voiceSel').onchange = e => {
+    const v = list.find(x => x.name === e.target.value);
+    VOICES[l] = v || null;
+    writeJSON('voice_' + l, e.target.value);
+    speak(l === 'sv' ? 'Jag l\u00e4ser en bok varje kv\u00e4ll.'
+          : l === 'ar' ? '\u0623\u062f\u0631\u0633 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0643\u0644 \u064a\u0648\u0645.'
+          : 'The rebels seized the armoury before dawn.');
+  };
+  document.getElementById('voiceTry').onclick = () =>
+    speak(l === 'sv' ? 'Jag l\u00e4ser en bok varje kv\u00e4ll.'
+          : l === 'ar' ? '\u0623\u062f\u0631\u0633 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0643\u0644 \u064a\u0648\u0645.'
+          : 'The rebels seized the armoury before dawn.');
 }
 function speak(text, langOverride){
   try {
@@ -2181,7 +2230,7 @@ function speak(text, langOverride){
     u.lang = cfg.lang;
     const v = VOICES[l];
     if (v) u.voice = v;
-    u.rate = (l === 'ar') ? 0.88 : 0.95;
+    u.rate = (l === 'ar') ? 0.88 : (l === 'sv' ? 0.92 : 0.95);
     u.pitch = 1;
     window.speechSynthesis.speak(u);
   } catch(e){}
@@ -2666,7 +2715,14 @@ function paintWordList(){
        : (LANG === 'en' ? 'Unit ' + wUnit : (UNAMES[wUnit] || wUnit).split(' \u00b7 ')[0]));
   const warn = $('#voiceWarn');
   if (warn){
-    if (voiceMissing()){
+    const only = (VOICE_LIST[LANG] || []);
+    if (!voiceMissing() && LANG !== 'en' && only.length && scoreVoice(only[0]) <= 0){
+      warn.classList.remove('hide');
+      warn.innerHTML = '\uD83E\uDD16 <b>Only the old robotic voice is installed here.</b> ' +
+        'The natural ones sound like people: open this file in <b>Microsoft Edge</b>, which ' +
+        'carries the online neural voices, or install one under Settings \u2192 Time &amp; ' +
+        'language \u2192 Speech \u2192 Manage voices.';
+    } else if (voiceMissing()){
       warn.classList.remove('hide');
       warn.innerHTML = '\uD83D\uDD07 <b>This device has no ' +
         (LANG === 'sv' ? 'Swedish' : 'Arabic') + ' voice installed.</b> ' +
@@ -2676,6 +2732,7 @@ function paintWordList(){
           : 'On Windows: Settings \u2192 Time &amp; language \u2192 Speech \u2192 Add voices \u2192 \u0627\u0644\u0639\u0631\u0628\u064a\u0629.');
     } else warn.classList.add('hide');
   }
+  paintVoicePick();
   const vb = $('#wView');
   if (vb) vb.textContent = wTable ? '\u25a4 Cards' : '\u25a6 Table';
   const sl = $('#wSeen');
