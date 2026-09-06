@@ -96,6 +96,26 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .bar i{display:block;height:100%;background:var(--sea);border-radius:99px}
 .cstat{display:flex;gap:6px;margin-top:8px;font-size:11px;color:var(--mut2);font-weight:700}
 .cstat b{color:var(--ink)}
+
+.guideme{position:relative;box-shadow:0 0 0 3px var(--sage),0 10px 26px rgba(79,138,107,.28) !important;
+  border-radius:16px;animation:guidepulse 1.8s ease-in-out infinite}
+@keyframes guidepulse{0%,100%{box-shadow:0 0 0 3px var(--sage),0 10px 26px rgba(79,138,107,.26)}
+  50%{box-shadow:0 0 0 5px var(--sage),0 12px 30px rgba(79,138,107,.36)}}
+.guideme:after{content:'\u25BC';position:absolute;left:50%;top:-26px;transform:translateX(-50%);
+  color:var(--sage);font-size:20px;line-height:1;animation:guidebob 1.1s ease-in-out infinite;
+  pointer-events:none;text-shadow:0 2px 6px rgba(79,138,107,.4)}
+@keyframes guidebob{0%,100%{top:-26px}50%{top:-19px}}
+.wchips .guideme:after,.wactions .guideme:after{top:-22px;font-size:16px}
+.gbar{display:flex;align-items:center;gap:11px;background:var(--sage-l);border:1px solid #CFE3D6;
+  border-radius:16px;padding:12px 15px;margin-bottom:14px;flex-wrap:wrap}
+.gbar .ga{font-size:17px;color:var(--sage);font-weight:800}
+.gbar .gtx{font-size:13px;color:var(--ink);line-height:1.5;flex:1;min-width:180px}
+.gbar .gtx b{color:var(--sage)}
+.gbar .gtx em{font-style:normal;color:var(--mut2);font-size:11.5px}
+.gbar button{border:1px solid #CFE3D6;background:var(--panel);border-radius:999px;padding:6px 13px;
+  font-family:var(--ui);font-size:11.5px;font-weight:800;color:var(--mut);cursor:pointer}
+.gbar button:hover{color:var(--sage)}
+.gbar.off{background:var(--bg);border-color:var(--line);color:var(--mut2);font-size:12px;font-weight:700}
 .mrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;
   border-top:1px solid var(--line);padding-top:10px}
 .mrow .mtot{flex:0 0 100%;margin-bottom:2px}
@@ -745,6 +765,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 
     <div class="dash" id="dash">
       <div>
+        <div id="guideBar"></div>
         <div class="sec">Your courses</div>
         <div class="cards" id="cards"></div>
       </div>
@@ -1102,6 +1123,9 @@ function moodRow(courseId){
       c.worstDays + ' days</div>' : '');
 }
 function paintCards(){
+  refreshGuide();
+  const gb = $('#guideBar');
+  if (gb){ gb.innerHTML = guideBanner(); wireGuideBar(); }
   const st = stats(), box = $('#cards');
 
   box.innerHTML = '';
@@ -1120,6 +1144,7 @@ function paintCards(){
         moodRow(c.id) + '</div>';
     b.onclick = () => go(c.id);
     box.appendChild(b);
+    if (GUIDE && GUIDE.course === c.id) markGuide(b);
   });
 }
 const PLAN_MARKER = 1;
@@ -1221,8 +1246,10 @@ function paintEssays(){
         '<div class="seenl">' + seenLine('essay:' + t.title) + '</div>' +
         '</button>';
     }).join('') + '</div></div>').join('');
-  box.querySelectorAll('.ecard').forEach(b =>
-    b.onclick = () => openEssay(b.dataset.t, null));
+  box.querySelectorAll('.ecard').forEach(b => {
+    b.onclick = () => openEssay(b.dataset.t, null);
+    if (GUIDE && GUIDE.id === 'essay:' + b.dataset.t) markGuide(b);
+  });
 }
 function openEssay(title, level){
   const set = ESSAYS.filter(x => x.title === title);
@@ -1292,6 +1319,7 @@ function openEssay(title, level){
                               startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
                               quizExit = () => openEssay(title, e.level); };
   eq.onclick = backToEssay;
+  if (GUIDE && GUIDE.id === 'essay:' + title) markGuide(eq);
   if (epool.length >= 6){
     $('#paper').insertAdjacentHTML('beforeend',
       '<div class="endquiz"><div class="eh">Now try the words this essay is built on.</div>' +
@@ -1694,6 +1722,101 @@ function barColour(pct){
   if (pct >= 10) return '#C98A5B';
   return '#C98A9B';
 }
+
+/* The guide: one green arrow at a time, pointing at the thing that has waited
+   longest. It follows you inwards — course, then item, then the quiz button —
+   and moves on as soon as that quiz is finished. */
+let guideOn = true;
+try { guideOn = (readJSON('guide_on') !== false); } catch(e){}
+const COURSE_LABEL = { units:'Words from units', books:'Words from books',
+  grammar:'Grammar', speaking:'Speaking', reading:'Reading', essay:'Essay writing' };
+function keyAge(k){
+  const p = passes()[k];
+  if (!p) {
+    const seen = seenAll()[k.split('|')[0]] || {};
+    const d = daysSince(seen.q || seen.d);
+    return d === null ? 9999 : 1000 + d;      /* never passed sorts first */
+  }
+  return daysSince(p);
+}
+let guideSkips = [];
+function nextTask(){
+  const cand = [];
+  ['units','books','grammar','speaking','reading','essay'].forEach(course => {
+    quizKeys(course).forEach(k => {
+      if (passValue(k) >= 1) return;             /* still fresh, leave it */
+      if (guideSkips.indexOf(k) >= 0) return;    /* you told me to move on */
+      cand.push({ course: course, key: k, age: keyAge(k) });
+    });
+  });
+  if (!cand.length) return null;
+  /* the oldest first, but do not park in one course: when several are equally
+     stale, take the course you have just left alone */
+  const last = readJSON('guide_last_course');
+  const prog = {};
+  ['units','books','grammar','speaking','reading','essay'].forEach(c =>
+    prog[c] = courseProgress(c).pct);
+  cand.sort((a, b) => {
+    if (b.age !== a.age) return b.age - a.age;
+    const pa = (a.course === last ? 1 : 0), pb = (b.course === last ? 1 : 0);
+    if (pa !== pb) return pa - pb;
+    if (prog[a.course] !== prog[b.course]) return prog[a.course] - prog[b.course];
+    return a.key < b.key ? -1 : 1;
+  });
+  const b = cand[0];
+  return nextTaskFor(b.key, b.course, b.age);
+}
+let GUIDE = null;
+function refreshGuide(){ GUIDE = guideOn ? nextTask() : null; }
+function clearGuideMarks(){
+  document.querySelectorAll('.guideme').forEach(el => el.classList.remove('guideme'));
+}
+function markGuide(el){
+  if (!guideOn || !el) return;
+  el.classList.add('guideme');
+}
+function guideBanner(){
+  if (!guideOn) return '<div class="gbar off"><span>Guide is off</span>' +
+    '<button class="gtog" id="gToggle">turn it on</button></div>';
+  if (!GUIDE) return '';
+  const days = GUIDE.age >= 1000 ? null : GUIDE.age;
+  return '<div class="gbar"><span class="ga">\u2192</span>' +
+    '<span class="gtx"><b>Next:</b> ' + COURSE_LABEL[GUIDE.course] + ' \u00b7 ' +
+    gEsc(GUIDE.itemLabel) + ' \u00b7 ' + gEsc(GUIDE.quizLabel) +
+    (days === null ? ' <em>(never done)</em>' : ' <em>(' + days + ' days ago)</em>') + '</span>' +
+    '<button class="gskip" id="gSkip">skip</button>' +
+    '<button class="gtog" id="gToggle">off</button></div>';
+}
+function wireGuideBar(){
+  const sk = document.getElementById('gSkip');
+  if (sk) sk.onclick = () => {
+    if (GUIDE) guideSkips.push(GUIDE.key);
+    refreshGuide();
+    go('dash');
+  };
+  const tg = document.getElementById('gToggle');
+  if (tg) tg.onclick = () => {
+    guideOn = !guideOn;
+    writeJSON('guide_on', guideOn);
+    refreshGuide(); go('dash');
+  };
+}
+function nextTaskFor(key, course, age){
+  const parts = key.split('|'); const id = parts[0], mode = parts[1] || null;
+  let itemLabel = '', label = '';
+  if (id.slice(0,4) === 'set:'){
+    const u = id.slice(4); const bk = BOOKS.find(x => x.u === u);
+    itemLabel = bk ? (bk.e || '') + ' ' + bk.t : 'Unit ' + u;
+    label = QMODES.filter(m => m[0] === mode).map(m => m[1])[0] || mode;
+  } else if (id.slice(0,5) === 'gram:'){
+    const g = GR.find(x => x.id === id.slice(5)); itemLabel = g ? g.t : id; label = 'its questions';
+  } else if (id.slice(0,6) === 'story:'){
+    const e = ST.find(x => ('story:' + x.sr + x.n) === id); itemLabel = e ? e.t : id;
+    label = 'the words of the episode';
+  } else if (id.slice(0,6) === 'essay:'){ itemLabel = id.slice(6); label = 'the words of the essay'; }
+  return { course:course, key:key, age:age, id:id, mode:mode,
+           itemLabel:itemLabel, quizLabel:label };
+}
 /* ---- speech: British English wherever a word is shown ---- */
 let VOICE = null;
 function pickVoice(){
@@ -1922,6 +2045,9 @@ function finishQuiz(){
   clearResume();          /* this set and this mode only */
   markPassed(quizPool ? (quizBack === 'reading' ? storyKeyNow : essayKeyNow)
                       : ('set:' + wUnit + '|' + qMode));
+  writeJSON('guide_last_course', quizPool ? quizBack
+            : (wMode === 'books' ? 'books' : 'units'));
+  refreshGuide();
   $('#qBar').style.width = '100%';
   $('#qCount').textContent = Q.length + ' / ' + Q.length;
   const pct = Math.round(qRight / Q.length * 100);
@@ -2126,6 +2252,12 @@ function paintWordChips(){
       (bk && u === wUnit ? ' style="background:' + bk.g + '"' : '') +
       '>' + m[0] + ' ' + label + '<span class="n">' + n + '</span></button>';
   }).join('');
+  if (GUIDE && GUIDE.id.slice(0,4) === 'set:'){
+    const want = GUIDE.id.slice(4);
+    box.querySelectorAll('button').forEach(b => {
+      if (b.dataset.u === want && b.dataset.u !== wUnit) markGuide(b);
+    });
+  }
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     wUnit = b.dataset.u; wShown = 60;
     markSeen('set:' + wUnit, 'open');
@@ -2151,6 +2283,11 @@ function paintPractise(){
     }).join('') +
     '<button class="cards" data-m="cards">\uD83C\uDCCF Flashcards<span class="qn">' +
     pool.length + '</span></button>';
+  if (GUIDE && GUIDE.id === 'set:' + wUnit){
+    box.querySelectorAll('button').forEach(b => {
+      if (b.dataset.m === GUIDE.mode) markGuide(b);
+    });
+  }
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     if (b.dataset.m === 'cards') return startCards();
     const slot = 'set:' + wUnit;
@@ -2283,6 +2420,8 @@ function renderGQ(){
 }
 function finishGQ(){
   markPassed('gram:' + GR[gqIx].id);
+  writeJSON('guide_last_course', GR[gqIx].sec === 'Speaking' ? 'speaking' : 'grammar');
+  refreshGuide();
   $('#qBar').style.width = '100%';
   const pct = Math.round(gqRight / GQ.length * 100);
   $('#qCard').innerHTML =
@@ -2402,8 +2541,10 @@ function paintReadList(){
         '</div></button>').join('') +
       '</div>';
   }).join('');
-  box.querySelectorAll('.epcard').forEach(b =>
-    b.onclick = () => openStory(b.dataset.sr, b.dataset.n));
+  box.querySelectorAll('.epcard').forEach(b => {
+    b.onclick = () => openStory(b.dataset.sr, b.dataset.n);
+    if (GUIDE && GUIDE.id === 'story:' + b.dataset.sr + b.dataset.n) markGuide(b);
+  });
 }
 function openStory(sr, n){
   const e = ST.find(x => x.sr === sr && x.n === n); if (!e) return;
@@ -2490,6 +2631,7 @@ function openStory(sr, n){
                               startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
                               quizExit = () => openStory(sr, n); };
   qb.onclick = backToStory;
+  if (GUIDE && GUIDE.id === 'story:' + sr + n) markGuide(qb);
   if (pool.length >= 6){
     $('#storyPaper').insertAdjacentHTML('beforeend',
       '<div class="endquiz"><div class="eh">That is the episode. Twenty questions on its words?</div>' +
@@ -2719,6 +2861,7 @@ function paintGramList(){
   box.querySelectorAll('.grow, .tsrow').forEach(b => {
     if (b.dataset.i === undefined) return;
     b.onclick = () => openGramTopic(Number(b.dataset.i));
+    if (GUIDE && GUIDE.id === 'gram:' + (GR[Number(b.dataset.i)] || {}).id) markGuide(b);
   });
 }
 function openGramTopic(ix){
@@ -2776,6 +2919,7 @@ function openGramTopic(ix){
   pb.className = 'openraw quiz' + (g.items.length ? '' : ' hide');
   pb.textContent = '\u25b6 Practise \u00b7 ' + Math.min(20, g.items.length) + ' questions';
   pb.onclick = () => startGramQuiz(ix);
+  if (GUIDE && GUIDE.id === 'gram:' + g.id) markGuide(pb);
   /* and again at the end, where you actually finish reading */
   if (g.items.length){
     $('#gPaper').insertAdjacentHTML('beforeend',
@@ -2906,6 +3050,7 @@ function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
   '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView'];
 function hideAll(except){
+  try { clearGuideMarks(); refreshGuide(); } catch(e){}
   SCREENS.forEach(x => { const el = $(x); if (el && x !== except) el.classList.remove('on'); });
   const dash = $('#dash');
   if (except) dash.classList.add('off'); else dash.classList.remove('off');
