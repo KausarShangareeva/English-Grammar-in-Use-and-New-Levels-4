@@ -122,6 +122,22 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 @keyframes guidepulsehot{
   0%,100%{box-shadow:0 0 0 2.5px #E94080,0 0 16px rgba(233,64,128,.40),0 10px 28px rgba(150,20,70,.20)}
   50%    {box-shadow:0 0 0 3.5px #FF5C99,0 0 30px rgba(233,64,128,.65),0 12px 32px rgba(150,20,70,.28)}}
+.followbox{display:flex;flex-direction:column;gap:8px;margin-top:14px;
+  padding-top:14px;border-top:1px solid var(--line)}
+.follow{display:flex;align-items:center;gap:10px;width:100%;border:1px solid transparent;
+  border-radius:14px;padding:10px 12px;cursor:pointer;text-align:left;
+  font-family:var(--ui);-webkit-tap-highlight-color:transparent}
+.follow img{width:26px;height:auto;flex:0 0 26px}
+.follow span{min-width:0}
+.follow b{display:block;font-size:12px;font-weight:800;line-height:1.3}
+.follow em{display:block;font-style:normal;font-size:10.5px;margin-top:3px;line-height:1.45;
+  opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.follow.g{background:var(--sage-l);border-color:#CFE3D6;color:var(--sage)}
+.follow.g:hover{background:#DCEFE3}
+.follow.p{background:var(--rose-l);border-color:#F0DCE2;color:var(--rose)}
+.follow.p:hover{background:#F7E2E8}
+@media (max-width:900px){ .followbox{flex-direction:row}
+  .follow{flex:1 1 0} .follow em{display:none} }
 .gbar{background:var(--sage-l);border:1px solid #CFE3D6;border-radius:16px;
   padding:14px 16px;margin-bottom:14px}
 .gbar.all{color:var(--sage);font-size:13px}
@@ -772,6 +788,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       <span class="btext"><b class="bt">Study hub</b><i class="bs">Kausar</i></span>
     </div>
     <nav class="nav" id="nav"></nav>
+    <div class="followbox" id="followBox"></div>
     <div class="sidefoot">
       <div class="who"><span class="av">K</span>
         <span class="txt"><span class="nm">Kausar</span><span class="sub">Student</span></span></div>
@@ -1152,6 +1169,7 @@ function paintCards(){
   refreshGuide();
   const gb = $('#guideBar');
   if (gb){ gb.innerHTML = guideBanner(); wireGuideBar(); }
+  paintFollow();
   const st = stats(), box = $('#cards');
 
   box.innerHTML = '';
@@ -3116,6 +3134,30 @@ function paintSchedule(){
   $('#goalNote').innerHTML = note;
 }
 
+/* take her straight to the thing a crystal is standing on */
+function jumpToGuide(which){
+  const g = which === 'pink' ? GUIDE2 : GUIDE;
+  if (!g){ go('dash'); return; }
+  const id = g.id;
+  if (id.slice(0,4) === 'set:'){
+    const u = id.slice(4);
+    wUnit = u;
+    wMode = (u.slice(0,2) === 'BK') ? 'books' : 'units';
+    go(wMode === 'books' ? 'books' : 'units');
+  } else if (id.slice(0,5) === 'gram:'){
+    const ix = GR.findIndex(x => x.id === id.slice(5));
+    if (ix >= 0){
+      gramOnly = (GR[ix].sec === 'Speaking') ? 'Speaking' : null;
+      lastGramCard = gramOnly ? 'speaking' : 'grammar';
+      openGramTopic(ix);
+    }
+  } else if (id.slice(0,6) === 'story:'){
+    const e = ST.find(x => ('story:' + x.sr + x.n) === id);
+    if (e) openStory(e.sr, e.n);
+  } else if (id.slice(0,6) === 'essay:'){
+    openEssay(id.slice(6), null);
+  }
+}
 function paintNav(){
   const nav = $('#nav'), mob = $('#mobbar');
   nav.innerHTML=''; mob.innerHTML='';
@@ -3131,6 +3173,24 @@ function paintNav(){
     b.onclick = () => go(n.id);
     mob.appendChild(b);
   });
+  paintFollow();
+}
+function paintFollow(){
+  const box = $('#followBox'); if (!box) return;
+  const row = (which, g, src, cls) => {
+    if (!g) return '';
+    const days = (g.age === null || g.age >= 1000) ? 'never done' :
+                 g.age === 0 ? 'today' : g.age + ' days';
+    return '<button class="follow ' + cls + '" data-w="' + which + '">' +
+      '<img alt="" src="' + src + '">' +
+      '<span><b>Follow the ' + which + ' crystal</b>' +
+      '<em>' + COURSE_LABEL[g.course] + ' \u00b7 ' + gEsc(g.itemLabel) +
+      ' \u00b7 ' + days + '</em></span></button>';
+  };
+  box.innerHTML = row('green', GUIDE, PLUMB_GREEN, 'g') +
+                  row('pink',  GUIDE2, PLUMB_PINK,  'p');
+  box.querySelectorAll('.follow').forEach(b =>
+    b.onclick = () => jumpToGuide(b.dataset.w));
 }
 /* the schedule is reached from the sidebar, not from a card */
 const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
@@ -3140,7 +3200,7 @@ function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
   '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView'];
 function hideAll(except){
-  try { clearGuideMarks(); refreshGuide(); } catch(e){}
+  try { clearGuideMarks(); refreshGuide(); paintFollow(); } catch(e){}
   SCREENS.forEach(x => { const el = $(x); if (el && x !== except) el.classList.remove('on'); });
   const dash = $('#dash');
   if (except) dash.classList.add('off'); else dash.classList.remove('off');
