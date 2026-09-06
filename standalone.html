@@ -97,18 +97,23 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .cstat{display:flex;gap:6px;margin-top:8px;font-size:11px;color:var(--mut2);font-weight:700}
 .cstat b{color:var(--ink)}
 
-.guideme{position:relative;box-shadow:0 0 0 3px var(--sage),0 10px 26px rgba(79,138,107,.28) !important;
-  border-radius:16px;animation:guidepulse 1.8s ease-in-out infinite}
-@keyframes guidepulse{0%,100%{box-shadow:0 0 0 3px var(--sage),0 10px 26px rgba(79,138,107,.26)}
-  50%{box-shadow:0 0 0 5px var(--sage),0 12px 30px rgba(79,138,107,.36)}}
-.guideme:after{content:'\u25BC';position:absolute;left:50%;top:-26px;transform:translateX(-50%);
-  color:var(--sage);font-size:20px;line-height:1;animation:guidebob 1.1s ease-in-out infinite;
-  pointer-events:none;text-shadow:0 2px 6px rgba(79,138,107,.4)}
-@keyframes guidebob{0%,100%{top:-26px}50%{top:-19px}}
-.wchips .guideme:after,.wactions .guideme:after{top:-22px;font-size:16px}
+.guideme{position:relative;border-radius:16px;
+  box-shadow:0 0 0 2.5px #21C98A,0 0 18px rgba(33,201,138,.45),0 10px 28px rgba(11,122,84,.22) !important;
+  animation:guidepulse 2s ease-in-out infinite}
+@keyframes guidepulse{
+  0%,100%{box-shadow:0 0 0 2.5px #21C98A,0 0 16px rgba(33,201,138,.40),0 10px 28px rgba(11,122,84,.20)}
+  50%    {box-shadow:0 0 0 3.5px #35E0A0,0 0 30px rgba(33,201,138,.65),0 12px 32px rgba(11,122,84,.28)}}
+.plumb{position:absolute;left:50%;top:-46px;width:23px;height:44px;margin-left:-11.5px;
+  pointer-events:none;animation:plumbbob 1.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 8px rgba(33,201,138,.75)) drop-shadow(0 4px 6px rgba(11,122,84,.35))}
+.plumb svg{width:100%;height:100%;display:block}
+@keyframes plumbbob{0%,100%{transform:translateY(0) rotate(-3deg)}
+  50%{transform:translateY(-7px) rotate(3deg)}}
+.wchips .plumb,.wactions .plumb{top:-38px;width:18px;height:34px;margin-left:-9px}
 .gbar{display:flex;align-items:center;gap:11px;background:var(--sage-l);border:1px solid #CFE3D6;
   border-radius:16px;padding:12px 15px;margin-bottom:14px;flex-wrap:wrap}
-.gbar .ga{font-size:17px;color:var(--sage);font-weight:800}
+.gbar .ga{font-size:15px;color:#21C98A;font-weight:800;
+  text-shadow:0 0 10px rgba(33,201,138,.55)}
 .gbar .gtx{font-size:13px;color:var(--ink);line-height:1.5;flex:1;min-width:180px}
 .gbar .gtx b{color:var(--sage)}
 .gbar .gtx em{font-style:normal;color:var(--mut2);font-size:11.5px}
@@ -1732,11 +1737,9 @@ const COURSE_LABEL = { units:'Words from units', books:'Words from books',
   grammar:'Grammar', speaking:'Speaking', reading:'Reading', essay:'Essay writing' };
 function keyAge(k){
   const p = passes()[k];
-  if (!p) {
-    const seen = seenAll()[k.split('|')[0]] || {};
-    const d = daysSince(seen.q || seen.d);
-    return d === null ? 9999 : 1000 + d;      /* never passed sorts first */
-  }
+  /* opening something is not doing it: never-passed always outranks the rest,
+     and the number does not move just because you looked at the page */
+  if (!p) return 9999;
   return daysSince(p);
 }
 let guideSkips = [];
@@ -1767,20 +1770,43 @@ function nextTask(){
   return nextTaskFor(b.key, b.course, b.age);
 }
 let GUIDE = null;
-function refreshGuide(){ GUIDE = guideOn ? nextTask() : null; }
+function refreshGuide(){
+  if (!guideOn){ GUIDE = null; return; }
+  /* keep pointing at the same thing until its quiz is actually finished */
+  const held = readJSON('guide_current');
+  if (held && passValue(held.key) < 1 && guideSkips.indexOf(held.key) < 0){
+    GUIDE = nextTaskFor(held.key, held.course, keyAge(held.key));
+    return;
+  }
+  GUIDE = nextTask();
+  if (GUIDE) writeJSON('guide_current', { key: GUIDE.key, course: GUIDE.course });
+}
 function clearGuideMarks(){
+  document.querySelectorAll('.plumb').forEach(el => el.remove());
   document.querySelectorAll('.guideme').forEach(el => el.classList.remove('guideme'));
 }
+const PLUMB = '<span class="plumb" aria-hidden="true"><svg viewBox="0 0 40 76">' +
+  '<defs><linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">' +
+  '<stop offset="0%" stop-color="#8FF7C8"/><stop offset="45%" stop-color="#21C98A"/>' +
+  '<stop offset="100%" stop-color="#0B7A54"/></linearGradient>' +
+  '<linearGradient id="pl" x1="0" y1="0" x2="1" y2="1">' +
+  '<stop offset="0%" stop-color="#EAFFF6" stop-opacity=".95"/>' +
+  '<stop offset="100%" stop-color="#EAFFF6" stop-opacity="0"/></linearGradient></defs>' +
+  '<polygon points="20,0 40,26 20,76 0,26" fill="url(#pg)"/>' +
+  '<polygon points="20,0 20,76 0,26" fill="url(#pl)"/>' +
+  '<polygon points="20,0 40,26 20,76" fill="#0B7A54" opacity=".18"/>' +
+  '</svg></span>';
 function markGuide(el){
   if (!guideOn || !el) return;
   el.classList.add('guideme');
+  if (!el.querySelector('.plumb')) el.insertAdjacentHTML('beforeend', PLUMB);
 }
 function guideBanner(){
   if (!guideOn) return '<div class="gbar off"><span>Guide is off</span>' +
     '<button class="gtog" id="gToggle">turn it on</button></div>';
   if (!GUIDE) return '';
   const days = GUIDE.age >= 1000 ? null : GUIDE.age;
-  return '<div class="gbar"><span class="ga">\u2192</span>' +
+  return '<div class="gbar"><span class="ga">◈</span>' +
     '<span class="gtx"><b>Next:</b> ' + COURSE_LABEL[GUIDE.course] + ' \u00b7 ' +
     gEsc(GUIDE.itemLabel) + ' \u00b7 ' + gEsc(GUIDE.quizLabel) +
     (days === null ? ' <em>(never done)</em>' : ' <em>(' + days + ' days ago)</em>') + '</span>' +
@@ -1791,6 +1817,8 @@ function wireGuideBar(){
   const sk = document.getElementById('gSkip');
   if (sk) sk.onclick = () => {
     if (GUIDE) guideSkips.push(GUIDE.key);
+    try { localStorage.removeItem('guide_current'); } catch(e){}
+    delete MEM['guide_current'];
     refreshGuide();
     go('dash');
   };
@@ -2047,6 +2075,8 @@ function finishQuiz(){
                       : ('set:' + wUnit + '|' + qMode));
   writeJSON('guide_last_course', quizPool ? quizBack
             : (wMode === 'books' ? 'books' : 'units'));
+  try { localStorage.removeItem('guide_current'); } catch(e){}
+  delete MEM['guide_current'];
   refreshGuide();
   $('#qBar').style.width = '100%';
   $('#qCount').textContent = Q.length + ' / ' + Q.length;
@@ -2423,6 +2453,8 @@ function renderGQ(){
 function finishGQ(){
   markPassed('gram:' + GR[gqIx].id);
   writeJSON('guide_last_course', GR[gqIx].sec === 'Speaking' ? 'speaking' : 'grammar');
+  try { localStorage.removeItem('guide_current'); } catch(e){}
+  delete MEM['guide_current'];
   refreshGuide();
   $('#qBar').style.width = '100%';
   const pct = Math.round(gqRight / GQ.length * 100);
