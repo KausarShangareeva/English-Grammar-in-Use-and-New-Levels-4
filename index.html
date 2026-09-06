@@ -385,6 +385,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .epcard .em3 span{margin-right:7px}
 .epcard .em3 span:last-child{margin-right:0}
 .epcard .un{background:#F1E7DC;color:#8A6A50;border-radius:999px;padding:3px 9px}
+.epmood{font-size:14px;line-height:1}
+.ecard .epmood{margin-right:6px}
 .epcard.read:after{content:'✓ read';position:absolute;top:12px;right:14px;font-size:10px;
   font-weight:800;color:var(--sage);letter-spacing:.4px}
 .readbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);
@@ -469,6 +471,29 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .tsonly{color:var(--rose);font-weight:700}
 .tsnote{display:block;font-size:11.5px;color:var(--mut2);margin-top:3px}
 .tsrow .ch{margin-left:auto;color:var(--mut2);font-size:19px;flex:0 0 14px;text-align:right}
+.mood{display:flex;align-items:center;gap:7px;flex:0 0 auto;background:var(--bg);
+  border-radius:999px;padding:6px 12px 6px 9px;margin-left:auto}
+.mood .em{font-size:16px;line-height:1}
+.mood .tx2{font-size:10.5px;font-weight:700;color:var(--mut2);white-space:nowrap}
+.mood.done{background:var(--sage-l)} .mood.done .tx2{color:var(--sage)}
+.mood.sad{background:var(--sea-l)}   .mood.sad .tx2{color:var(--sea)}
+.mood.hot{background:var(--rose-l)}  .mood.hot .tx2{color:var(--rose)}
+@media (max-width:700px){ .mood .tx2{display:none} .mood{padding:6px 9px} }
+.moodbar{background:var(--panel);border-radius:19px;padding:17px 19px;margin-bottom:14px;
+  box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.moodbar h3{font-family:var(--disp);font-size:22px;font-weight:600;margin:0 0 4px}
+.moodbar .mline{font-size:13.5px;line-height:1.7;color:var(--mut)}
+.moodbar .mline b{color:var(--ink)}
+.moodbar .mtags{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.moodbar .mtag{display:flex;align-items:center;gap:7px;border-radius:999px;padding:6px 13px 6px 10px;
+  font-size:11.5px;font-weight:800}
+.moodbar .mtag i{font-style:normal;font-size:14px}
+.mtag.done{background:var(--sage-l);color:var(--sage)}
+.mtag.wait{background:var(--bg);color:var(--mut)}
+.mtag.sad{background:var(--sea-l);color:var(--sea)}
+.mtag.hot{background:var(--rose-l);color:var(--rose)}
+.moodbar .worst{margin-top:11px;font-size:12.5px;color:var(--mut2);line-height:1.6}
+.moodbar .worst b{color:var(--rose)}
 .gsec{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut2);
   margin:16px 2px 8px}
 .gramtopic .paper h1{font-family:var(--disp);font-size:30px;font-weight:600;margin:0 0 4px}
@@ -692,6 +717,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 
     <div class="dash" id="dash">
       <div>
+        <div class="moodbar" id="moodBar"></div>
         <div class="sec">Your courses</div>
         <div class="cards" id="cards"></div>
       </div>
@@ -1060,7 +1086,42 @@ function greeting(){
   const h = new Date().getHours();
   return h < 5 ? 'Still awake' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 }
+function paintMoodBar(){
+  const box = $('#moodBar'); if (!box) return;
+  const items = allTrackables();
+  const g = { done:[], wait:[], sad:[], hot:[] };
+  items.forEach(i => {
+    const m = mood(i.id);
+    const k = m[2] === 'done' ? 'done' : m[2] === 'sad' ? 'sad' : m[2] === 'hot' ? 'hot' : 'wait';
+    g[k].push(Object.assign({ days: daysSince((seenAll()[i.id]||{}).q ||
+                                              (seenAll()[i.id]||{}).d) }, i));
+  });
+  const n = k => g[k].length;
+  let line;
+  if (n('done') === 0 && n('sad') + n('hot') === 0)
+    line = 'Nothing opened yet. Pick any card below and the faces will start moving.';
+  else if (n('hot') === 0 && n('sad') === 0)
+    line = '<b>Everything is warm.</b> ' + n('done') + ' finished today, nothing left behind.';
+  else
+    line = 'You have <b>' + (n('hot') + n('sad')) + '</b> waiting for you' +
+           (n('hot') ? ' \u2014 <b>' + n('hot') + '</b> of them for three days or more' : '') +
+           ', and <b>' + n('done') + '</b> done today.';
+  const worst = g.hot.slice().sort((a,b) => (b.days||0) - (a.days||0)).slice(0,3);
+  box.innerHTML =
+    '<h3>Where you stand</h3><div class="mline">' + line + '</div>' +
+    '<div class="mtags">' +
+      '<span class="mtag done"><i>\uD83E\uDD29</i>' + n('done') + ' done today</span>' +
+      '<span class="mtag wait"><i>\uD83D\uDE42</i>' + n('wait') + ' waiting</span>' +
+      '<span class="mtag sad"><i>\uD83D\uDE2D</i>' + n('sad') + ' two days</span>' +
+      '<span class="mtag hot"><i>\uD83E\uDD75</i>' + n('hot') + ' three days or more</span>' +
+    '</div>' +
+    (worst.length
+      ? '<div class="worst">Longest untouched: ' + worst.map(w =>
+          '<b>' + gEsc(w.t) + '</b> (' + w.days + ' d, ' + w.where + ')').join(' \u00b7 ') + '</div>'
+      : '');
+}
 function paintCards(){
+  paintMoodBar();
   const st = stats(), box = $('#cards');
 
   box.innerHTML = '';
@@ -1172,7 +1233,8 @@ function paintEssays(){
         '" data-t="' + esc(t.title) + '">' +
         '<div class="et">' + t.topic + '</div>' +
         '<div class="ef">' + t.focus + '</div>' +
-        '<div class="em2">' + t.levels.map(e =>
+        '<div class="em2"><span class="epmood" title="' + mood('essay:' + t.title)[1] + '">' +
+        mood('essay:' + t.title)[0] + '</span>' + t.levels.map(e =>
           '<span class="lvl' + (isRead(key(e)) ? ' on' : '') + '">' + e.level + '</span>').join('') +
         '<span class="wcs">' + t.levels[0].wc.replace('\u2248 ','') + '</span></div>' +
         '</button>';
@@ -1183,6 +1245,7 @@ function paintEssays(){
 function openEssay(title, level){
   const set = ESSAYS.filter(x => x.title === title);
   if (!set.length) return;
+  markSeen('essay:' + title, 'open');
   const e = set.find(x => x.level === level) || set[0];
   $('#essaysView').classList.remove('on');
   hideAll('#reader');
@@ -1822,6 +1885,7 @@ function finishQuiz(){
     '<button class="qnext" id="qAgain">Another round</button>' +
     '<button class="qnext" id="qBack" style="background:var(--panel);color:var(--mut);' +
     'border:1px solid var(--line);margin-top:8px">Back to the words</button></div>';
+  if (!quizPool && wUnit) markSeen('set:' + wUnit, 'quiz');
   document.getElementById('qAgain').onclick = () => startQuiz(quizPool, quizTitle, quizBack);
   document.getElementById('qBack').onclick = () => quizExit();
   paintCards();
@@ -1857,6 +1921,57 @@ function renderCard(){
   $('#cFlip').textContent = flipped ? 'Show the word' : 'Show translation';
 }
 
+
+/* The moods, exactly as the old trainer had them: an item you opened today is
+   happy, one you have not touched for days is not. Nothing is locked by this —
+   it is a reminder, not a gate. */
+const SEEN_KEY = 'studyhub_seen';
+function seenAll(){ return readJSON(SEEN_KEY) || {}; }
+function markSeen(id, kind){
+  const all = seenAll();
+  const r = all[id] || (all[id] = {});
+  r[kind === 'quiz' ? 'q' : 'd'] = isoToday();
+  writeJSON(SEEN_KEY, all);
+}
+function daysSince(iso){
+  if (!iso) return null;
+  const a = new Date(iso + 'T00:00:00'), b = new Date(isoToday() + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+function mood(id){
+  const r = seenAll()[id] || {};
+  const t = isoToday();
+  if (r.q === t) return ['\uD83E\uDD29', 'great work today', 'done'];
+  if (r.d === t) return ['\uD83D\uDE42', 'opened today \u00b7 quiz waiting', ''];
+  const base = r.q || r.d;
+  const d = daysSince(base);
+  if (d === null)  return ['\uD83D\uDE42', 'not opened yet', ''];
+  if (d <= 1)      return ['\uD83D\uDE42', 'I am waiting', ''];
+  if (d === 2)     return ['\uD83D\uDE2D', 'you have been away 2 days', 'sad'];
+  return ['\uD83E\uDD75', d + ' days \u2014 you may forget this', 'hot'];
+}
+function moodChip(id){
+  const m = mood(id);
+  return '<span class="mood ' + m[2] + '" title="' + m[1] + '">' +
+    '<span class="em">' + m[0] + '</span>' +
+    '<span class="tx2">' + m[1] + '</span></span>';
+}
+/* every trackable thing in one list, so the dashboard can count them */
+function allTrackables(){
+  const out = [];
+  GR.forEach((g,i) => out.push({ id:'gram:' + g.id, t:g.t,
+    where: g.sec === 'Speaking' ? 'Speaking' : 'Grammar' }));
+  wUnitsFor('units').forEach(u => out.push({ id:'set:' + u, t:'Unit ' + u, where:'Words from units' }));
+  wUnitsFor('books').forEach(u => {
+    const bk = BOOKS.find(x => x.u === u);
+    out.push({ id:'set:' + u, t: bk ? bk.t : u, where:'Words from books' });
+  });
+  ST.forEach(e => out.push({ id:'story:' + e.sr + e.n, t:e.t, where:'Reading' }));
+  const titles = [];
+  ESSAYS.forEach(e => { if (titles.indexOf(e.title) < 0) titles.push(e.title); });
+  titles.forEach(t => out.push({ id:'essay:' + t, t:t, where:'Essay writing' }));
+  return out;
+}
 /* ---- the word list, rendered by the platform itself ---- */
 let wMode = 'units', wUnit = null, wShown = 60, wQuery = '';
 function wUnitsFor(mode){
@@ -1870,13 +1985,16 @@ function paintWordChips(){
     const n = WD.filter(w => w.u === u).length;
     const bk = BOOKS.find(x => x.u === u);
     const label = bk ? (bk.e || '') + ' ' + bk.t : u + ' \u00b7 ' + (UNAMES[u] || '');
+    const m = mood('set:' + u);
     return '<button data-u="' + u + '"' + (bk ? ' class="bk"' : '') +
       (u === wUnit ? ' aria-pressed="true"' : '') +
       (bk && u === wUnit ? ' style="background:' + bk.g + '"' : '') +
-      '>' + label + '<span class="n">' + n + '</span></button>';
+      '>' + m[0] + ' ' + label + '<span class="n">' + n + '</span></button>';
   }).join('');
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
-    wUnit = b.dataset.u; wShown = 60; paintWordChips(); paintWordList();
+    wUnit = b.dataset.u; wShown = 60;
+    markSeen('set:' + wUnit, 'open');
+    paintWordChips(); paintWordList();
   });
 }
 function paintPractise(){
@@ -1944,6 +2062,7 @@ function openWords(mode){
   const us = wUnitsFor(mode);
   if (!wUnit || us.indexOf(wUnit) < 0) wUnit = us[0];
   wShown = 60;
+  markSeen('set:' + wUnit, 'open');
   paintWordChips(); paintWordList();
 }
 /* ---- the grammar quiz: the questions written for each topic ---- */
@@ -2018,6 +2137,7 @@ function finishGQ(){
      : pct >= 50 ? 'Read the table again \u2014 the rule is nearly there.'
      : 'Worth reading the whole topic through before another round.') + '</div>' +
     '<button class="qnext" id="qBack2">Back to ' + gqTitle + '</button></div>';
+  markSeen('gram:' + GR[gqIx].id, 'quiz');
   document.getElementById('qBack2').onclick = () => openGramTopic(gqIx);
   paintCards();
 }
@@ -2120,7 +2240,9 @@ function paintReadList(){
           '<div class="et2">' + e.t + '</div>' +
           '<div class="es">' + e.s + '</div>' +
           '<div class="em3"><span class="un">unit ' + e.u + '</span>' +
-          '<span>' + e.wc + ' words</span><span>' + e.c + ' to learn</span></div>' +
+          '<span>' + e.wc + ' words</span><span>' + e.c + ' to learn</span>' +
+          '<span class="epmood" title="' + mood('story:' + sr + e.n)[1] + '">' +
+          mood('story:' + sr + e.n)[0] + '</span></div>' +
         '</div></button>').join('') +
       '</div>';
   }).join('');
@@ -2129,6 +2251,7 @@ function paintReadList(){
 }
 function openStory(sr, n){
   const e = ST.find(x => x.sr === sr && x.n === n); if (!e) return;
+  markSeen('story:' + sr + n, 'open');
   $('#readList').classList.remove('on');
   hideAll('#storyView');
     $('#storyView').classList.add('on');
@@ -2425,7 +2548,8 @@ function paintGramList(){
       return '<button class="grow" data-i="' + i + '"><span><span class="k">' + gEsc(g.t) + '</span>' +
         '<div class="d">' + gEsc(g.sub) + '</div>' +
         '<div class="m">' + nv + ' cards \u00b7 ' + nex + ' examples \u00b7 ' +
-        g.items.length + ' questions</div></span><span class="ch">\u203a</span></button>';
+        g.items.length + ' questions</div></span>' + moodChip('gram:' + g.id) +
+        '<span class="ch">\u203a</span></button>';
     }).join('')).join('');
   box.querySelectorAll('.grow, .tsrow').forEach(b => {
     if (b.dataset.i === undefined) return;
@@ -2434,6 +2558,7 @@ function paintGramList(){
 }
 function openGramTopic(ix){
   const g = GR[ix]; if (!g) return;
+  markSeen('gram:' + g.id, 'open');
   $('#gramList').classList.remove('on');
   hideAll('#gramTopic');
     $('#gramTopic').classList.add('on');
