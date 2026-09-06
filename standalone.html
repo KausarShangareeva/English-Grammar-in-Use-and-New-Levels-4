@@ -540,7 +540,11 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   cursor:pointer;box-shadow:0 5px 16px rgba(39,107,122,.05);display:flex;align-items:center;gap:14px;
   transition:transform .14s,box-shadow .14s;-webkit-tap-highlight-color:transparent}
 .grow:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(39,107,122,.1)}
-.grow .k{font-family:var(--disp);font-size:21px;font-weight:600;line-height:1.15}
+.grow .k{font-family:var(--disp);font-size:21px;font-weight:600;line-height:1.2;display:block}
+.grow .klist{display:block;font-family:var(--ui);font-size:11.5px;font-weight:700;
+  color:var(--mut2);line-height:1.55;margin-top:4px;letter-spacing:.1px}
+.gramtopic .paper h1 .hlist{display:block;font-family:var(--ui);font-size:13px;font-weight:700;
+  color:var(--mut2);line-height:1.55;margin-top:8px;letter-spacing:.1px}
 .grow .d{font-size:12px;color:var(--mut);line-height:1.45;margin-top:3px}
 .grow .m{font-size:11px;color:var(--rose);font-weight:700;margin-top:5px}
 .grow .ch{margin-left:auto;color:var(--mut2);font-size:20px;flex:0 0 auto}
@@ -3037,7 +3041,11 @@ function paintGramList(){
     s2.items.map(([g,i]) => {
       const nv = g.groups.reduce((a,b) => a + b.vs.length, 0);
       const nex = g.groups.reduce((a,b) => a + b.vs.reduce((x,y) => x + (y.ex ? y.ex.length : 0), 0), 0);
-      return '<button class="grow" data-i="' + i + '"><span><span class="k">' + gEsc(g.t) + '</span>' +
+      const dash = g.t.indexOf(' \u2014 ');
+      const kName = dash > 0 ? g.t.slice(0, dash) : g.t;
+      const kList = dash > 0 ? g.t.slice(dash + 3) : '';
+      return '<button class="grow" data-i="' + i + '"><span><span class="k">' + gEsc(kName) +
+        (kList ? '<span class="klist">' + gEsc(kList) + '</span>' : '') + '</span>' +
         '<div class="d">' + gEsc(g.sub) + '</div>' +
         '<div class="m">' + nv + ' cards \u00b7 ' + nex + ' examples \u00b7 ' +
         g.items.length + ' questions</div>' +
@@ -3101,6 +3109,13 @@ function openGramTopic(ix){
     });
   });
   $('#gPaper').innerHTML = html;
+  const h1 = $('#gPaper h1');
+  if (h1){
+    const t = h1.textContent, dash = t.indexOf(' \u2014 ');
+    if (dash > 0)
+      h1.innerHTML = gEsc(t.slice(0, dash)) +
+        '<span class="hlist">' + gEsc(t.slice(dash + 3)) + '</span>';
+  }
   addSpeakers($('#gPaper'));
   const pb = $('#gramPractise');
   pb.classList.toggle('hide', !g.items.length);
