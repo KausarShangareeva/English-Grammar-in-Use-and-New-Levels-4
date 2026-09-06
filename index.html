@@ -96,12 +96,14 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .bar i{display:block;height:100%;background:var(--sea);border-radius:99px}
 .cstat{display:flex;gap:6px;margin-top:8px;font-size:11px;color:var(--mut2);font-weight:700}
 .cstat b{color:var(--ink)}
-.mrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:9px;
-  border-top:1px solid var(--line);padding-top:9px}
+.mrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;
+  border-top:1px solid var(--line);padding-top:10px}
+.mrow .mtot{flex:0 0 100%;margin-bottom:2px}
 .mtot{font-size:10.5px;font-weight:800;color:var(--mut2);margin-right:auto}
-.mp{display:flex;align-items:center;gap:4px;border-radius:999px;padding:3px 8px 3px 6px;
-  font-size:11px;font-weight:800}
+.mp{display:flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px 4px 7px;
+  font-size:11px;font-weight:800;white-space:nowrap}
 .mp i{font-style:normal;font-size:12px;line-height:1}
+.mp em{font-style:normal;font-weight:700;opacity:.8;margin-left:3px}
 .mp.done{background:var(--sage-l);color:var(--sage)}
 .mp.open{background:var(--sea-l);color:var(--sea)}
 .mp.wait{background:var(--bg);color:var(--mut2)}
@@ -489,7 +491,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .tsonly{color:var(--rose);font-weight:700}
 .tsnote{display:block;font-size:11.5px;color:var(--mut2);margin-top:3px}
 .tsseen{display:block;font-size:10.5px;font-weight:700;color:var(--mut2);margin-top:5px}
-.tsseen.done{color:var(--sage)} .tsseen.sad{color:var(--sea)} .tsseen.hot{color:var(--rose)}
+.tsseen.done{color:var(--sage)} .tsseen.open{color:var(--sea)}
+.tsseen.sad{color:var(--sea)} .tsseen.hot{color:var(--rose)}
 .seenl{font-size:10.5px;font-weight:700;color:var(--mut2);margin-top:6px}
 .wseen{font-size:11.5px;font-weight:700;color:var(--mut2);margin-top:5px}
 .wseen.done{color:var(--sage)} .wseen.sad{color:var(--sea)} .wseen.hot{color:var(--rose)}
@@ -499,6 +502,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .mood .em{font-size:16px;line-height:1}
 .mood .tx2{font-size:10.5px;font-weight:700;color:var(--mut2);white-space:nowrap}
 .mood.done{background:var(--sage-l)} .mood.done .tx2{color:var(--sage)}
+.mood.open{background:var(--sea-l)} .mood.open .tx2{color:var(--sea)}
 .mood.sad{background:var(--sea-l)}   .mood.sad .tx2{color:var(--sea)}
 .mood.hot{background:var(--rose-l)}  .mood.hot .tx2{color:var(--rose)}
 @media (max-width:700px){ .mood .tx2{display:none} .mood{padding:6px 9px} }
@@ -1114,15 +1118,17 @@ function greeting(){
 function moodRow(courseId){
   const c = moodCounts(courseId);
   if (!c.total) return '';
-  const pill = (cls, em, n, title) => n
-    ? '<span class="mp ' + cls + '" title="' + title + '"><i>' + em + '</i>' + n + '</span>' : '';
+  /* the number alone is a riddle, so every pill says what it counts */
+  const pill = (cls, em, n, word, title) => n
+    ? '<span class="mp ' + cls + '" title="' + title + '"><i>' + em + '</i>' + n +
+      ' <em>' + word + '</em></span>' : '';
   return '<div class="mrow">' +
-    '<span class="mtot">' + c.total + ' in here</span>' +
-    pill('done', '\uD83E\uDD29', c.done, 'practised today') +
-    pill('open', '\uD83D\uDE42', c.open,  'opened today, quiz waiting') +
-    pill('wait', '\uD83D\uDE42', c.wait,  'waiting') +
-    pill('sad',  '\uD83D\uDE2D', c.sad,   'two days untouched') +
-    pill('hot',  '\uD83E\uDD75', c.hot,   'three days or more') +
+    '<span class="mtot">' + c.total + ' topics</span>' +
+    pill('done', '\uD83E\uDD29', c.done, 'practised', 'quiz done today') +
+    pill('open', '\uD83D\uDC40', c.open,  'opened',    'opened today, quiz still waiting') +
+    pill('wait', '\uD83D\uDE42', c.wait,  'waiting',   'not touched yet, or only yesterday') +
+    pill('sad',  '\uD83D\uDE2D', c.sad,   '2 days',    'two days untouched') +
+    pill('hot',  '\uD83E\uDD75', c.hot,   '3+ days',   'three days or more') +
     '</div>' +
     (c.worst ? '<div class="mworst">\uD83E\uDD75 <b>' + gEsc(c.worst) + '</b> \u2014 ' +
       c.worstDays + ' days</div>' : '');
@@ -2004,7 +2010,7 @@ function mood(id){
   const r = seenAll()[id] || {};
   const t = isoToday();
   if (r.q === t) return ['\uD83E\uDD29', 'great work today', 'done'];
-  if (r.d === t) return ['\uD83D\uDE42', 'opened today \u00b7 quiz waiting', ''];
+  if (r.d === t) return ['\uD83D\uDC40', 'opened today \u00b7 quiz waiting', 'open'];
   const base = (r.q && r.d) ? (r.q > r.d ? r.q : r.d) : (r.q || r.d);
   const d = daysSince(base);
   if (d === null)  return ['\uD83D\uDE42', 'not opened yet', ''];
