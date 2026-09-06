@@ -318,6 +318,18 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   text-transform:uppercase;color:var(--sc);padding:9px 4px 6px}
 .sth .ste{font-size:14px;letter-spacing:0}
 .sth .stn{margin-left:auto;font-size:10.5px;letter-spacing:.3px;opacity:.75}
+.twrap{display:flex;align-items:center;gap:4px}
+.twrap .trow{flex:1;min-width:0}
+.mvbtns{display:flex;gap:2px;flex:0 0 auto;opacity:0;transition:opacity .12s}
+.twrap:hover .mvbtns,.mvbtns:focus-within{opacity:1}
+@media (hover:none){ .mvbtns{opacity:.55} }
+.mv{border:1px solid var(--line);background:var(--panel);border-radius:8px;width:24px;height:24px;
+  line-height:1;font-size:14px;color:var(--mut2);cursor:pointer;padding:0;
+  -webkit-tap-highlight-color:transparent}
+.mv:hover{color:var(--sea);border-color:var(--line2)}
+.mvd{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--sand);background:#FBF3DC;border-radius:999px;padding:2px 6px;margin-left:6px;
+  vertical-align:1px}
 .stream .trow{padding:8px 6px}
 .stream .trow:hover{background:rgba(255,255,255,.65)}
 .stream .trow .box{border-color:var(--sc);opacity:.55}
@@ -1209,13 +1221,15 @@ function paintToday(where){
     return;
   }
   const status = readJSON('task-status-8weeks') || {};
-  const done = day.rows.filter(r => Number(status[r.i]) === 1).length;
-  const missed = day.rows.filter(r => Number(status[r.i]) === 2).length;
-  const rows = streamBlocks(day.rows, status);
+  const dayRows0 = rowsForDay(day.iso || isoToday());
+  const done = dayRows0.filter(r => Number(status[r.i]) === 1).length;
+  const missed = dayRows0.filter(r => Number(status[r.i]) === 2).length;
+  const dayRows = rowsForDay(day.iso || isoToday());
+  const rows = streamBlocks(dayRows, status, day.iso || isoToday());
   box.innerHTML =
     '<div class="th"><h3>Today</h3>' +
     '<span class="wk">' + day.d + ' \u00b7 week ' + day.w + '</span>' +
-    '<span class="done">' + done + ' of ' + day.rows.length + ' done' +
+    '<span class="done">' + done + ' of ' + dayRows0.length + ' done' +
     (missed ? ' \u00b7 <span class="miss">' + missed + ' missed</span>' : '') + '</span></div>' +
     '<div class="ps">Tap once for \u2713 done, twice for \u2715 could not, again to clear.</div>' +
     '<div class="tlist">' + rows + '</div>' +
@@ -1226,6 +1240,14 @@ function paintToday(where){
     else b.onclick = () => go('plan');
   }
   /* one place decides what a tap means, so the card and the week agree */
+  box.querySelectorAll('.mv').forEach(b => b.onclick = ev => {
+    ev.stopPropagation();
+    moveTask(b.dataset.id, Number(b.dataset.mv), () => {
+      paintToday(where);
+      if ($('#planView').classList.contains('on')){ paintWeek(); paintFinish(); }
+      paintCards();
+    });
+  });
   box.querySelectorAll('.trow').forEach(row => {
     row.onclick = () => {
       const id = row.dataset.task;
@@ -1556,6 +1578,43 @@ function paintFinish(){
         '<div class="fn">' + (i.iso ? (d + ' days \u00b7 ' + i.note) : i.note) + '</div></div>';
     }).join('') + '</div>';
 }
+
+/* Moving a task: a plan you cannot bend gets abandoned. A row can be pushed to
+   the next day or pulled back to the one before, and it carries its own text,
+   its mark and its place in the queue with it. */
+const MOVE_KEY = 'task-moves-8weeks';
+function moves(){ return readJSON(MOVE_KEY) || {}; }
+function dayShift(iso, n){
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  const k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') +
+            '-' + String(d.getDate()).padStart(2,'0');
+  return PLAN[k] ? k : null;
+}
+function homeDay(id){ return id.slice(0,10); }
+function whereItSits(id){ return moves()[id] || homeDay(id); }
+function moveTask(id, n, then){
+  const from = whereItSits(id);
+  const to = dayShift(from, n);
+  if (!to) return;
+  const m = moves();
+  if (to === homeDay(id)) delete m[id]; else m[id] = to;
+  writeJSON(MOVE_KEY, m);
+  if (then) then();
+}
+/* what a given day actually holds once the moves are applied */
+function rowsForDay(iso){
+  const m = moves(), out = [];
+  (PLAN[iso] ? PLAN[iso].rows : []).forEach(r => { if (!m[r.i]) out.push(r); });
+  Object.keys(m).forEach(id => {
+    if (m[id] !== iso) return;
+    const src = PLAN[homeDay(id)];
+    if (!src) return;
+    const row = src.rows.find(x => x.i === id);
+    if (row) out.push(row);
+  });
+  return out;
+}
 /* ---- keeping the marks safe ---- */
 function storageWorks(){
   try { localStorage.setItem('__probe','1'); localStorage.removeItem('__probe'); return true; }
@@ -1625,7 +1684,7 @@ function groupRows(rows){
   rows.forEach(r => { const k = streamOf(r); (by[k] = by[k] || []).push(r); });
   return STREAMS.filter(s => by[s.k] && by[s.k].length).map(s => ({ s:s, rows:by[s.k] }));
 }
-function streamBlocks(rows, st){
+function streamBlocks(rows, st, dayIso){
   return groupRows(rows).map(g => {
     const done = g.rows.filter(r => Number(st[r.i]) === 1).length;
     return '<div class="stream" style="--sc:' + g.s.c + ';--sbg:' + g.s.bg + '">' +
@@ -1633,9 +1692,16 @@ function streamBlocks(rows, st){
       '<span class="stn">' + done + '/' + g.rows.length + '</span></div>' +
       g.rows.map(r => {
         const v = Number(st[r.i]) || 0;
-        return '<button class="trow' + (v === 1 ? ' on' : v === 2 ? ' missed' : '') +
+        const away = dayIso && homeDay(r.i) !== dayIso;
+        return '<div class="twrap">' +
+          '<button class="trow' + (v === 1 ? ' on' : v === 2 ? ' missed' : '') +
           '" data-task="' + r.i + '" title="tap again for \u2715 could not">' +
-          '<span class="box"></span><span>' + gEsc(taskText(r)) + '</span></button>';
+          '<span class="box"></span><span>' + gEsc(taskText(r)) +
+          (away ? ' <i class="mvd">moved</i>' : '') + '</span></button>' +
+          (dayIso ? '<span class="mvbtns">' +
+            '<button class="mv" data-mv="-1" data-id="' + r.i + '" title="a day earlier">\u2039</button>' +
+            '<button class="mv" data-mv="1" data-id="' + r.i + '" title="a day later">\u203a</button>' +
+          '</span>' : '') + '</div>';
       }).join('') +
       '</div>';
   }).join('');
@@ -1673,27 +1739,30 @@ function paintWeek(){
   const wk = WEEKS[wkIx]; if (!wk) return;
   recomputeQueues();
   const st = taskStatus(), iso = isoToday();
-  const all = wk.days.reduce((a,d) => a + d.rows.length, 0);
-  const done = wk.days.reduce((a,d) => a + d.rows.filter(r => Number(st[r.i]) === 1).length, 0);
+  const all = wk.days.reduce((a,d) => a + rowsForDay(d.iso).length, 0);
+  const done = wk.days.reduce((a,d) =>
+    a + rowsForDay(d.iso).filter(r => Number(st[r.i]) === 1).length, 0);
   $('#wkTitle').textContent = 'Week ' + wk.w;
   $('#wkSub').textContent = (wk.ti || '').replace(/^WEEK \d+ \u00b7 /,'') +
     ' \u00b7 ' + done + ' of ' + all + ' done';
   $('#wkPrev').disabled = wkIx === 0;
   $('#wkNext').disabled = wkIx >= WEEKS.length - 1;
   $('#wkDays').innerHTML = wk.days.map(d => {
-    const dn = d.rows.filter(r => Number(st[r.i]) === 1).length;
-    const dm = d.rows.filter(r => Number(st[r.i]) === 2).length;
+    const rows = rowsForDay(d.iso);
+    const dn = rows.filter(r => Number(st[r.i]) === 1).length;
+    const dm = rows.filter(r => Number(st[r.i]) === 2).length;
     const open = (openDays[d.iso] !== undefined) ? openDays[d.iso] : (d.iso === iso);
     return '<div class="day' + (d.iso === iso ? ' isnow' : '') +
-      (dn === d.rows.length ? ' done' : '') + (open ? ' open' : '') + '" data-iso="' + d.iso + '">' +
+      (rows.length && dn === rows.length ? ' done' : '') + (open ? ' open' : '') + '" data-iso="' + d.iso + '">' +
       '<button class="dayh" data-day="' + d.iso + '"><span class="dn">' + gEsc(d.d) + '</span>' +
       '<span class="dd">' + d.iso.slice(8) + '.' + d.iso.slice(5,7) +
       (d.iso === iso ? ' \u00b7 today' : '') + '</span>' +
-      '<span class="dc">' + dn + '/' + d.rows.length +
+      '<span class="dc">' + dn + '/' + rows.length +
       (dm ? ' <span class="miss">\u2715' + dm + '</span>' : '') + '</span>' +
       '<span class="cara">' + (open ? '\u2303' : '\u2304') + '</span></button>' +
-      '<div class="dbar"><i style="width:' + Math.round(dn/d.rows.length*100) + '%"></i></div>' +
-      '<div class="tlist">' + streamBlocks(d.rows, st) + '</div></div>';
+      '<div class="dbar"><i style="width:' +
+        Math.round(dn / Math.max(1, rows.length) * 100) + '%"></i></div>' +
+      '<div class="tlist">' + streamBlocks(rows, st, d.iso) + '</div></div>';
   }).join('');
   $('#wkDays').querySelectorAll('.dayh').forEach(h => h.onclick = () => {
     const iso2 = h.dataset.day;
@@ -1706,6 +1775,12 @@ function paintWeek(){
     toggleTask(b.dataset.task, () => {
       paintWeek(); paintToday('#todayTop2'); paintFinish(); paintCards();
     }));
+  $('#wkDays').querySelectorAll('.mv').forEach(b => b.onclick = ev => {
+    ev.stopPropagation();
+    moveTask(b.dataset.id, Number(b.dataset.mv), () => {
+      paintWeek(); paintToday('#todayTop2'); paintFinish(); paintCards();
+    });
+  });
 }
 
 /* Progress is the number of quizzes you have actually finished, not the words
