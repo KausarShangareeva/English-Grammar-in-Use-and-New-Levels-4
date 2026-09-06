@@ -448,6 +448,27 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .grow .d{font-size:12px;color:var(--mut);line-height:1.45;margin-top:3px}
 .grow .m{font-size:11px;color:var(--rose);font-weight:700;margin-top:5px}
 .grow .ch{margin-left:auto;color:var(--mut2);font-size:20px;flex:0 0 auto}
+.tenses{background:var(--panel);border-radius:19px;padding:18px 18px 12px;
+  box-shadow:0 6px 20px rgba(39,107,122,.06);margin-bottom:6px}
+.tsh{font-family:var(--disp);font-size:23px;font-weight:600;margin-bottom:3px}
+.tssub{font-size:12px;color:var(--mut);line-height:1.55;margin-bottom:10px}
+.tssub s{color:var(--mut2)}
+.tsg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--mut2);margin:14px 2px 4px}
+.tsrow{display:flex;align-items:flex-start;gap:12px;width:100%;border:none;background:none;
+  padding:10px 8px;border-radius:12px;text-align:left;font-family:var(--ui);cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.tsrow:hover{background:var(--bg)}
+.tsdot{width:13px;height:13px;flex:0 0 13px;border-radius:50%;margin-top:3px;
+  box-shadow:0 0 0 3px rgba(0,0,0,.04)}
+.tsmid{min-width:0}
+.tsn{display:block;font-family:var(--disp);font-size:19px;font-weight:600;line-height:1.2}
+.tsf{display:block;font-size:12.5px;color:var(--ink);margin-top:3px;line-height:1.5}
+.tsf b{color:var(--sea)}
+.tsp{color:var(--mut2);font-weight:700}
+.tsonly{color:var(--rose);font-weight:700}
+.tsnote{display:block;font-size:11.5px;color:var(--mut2);margin-top:3px}
+.tsrow .ch{margin-left:auto;color:var(--mut2);font-size:19px;flex:0 0 14px;text-align:right}
 .gsec{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut2);
   margin:16px 2px 8px}
 .gramtopic .paper h1{font-family:var(--disp);font-size:30px;font-weight:600;margin:0 0 4px}
@@ -2282,6 +2303,55 @@ function gHi(sent, forms){
   try { return gEsc(sent).replace(new RegExp('\\b(' + forms + ')\\b','i'), '<b>$1</b>'); }
   catch(e){ return gEsc(sent); }
 }
+
+/* The eight forms in the order they are usually taught, each with its own colour
+   so the shape of the system stays visible. */
+const TENSES = [
+  { g:'Present', c:'#D1495B', n:'Present Simple',
+    a:'I <b>do</b> / she <b>does</b>', p:'it <b>is done</b>', topic:'verbsys',
+    note:'habits, facts, timetables' },
+  { g:'Present', c:'#E07A3E', n:'Present Continuous',
+    a:'I <b>am doing</b>', p:'it <b>is being done</b>', topic:'cont',
+    note:'happening now, or arranged for later' },
+  { g:'Present', c:'#D9A628', n:'Present Perfect Simple',
+    a:'I <b>have done</b>', p:'it <b>has been done</b>', topic:'pperf',
+    note:'past action, present result' },
+  { g:'Present', c:'#4F8A6B', n:'Present Perfect Continuous',
+    a:'I <b>have been doing</b>', p:null, topic:'pperf',
+    note:'how long it has been going on' },
+  { g:'Past', c:'#2F8A86', n:'Past Simple',
+    a:'I <b>did</b>', p:'it <b>was done</b>', topic:'past',
+    note:'finished, at a named time' },
+  { g:'Past', c:'#3E6FA8', n:'Past Continuous',
+    a:'I <b>was doing</b>', p:'it <b>was being done</b>', topic:'pastcont',
+    note:'in progress when something cut in' },
+  { g:'Past', c:'#6B5BA8', n:'Past Perfect Simple',
+    a:'I <b>had done</b>', p:'it <b>had been done</b>', topic:'pastperf',
+    note:'the earlier of two past events' },
+  { g:'Past', c:'#8E5AA0', n:'Past Perfect Continuous',
+    a:'I <b>had been doing</b>', p:null, topic:'pastperfcont',
+    note:'how long, up to a past moment' }
+];
+function tenseBlock(){
+  const byGroup = ['Present','Past'].map(g =>
+    '<div class="tsg">' + g + ' tenses</div>' +
+    TENSES.filter(t => t.g === g).map(t => {
+      const ix = GR.findIndex(x => x.id === t.topic);
+      return '<button class="tsrow"' + (ix >= 0 ? ' data-i="' + ix + '"' : '') + '>' +
+        '<span class="tsdot" style="background:' + t.c + '"></span>' +
+        '<span class="tsmid"><span class="tsn">' + t.n + '</span>' +
+        '<span class="tsf">' + t.a +
+        (t.p ? ' <span class="tsp">\u00b7 passive:</span> ' + t.p
+             : ' <span class="tsonly">\u00b7 active only</span>') + '</span>' +
+        '<span class="tsnote">' + t.note + '</span></span>' +
+        (ix >= 0 ? '<span class="ch">\u203a</span>' : '<span class="ch"></span>') +
+        '</button>';
+    }).join('')).join('');
+  return '<div class="tenses"><div class="tsh">The eight forms</div>' +
+    '<div class="tssub">Four in the present, four in the past. ' +
+    'The two continuous perfects have no passive \u2014 nobody says ' +
+    '<s>it had been being done</s>.</div>' + byGroup + '</div>';
+}
 let gramOnly = null;          /* null = everything except Speaking */
 function paintGramList(){
   const box = $('#gramList'); if (!box) return;
@@ -2293,7 +2363,7 @@ function paintGramList(){
     if (!s2){ s2 = { k:g.sec, items:[] }; secs.push(s2); }
     s2.items.push([g,i]);
   });
-  box.innerHTML = secs.map(s2 =>
+  box.innerHTML = (gramOnly ? '' : tenseBlock()) + secs.map(s2 =>
     '<div class="gsec">' + s2.k + ' \u00b7 ' + s2.items.length + '</div>' +
     s2.items.map(([g,i]) => {
       const nv = g.groups.reduce((a,b) => a + b.vs.length, 0);
@@ -2303,8 +2373,10 @@ function paintGramList(){
         '<div class="m">' + nv + ' cards \u00b7 ' + nex + ' examples \u00b7 ' +
         g.items.length + ' questions</div></span><span class="ch">\u203a</span></button>';
     }).join('')).join('');
-  box.querySelectorAll('.grow').forEach(b =>
-    b.onclick = () => openGramTopic(Number(b.dataset.i)));
+  box.querySelectorAll('.grow, .tsrow').forEach(b => {
+    if (b.dataset.i === undefined) return;
+    b.onclick = () => openGramTopic(Number(b.dataset.i));
+  });
 }
 function openGramTopic(ix){
   const g = GR[ix]; if (!g) return;
