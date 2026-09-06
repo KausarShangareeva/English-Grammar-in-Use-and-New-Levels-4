@@ -1790,9 +1790,15 @@ function paintLangMenu(){
     if (b.dataset.l !== LANG) applyLang(b.dataset.l);
   });
 }
-/* the three keep their progress apart */
+/* The three languages keep their own study progress \u2014 but the schedule, the
+   IT goals and the settings belong to you, not to a language, so those stay shared. */
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done',
+                     'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
-function lkey(k){ return LANG === 'en' ? k : LANG + ':' + k; }
+function lkey(k){
+  if (LANG === 'en' || SHARED_KEYS.indexOf(k) >= 0) return k;
+  return LANG + ':' + k;
+}
 readJSON  = k => _readJSON(lkey(k));
 writeJSON = (k, v) => _writeJSON(lkey(k), v);
 /* ---- the plan, rendered by the platform itself ---- */
