@@ -320,16 +320,16 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .sth .stn{margin-left:auto;font-size:10.5px;letter-spacing:.3px;opacity:.75}
 .twrap{display:flex;align-items:center;gap:4px}
 .twrap .trow{flex:1;min-width:0}
-.mvbtns{display:flex;gap:2px;flex:0 0 auto;opacity:0;transition:opacity .12s}
+.mvbtns{display:flex;flex-direction:column;gap:2px;flex:0 0 auto;opacity:0;transition:opacity .12s}
 .twrap:hover .mvbtns,.mvbtns:focus-within{opacity:1}
 @media (hover:none){ .mvbtns{opacity:.55} }
-.mv{border:1px solid var(--line);background:var(--panel);border-radius:8px;width:24px;height:24px;
-  line-height:1;font-size:14px;color:var(--mut2);cursor:pointer;padding:0;
+.mv{border:1px solid var(--line);background:var(--panel);border-radius:7px;width:24px;height:19px;
+  line-height:1;font-size:12px;color:var(--mut2);cursor:pointer;padding:0;
   -webkit-tap-highlight-color:transparent}
 .mv:hover{color:var(--sea);border-color:var(--line2)}
-.mvd{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
-  color:var(--sand);background:#FBF3DC;border-radius:999px;padding:2px 6px;margin-left:6px;
-  vertical-align:1px}
+.mvd{font-style:normal;font-size:10px;font-weight:700;letter-spacing:0;
+  color:#8A6E14;background:#FBF3DC;border-radius:999px;padding:2px 8px;margin-left:6px;
+  vertical-align:1px;white-space:nowrap}
 .stream .trow{padding:8px 6px}
 .stream .trow:hover{background:rgba(255,255,255,.65)}
 .stream .trow .box{border-color:var(--sc);opacity:.55}
@@ -1592,6 +1592,10 @@ function dayShift(iso, n){
   return PLAN[k] ? k : null;
 }
 function homeDay(id){ return id.slice(0,10); }
+function niceDay(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+}
 function whereItSits(id){ return moves()[id] || homeDay(id); }
 function moveTask(id, n, then){
   const from = whereItSits(id);
@@ -1697,10 +1701,11 @@ function streamBlocks(rows, st, dayIso){
           '<button class="trow' + (v === 1 ? ' on' : v === 2 ? ' missed' : '') +
           '" data-task="' + r.i + '" title="tap again for \u2715 could not">' +
           '<span class="box"></span><span>' + gEsc(taskText(r)) +
-          (away ? ' <i class="mvd">moved</i>' : '') + '</span></button>' +
+          (away ? ' <i class="mvd">moved from ' + gEsc(niceDay(homeDay(r.i))) + '</i>' : '') +
+          '</span></button>' +
           (dayIso ? '<span class="mvbtns">' +
-            '<button class="mv" data-mv="-1" data-id="' + r.i + '" title="a day earlier">\u2039</button>' +
-            '<button class="mv" data-mv="1" data-id="' + r.i + '" title="a day later">\u203a</button>' +
+            '<button class="mv" data-mv="-1" data-id="' + r.i + '" title="move a day earlier">\u2191</button>' +
+            '<button class="mv" data-mv="1" data-id="' + r.i + '" title="move a day later">\u2193</button>' +
           '</span>' : '') + '</div>';
       }).join('') +
       '</div>';
