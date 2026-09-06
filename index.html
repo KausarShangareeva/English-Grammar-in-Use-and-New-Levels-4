@@ -437,7 +437,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .wview:hover{color:var(--sea);border-color:var(--line2)}
 .wtabwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.wtab{width:100%;border-collapse:collapse;min-width:900px}
+.wtab{width:100%;border-collapse:collapse;min-width:900px;table-layout:fixed}
 .wtab th{font-family:var(--ui);font-size:8.5px;font-weight:800;letter-spacing:.9px;
   text-transform:uppercase;color:var(--rose);text-align:left;padding:0 10px 8px 0;
   border-bottom:1px solid var(--line2);white-space:nowrap}
@@ -447,7 +447,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .wtab td.n0{font-family:var(--ui);font-size:11px;font-weight:800;color:var(--mut2);
   text-align:right;padding-right:12px}
 .wtab td.w0{font-family:var(--disp);font-size:19px;font-weight:600;color:var(--ink);
-  line-height:1.25;white-space:nowrap}
+  line-height:1.25;word-break:break-word}
 .wtab td.w0 .pos2{display:block;font-family:var(--ui);font-size:10px;color:var(--mut2);
   margin:2px 0 0}
 .wtab td.r0{color:var(--rose);font-weight:700;font-size:13.5px}
@@ -2618,7 +2618,10 @@ function paintWordList(){
   const slice = ws.slice(0, wShown);
   if (wTable){
     box.innerHTML = '<div class="wtabwrap"><table class="wtab">' +
-      '<tr><th>\u2116</th><th>word</th><th>\u043f\u0435\u0440\u0435\u0432\u043e\u0434</th>' +
+      '<col style="width:3.5%"><col style="width:12%"><col style="width:13%">' +
+      '<col style="width:19%"><col style="width:19%"><col style="width:18%">' +
+      '<col style="width:15.5%">' +
+      '<tr><th>\u2116</th><th>word</th><th>translation</th>' +
       '<th>meaning</th><th>collocations</th><th>example</th><th>family \u00b7 warnings</th></tr>' +
       slice.map((w, ix) => {
         const ex = (w.e && w.e.length)
