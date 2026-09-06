@@ -2296,6 +2296,34 @@ function showWord(i, fallback){
   pop.classList.add('on');
   pop.querySelector('.x').onclick = () => pop.classList.remove('on');
 }
+/* A speaker on every example: the list items, and any table cell that is a real
+   English sentence rather than a label or a translation. */
+function addSpeakers(root){
+  if (!root) return;
+  const say = t => String(t)
+    .replace(/[\u274C\u2705\u26A0\uFE0F\uD83E\uDE77\uD83D\uDD01\uD83D\uDCAC\u26D4]/g,'')
+    .replace(/^[\s\u00b7\u2014-]+/,'').trim();
+  const latin = t => {
+    const letters = (t.match(/[A-Za-z\u0400-\u04FF]/g) || []);
+    if (letters.length < 6) return false;
+    const cyr = (t.match(/[\u0400-\u04FF]/g) || []).length;
+    return cyr / letters.length < 0.2;
+  };
+  root.querySelectorAll('li').forEach(li => {
+    if (li.querySelector('.spk')) return;
+    /* the label sits in its own span; only the sentence should be read */
+    const lab = li.querySelector('.lv');
+    const t = say(lab ? li.textContent.slice(lab.textContent.length) : li.textContent);
+    if (latin(t)) li.insertAdjacentHTML('beforeend', ' ' + spk(t));
+  });
+  root.querySelectorAll('table.vtab td').forEach(td => {
+    if (td.querySelector('.spk')) return;
+    const t = say(td.textContent);
+    if (!latin(t)) return;
+    if (t.split(/\s+/).length < 3) return;        /* labels and single forms: no */
+    td.insertAdjacentHTML('beforeend', ' ' + spk(t));
+  });
+}
 /* ---- grammar, rendered by the platform itself ---- */
 const gEsc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const gSafe = t => String(t == null ? '' : t);
@@ -2424,6 +2452,7 @@ function openGramTopic(ix){
     });
   });
   $('#gPaper').innerHTML = html;
+  addSpeakers($('#gPaper'));
   const pb = $('#gramPractise');
   pb.classList.toggle('hide', !g.items.length);
   pb.className = 'openraw quiz' + (g.items.length ? '' : ' hide');
