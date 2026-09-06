@@ -619,6 +619,12 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .tsonly{color:var(--rose);font-weight:700}
 .tsnote{display:block;font-size:11.5px;color:var(--mut2);margin-top:3px}
 .tsseen{display:block;font-size:10.5px;font-weight:700;color:var(--mut2);margin-top:5px}
+.tsrow.flat{cursor:default}
+.tsrow.flat:hover{background:none}
+.tsnat{display:block;font-family:var(--ui);font-size:11px;font-weight:700;color:var(--mut2);
+  margin-top:2px}
+.tsfoot{margin-top:14px;padding-top:13px;border-top:1px solid var(--line);font-size:12.5px;
+  line-height:1.65;color:var(--mut)}
 .tsseen.done{color:var(--sage)} .tsseen.open{color:var(--sea)}
 .tsseen.sad{color:var(--sea)} .tsseen.hot{color:var(--rose)}
 .seenl{font-size:10.5px;font-weight:700;color:var(--mut2);margin-top:6px}
@@ -3202,6 +3208,20 @@ const TENSES = [
     a:'I <b>will have been doing</b>', p:null, topic:'tsFutPerfCont',
     note:'how long, up to a future point' }
 ];
+/* every language gets its own overview, not the English one */
+const LANG_FORMS = {"sv":{"title":"The Swedish verb, in six shapes","sub":"Swedish has no continuous and no do-support: six forms cover everything.","rows":[["Present","Presens","jag <b>läser</b>","I read · I am reading","#D1495B","🩷 one form for both English tenses"],["Past","Preteritum","jag <b>läste</b>","I read · I was reading","#E07A3E","the plain past, with -de, -te or -dde"],["Supine","Supinum","<b>läst</b>","(the form used after har)","#D9A628","⚠️ never used alone"],["Perfect","Perfekt","jag <b>har läst</b>","I have read","#4F8A6B","har + supinum"],["Pluperfect","Pluskvamperfekt","jag <b>hade läst</b>","I had read","#3E6FA8","hade + supinum"],["Future","Futurum","jag <b>ska läsa</b>","I will read","#8E5AA0","🩷 also <b>kommer att läsa</b> for a prediction"]],"note":"🩷 There is no continuous: <b>jag läser</b> is both <i>I read</i> and <i>I am reading</i>. ⚠️ And there is no <b>do</b>: a question is made by moving the verb \\u2014 <b>Läser du?</b>"},"ar":{"title":"The Arabic verb, in six shapes","sub":"Arabic marks aspect rather than time: finished, unfinished, command \u2014 and what is built from them.","rows":[["Past","الماضي · al-māḍī","<b>دَرَسَ</b> darasa","he studied","#D1495B","the finished action"],["Present","المضارع · al-muḍāriʿ","<b>يَدرُسُ</b> yadrusu","he studies · is studying","#4F8A6B","🩷 present and future both live here"],["Imperative","الأمر · al-amr","<b>اُدرُسْ</b> udrus","study!","#E07A3E","the command"],["Future","المستقبل","<b>سَيَدرُسُ</b> sa-yadrusu","he will study","#3E6FA8","🩷 س or سوف before the present"],["Negated past","لم + المضارع المجزوم","<b>لم يَدرُسْ</b> lam yadrus","he did not study","#8E5AA0","⚠️ the negation changes the form, not just adds a word"],["Verbal noun","المصدر · al-maṣdar","<b>دِراسة</b> dirāsa","studying, study","#6B5BA8","🩷 the noun built from the same root"]],"note":"🩷 The three root letters carry the meaning: <b>د-ر-س</b> gives <i>darasa</i> to study, <i>madrasa</i> a school, <i>mudarris</i> a teacher, <i>dirāsa</i> study. ⚠️ Learn the root, and a dozen words come with it."}};
+function langFormsBlock(){
+  const b = LANG_FORMS[LANG]; if (!b) return '';
+  return '<div class="tenses"><div class="tsh">' + b.title + '</div>' +
+    '<div class="tssub">' + b.sub + '</div>' +
+    b.rows.map(r =>
+      '<div class="tsrow flat"><span class="tsdot" style="background:' + r[4] + '"></span>' +
+      '<span class="tsmid"><span class="tsn">' + r[0] +
+      '<span class="tsnat">' + r[1] + '</span></span>' +
+      '<span class="tsf">' + r[2] + ' \u2014 <span class="tsp">' + r[3] + '</span></span>' +
+      '<span class="tsnote">' + r[5] + '</span></span></div>').join('') +
+    '<div class="tsfoot">' + b.note + '</div></div>';
+}
 function tenseBlock(){
   const byGroup = ['Present','Past','Future'].map(g =>
     '<div class="tsg">' + g + ' tenses</div>' +
@@ -3239,7 +3259,8 @@ function paintGramList(){
     if (!s2){ s2 = { k:g.sec, items:[] }; secs.push(s2); }
     s2.items.push([g,i]);
   });
-  box.innerHTML = (gramOnly ? '' : tenseBlock()) + secs.map(s2 =>
+  box.innerHTML = (gramOnly ? '' : (LANG === 'en' ? tenseBlock() : langFormsBlock())) +
+    secs.map(s2 =>
     '<div class="gsec">' + s2.k + ' \u00b7 ' + s2.items.length + '</div>' +
     s2.items.map(([g,i]) => {
       const nv = g.groups.reduce((a,b) => a + b.vs.length, 0);
