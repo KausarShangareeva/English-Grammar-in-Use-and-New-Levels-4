@@ -103,29 +103,35 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 @keyframes guidepulse{
   0%,100%{box-shadow:0 0 0 2.5px #21C98A,0 0 16px rgba(33,201,138,.40),0 10px 28px rgba(11,122,84,.20)}
   50%    {box-shadow:0 0 0 3.5px #35E0A0,0 0 30px rgba(33,201,138,.65),0 12px 32px rgba(11,122,84,.28)}}
-.plumb{position:absolute;left:50%;top:-54px;width:38px;margin-left:-19px;
+.plumb{position:absolute;left:50%;top:-66px;width:52px;margin-left:-26px;
   pointer-events:none;animation:plumbbob 1.6s ease-in-out infinite;
   filter:drop-shadow(0 0 9px rgba(33,201,138,.8)) drop-shadow(0 5px 7px rgba(11,122,84,.35))}
 .plumb.hot{filter:drop-shadow(0 0 9px rgba(233,64,128,.75)) drop-shadow(0 5px 7px rgba(150,20,70,.35))}
-.plumb img{width:38px;height:auto;display:block}
-.wchips .plumb img,.wactions .plumb img{width:28px}
-.gbar .ga{width:18px;height:auto}
+.plumb img{width:52px;height:auto;display:block}
+.wchips .plumb img,.wactions .plumb img{width:38px}
+.gbar .ga{width:22px;height:auto}
 @keyframes plumbbob{0%,100%{transform:translateY(0) rotate(-4deg)}
   50%{transform:translateY(-8px) rotate(4deg)}}
-.wchips .plumb,.wactions .plumb{top:-40px;width:28px;margin-left:-14px}
+.wchips .plumb,.wactions .plumb{top:-50px;width:38px;margin-left:-19px}
 .guideoverdue{box-shadow:0 0 0 2.5px #E94080,0 0 18px rgba(233,64,128,.45),
   0 10px 28px rgba(150,20,70,.22) !important;animation:guidepulsehot 2s ease-in-out infinite}
 @keyframes guidepulsehot{
   0%,100%{box-shadow:0 0 0 2.5px #E94080,0 0 16px rgba(233,64,128,.40),0 10px 28px rgba(150,20,70,.20)}
   50%    {box-shadow:0 0 0 3.5px #FF5C99,0 0 30px rgba(233,64,128,.65),0 12px 32px rgba(150,20,70,.28)}}
-.gbar{display:flex;align-items:center;gap:11px;background:var(--sage-l);border:1px solid #CFE3D6;
-  border-radius:16px;padding:12px 15px;margin-bottom:14px;flex-wrap:wrap}
-.gbar .ga{flex:0 0 18px;
-  filter:drop-shadow(0 0 6px rgba(33,201,138,.6))}
+.gbar{background:var(--sage-l);border:1px solid #CFE3D6;border-radius:16px;
+  padding:14px 16px;margin-bottom:14px}
+.gbar.all{color:var(--sage);font-size:13px}
+.gmain{display:flex;align-items:flex-start;gap:12px}
+.gsecond{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;
+  border-top:1px solid #CFE3D6;font-size:12px;color:var(--mut);line-height:1.5}
+.gsecond b{color:var(--rose)}
+.ga2{width:15px;height:auto;flex:0 0 15px;filter:drop-shadow(0 0 6px rgba(233,64,128,.55))}
+.gbar .ga{flex:0 0 22px;margin-top:1px;
+  filter:drop-shadow(0 0 7px rgba(33,201,138,.65))}
 .gbar.hot{background:var(--rose-l);border-color:#F0DCE2}
 .gbar.hot .gtx b{color:var(--rose)}
 .gbar.hot .ga{filter:drop-shadow(0 0 6px rgba(233,64,128,.6))}
-.gbar .gtx{font-size:13px;color:var(--ink);line-height:1.5;flex:1;min-width:180px}
+.gbar .gtx{font-size:13.5px;color:var(--ink);line-height:1.6;flex:1;min-width:180px}
 .gbar .gtx b{color:var(--sage)}
 .gbar .gtx em{font-style:normal;color:var(--mut2);font-size:11.5px}
 .gbar button{border:1px solid #CFE3D6;background:var(--panel);border-radius:999px;padding:6px 13px;
@@ -1160,7 +1166,8 @@ function paintCards(){
         moodRow(c.id) + '</div>';
     b.onclick = () => go(c.id);
     box.appendChild(b);
-    if (GUIDE && GUIDE.course === c.id) markGuide(b);
+    if (GUIDE && GUIDE.course === c.id) markGuide(b, false);
+    else if (GUIDE2 && GUIDE2.course === c.id) markGuide(b, true);
   });
 }
 const PLAN_MARKER = 1;
@@ -1264,7 +1271,8 @@ function paintEssays(){
     }).join('') + '</div></div>').join('');
   box.querySelectorAll('.ecard').forEach(b => {
     b.onclick = () => openEssay(b.dataset.t, null);
-    if (GUIDE && GUIDE.id === 'essay:' + b.dataset.t) markGuide(b);
+    const role = guideRole('essay:' + b.dataset.t);
+    if (role) markGuide(b, role === 'pink');
   });
 }
 function openEssay(title, level){
@@ -1335,7 +1343,7 @@ function openEssay(title, level){
                               startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
                               quizExit = () => openEssay(title, e.level); };
   eq.onclick = backToEssay;
-  if (GUIDE && GUIDE.id === 'essay:' + title) markGuide(eq);
+  { const role = guideRole('essay:' + title); if (role) markGuide(eq, role === 'pink'); }
   if (epool.length >= 6){
     $('#paper').insertAdjacentHTML('beforeend',
       '<div class="endquiz"><div class="eh">Now try the words this essay is built on.</div>' +
@@ -1781,16 +1789,44 @@ function nextTask(){
   return nextTaskFor(b.key, b.course, b.age);
 }
 let GUIDE = null;
+function contactAge(k){
+  const p = passes()[k];
+  if (p) return daysSince(p);
+  const seen = seenAll()[k.split('|')[0]] || {};
+  const d = daysSince(seen.q || seen.d);
+  return d === null ? null : d;          /* never touched at all */
+}
+/* the pink one: whatever you have left alone longest */
+function stalestTask(exceptKey){
+  let dated = null, untouched = null;
+  ['units','books','grammar','speaking','reading','essay'].forEach(course => {
+    quizKeys(course).forEach(k => {
+      if (k === exceptKey || passValue(k) >= 1) return;
+      const age = contactAge(k);
+      if (age === null){
+        if (!untouched) untouched = { course: course, key: k, age: null };
+      } else if (!dated || age > dated.age){
+        dated = { course: course, key: k, age: age };
+      }
+    });
+  });
+  const b = dated && dated.age >= 3 ? dated : (dated || untouched);
+  return b ? nextTaskFor(b.key, b.course, b.age) : null;
+}
+let GUIDE2 = null;
 function refreshGuide(){
-  if (!guideOn){ GUIDE = null; return; }
+  if (!guideOn){ GUIDE = null; GUIDE2 = null; return; }
   /* keep pointing at the same thing until its quiz is actually finished */
   const held = readJSON('guide_current');
   if (held && passValue(held.key) < 1 && guideSkips.indexOf(held.key) < 0){
     GUIDE = nextTaskFor(held.key, held.course, keyAge(held.key));
+    GUIDE2 = stalestTask(GUIDE.key);
     return;
   }
   GUIDE = nextTask();
   if (GUIDE) writeJSON('guide_current', { key: GUIDE.key, course: GUIDE.course });
+  GUIDE2 = GUIDE ? stalestTask(GUIDE.key) : null;
+  if (GUIDE2 && GUIDE2.key === (GUIDE && GUIDE.key)) GUIDE2 = null;
 }
 function clearGuideMarks(){
   document.querySelectorAll('.plumb').forEach(el => el.remove());
@@ -1806,44 +1842,39 @@ function plumbFor(days){
   return '<span class="plumb' + ((days !== null && days >= 3) ? ' hot' : '') +
     '" aria-hidden="true"><img src="' + src + '" alt=""></span>';
 }
-function markGuide(el){
+function markGuide(el, pink){
   if (!guideOn || !el) return;
-  const overdue = GUIDE && GUIDE.age !== null && GUIDE.age >= 3;
   el.classList.add('guideme');
-  if (overdue) el.classList.add('guideoverdue');
+  if (pink) el.classList.add('guideoverdue');
   if (!el.querySelector('.plumb'))
-    el.insertAdjacentHTML('beforeend', plumbFor(overdue ? 3 : 0));
+    el.insertAdjacentHTML('beforeend', plumbFor(pink ? 3 : 0));
+}
+/* does this element belong to the green target, the pink one, or neither? */
+function guideRole(id, mode){
+  const match = g => g && g.id === id && (!mode || g.mode === mode);
+  if (match(GUIDE)) return 'green';
+  if (match(GUIDE2)) return 'pink';
+  return null;
 }
 function guideBanner(){
-  if (!guideOn) return '<div class="gbar off"><span>Guide is off</span>' +
-    '<button class="gtog" id="gToggle">turn it on</button></div>';
-  if (!GUIDE) return '';
-  const days = GUIDE.age >= 1000 ? null : GUIDE.age;
-  const overdue = GUIDE.age !== null && GUIDE.age >= 3;
-  return '<div class="gbar' + (overdue ? ' hot' : '') + '">' +
-    '<img class="ga" alt="" src="' + (overdue ? PLUMB_PINK : PLUMB_GREEN) + '">' +
-    '<span class="gtx"><b>Next:</b> ' + COURSE_LABEL[GUIDE.course] + ' \u00b7 ' +
+  if (!GUIDE) return '<div class="gbar all"><span class="gtx">' +
+    '<b>Everything is fresh.</b> Nothing is waiting for you today.</span></div>';
+  const d = GUIDE.age >= 1000 ? null : GUIDE.age;
+  const line2 = GUIDE2
+    ? '<div class="gsecond"><img class="ga2" alt="" src="' + PLUMB_PINK + '">' +
+      '<span>and this one has been left the longest: <b>' +
+      COURSE_LABEL[GUIDE2.course] + ' \u00b7 ' + gEsc(GUIDE2.itemLabel) + '</b>' +
+      (GUIDE2.age === null ? ' \u2014 never touched' : ' \u2014 ' + GUIDE2.age + ' days') +
+      '</span></div>' : '';
+  return '<div class="gbar"><div class="gmain">' +
+    '<img class="ga" alt="" src="' + PLUMB_GREEN + '">' +
+    '<span class="gtx"><b>Do this one now.</b> ' + COURSE_LABEL[GUIDE.course] + ' \u00b7 ' +
     gEsc(GUIDE.itemLabel) + ' \u00b7 ' + gEsc(GUIDE.quizLabel) +
-    (days === null ? ' <em>(never done)</em>' : ' <em>(' + days + ' days ago)</em>') + '</span>' +
-    '<button class="gskip" id="gSkip">skip</button>' +
-    '<button class="gtog" id="gToggle">off</button></div>';
+    (d === null ? ' \u2014 <em>never done</em>' : ' \u2014 <em>' + d + ' days ago</em>') +
+    '. Follow the crystal. It moves only when the quiz is finished.</span></div>' +
+    line2 + '</div>';
 }
-function wireGuideBar(){
-  const sk = document.getElementById('gSkip');
-  if (sk) sk.onclick = () => {
-    if (GUIDE) guideSkips.push(GUIDE.key);
-    try { localStorage.removeItem('guide_current'); } catch(e){}
-    delete MEM['guide_current'];
-    refreshGuide();
-    go('dash');
-  };
-  const tg = document.getElementById('gToggle');
-  if (tg) tg.onclick = () => {
-    guideOn = !guideOn;
-    writeJSON('guide_on', guideOn);
-    refreshGuide(); go('dash');
-  };
-}
+function wireGuideBar(){}
 function nextTaskFor(key, course, age){
   const parts = key.split('|'); const id = parts[0], mode = parts[1] || null;
   let itemLabel = '', label = '';
@@ -2299,12 +2330,14 @@ function paintWordChips(){
       (bk && u === wUnit ? ' style="background:' + bk.g + '"' : '') +
       '>' + m[0] + ' ' + label + '<span class="n">' + n + '</span></button>';
   }).join('');
-  if (GUIDE && GUIDE.id.slice(0,4) === 'set:'){
-    const want = GUIDE.id.slice(4);
+  [[GUIDE, false], [GUIDE2, true]].forEach(pair => {
+    const g = pair[0];
+    if (!g || g.id.slice(0,4) !== 'set:') return;
+    const want = g.id.slice(4);
     box.querySelectorAll('button').forEach(b => {
-      if (b.dataset.u === want && b.dataset.u !== wUnit) markGuide(b);
+      if (b.dataset.u === want && b.dataset.u !== wUnit) markGuide(b, pair[1]);
     });
-  }
+  });
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     wUnit = b.dataset.u; wShown = 60;
     markSeen('set:' + wUnit, 'open');
@@ -2330,11 +2363,13 @@ function paintPractise(){
     }).join('') +
     '<button class="cards" data-m="cards">\uD83C\uDCCF Flashcards<span class="qn">' +
     pool.length + '</span></button>';
-  if (GUIDE && GUIDE.id === 'set:' + wUnit){
+  [[GUIDE, false], [GUIDE2, true]].forEach(pair => {
+    const g = pair[0];
+    if (!g || g.id !== 'set:' + wUnit) return;
     box.querySelectorAll('button').forEach(b => {
-      if (b.dataset.m === GUIDE.mode) markGuide(b);
+      if (b.dataset.m === g.mode) markGuide(b, pair[1]);
     });
-  }
+  });
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     if (b.dataset.m === 'cards') return startCards();
     const slot = 'set:' + wUnit;
@@ -2592,7 +2627,8 @@ function paintReadList(){
   }).join('');
   box.querySelectorAll('.epcard').forEach(b => {
     b.onclick = () => openStory(b.dataset.sr, b.dataset.n);
-    if (GUIDE && GUIDE.id === 'story:' + b.dataset.sr + b.dataset.n) markGuide(b);
+    const role = guideRole('story:' + b.dataset.sr + b.dataset.n);
+    if (role) markGuide(b, role === 'pink');
   });
 }
 function openStory(sr, n){
@@ -2680,7 +2716,7 @@ function openStory(sr, n){
                               startQuiz(pool, 'Words from \u201c' + e.t + '\u201d', 'reading');
                               quizExit = () => openStory(sr, n); };
   qb.onclick = backToStory;
-  if (GUIDE && GUIDE.id === 'story:' + sr + n) markGuide(qb);
+  { const role = guideRole('story:' + sr + n); if (role) markGuide(qb, role === 'pink'); }
   if (pool.length >= 6){
     $('#storyPaper').insertAdjacentHTML('beforeend',
       '<div class="endquiz"><div class="eh">That is the episode. Twenty questions on its words?</div>' +
@@ -2910,7 +2946,8 @@ function paintGramList(){
   box.querySelectorAll('.grow, .tsrow').forEach(b => {
     if (b.dataset.i === undefined) return;
     b.onclick = () => openGramTopic(Number(b.dataset.i));
-    if (GUIDE && GUIDE.id === 'gram:' + (GR[Number(b.dataset.i)] || {}).id) markGuide(b);
+    const role = guideRole('gram:' + (GR[Number(b.dataset.i)] || {}).id);
+    if (role) markGuide(b, role === 'pink');
   });
 }
 function openGramTopic(ix){
@@ -2968,7 +3005,7 @@ function openGramTopic(ix){
   pb.className = 'openraw quiz' + (g.items.length ? '' : ' hide');
   pb.textContent = '\u25b6 Practise \u00b7 ' + Math.min(20, g.items.length) + ' questions';
   pb.onclick = () => startGramQuiz(ix);
-  if (GUIDE && GUIDE.id === 'gram:' + g.id) markGuide(pb);
+  { const role = guideRole('gram:' + g.id); if (role) markGuide(pb, role === 'pink'); }
   /* and again at the end, where you actually finish reading */
   if (g.items.length){
     $('#gPaper').insertAdjacentHTML('beforeend',
