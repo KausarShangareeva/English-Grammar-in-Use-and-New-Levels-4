@@ -617,6 +617,9 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .tsseen.sad{color:var(--sea)} .tsseen.hot{color:var(--rose)}
 .seenl{font-size:10.5px;font-weight:700;color:var(--mut2);margin-top:6px}
 .wseen{font-size:11.5px;font-weight:700;color:var(--mut2);margin-top:5px}
+.voicewarn{margin-top:10px;background:var(--rose-l);border:1px solid #F0DCE2;border-radius:13px;
+  padding:10px 13px;font-size:11.5px;line-height:1.6;color:var(--ink)}
+.voicewarn b{color:var(--rose)}
 .wseen.done{color:var(--sage)} .wseen.sad{color:var(--sea)} .wseen.hot{color:var(--rose)}
 .tsrow .ch{margin-left:auto;color:var(--mut2);font-size:19px;flex:0 0 14px;text-align:right}
 .mood{display:flex;align-items:center;gap:7px;flex:0 0 auto;background:var(--bg);
@@ -955,6 +958,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
           <h2 id="wTitle"></h2>
           <div class="ps" id="wSub"></div>
           <div class="wseen" id="wSeen"></div>
+          <div class="voicewarn hide" id="voiceWarn"></div>
         </div>
         <input class="wsearch" id="wSearch" type="search" placeholder="search a word or a translation">
         <button class="wview" id="wView">▦ Table</button>
@@ -2102,34 +2106,61 @@ function nextTaskFor(key, course, age){
 }
 /* ---- speech: British English wherever a word is shown ---- */
 let VOICE = null;
+/* Each platform speaks its own language: a Swedish word read by a British voice
+   is worse than no sound at all. */
+const VOICE_FOR = {
+  en: { lang:'en-GB', pref:/Sonia|Libby|Kate|Serena|Google UK English Female|Female/i,
+        fall:['en-GB','en'] },
+  sv: { lang:'sv-SE', pref:/Alva|Klara|Bengt|Google svenska|Female/i,
+        fall:['sv-SE','sv'] },
+  ar: { lang:'ar-SA', pref:/Maged|Laila|Tarik|Google \u0627\u0644\u0639\u0631\u0628\u064a\u0629/i,
+        fall:['ar-SA','ar-EG','ar'] }
+};
+let VOICES = {};
 function pickVoice(){
   try {
     const vs = window.speechSynthesis.getVoices() || [];
-    VOICE = vs.find(v => v.lang === 'en-GB' && /Sonia|Libby|Kate|Serena|Female|Google UK English Female/i.test(v.name))
-         || vs.find(v => v.lang === 'en-GB')
-         || vs.find(v => (v.lang||'').indexOf('en-GB') === 0)
-         || vs.find(v => (v.lang||'').indexOf('en') === 0) || null;
+    Object.keys(VOICE_FOR).forEach(k => {
+      const c = VOICE_FOR[k];
+      let v = vs.find(x => x.lang === c.lang && c.pref.test(x.name));
+      if (!v) v = vs.find(x => x.lang === c.lang);
+      if (!v) for (const f of c.fall){
+        v = vs.find(x => (x.lang || '').replace('_','-').indexOf(f) === 0);
+        if (v) break;
+      }
+      VOICES[k] = v || null;
+    });
+    VOICE = VOICES.en || null;
   } catch(e){}
 }
 try {
   pickVoice();
   if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = pickVoice;
 } catch(e){}
-function speak(text){
+/* does this device actually have the voice we need? */
+function voiceMissing(){
+  const l = (typeof LANG === 'undefined') ? 'en' : LANG;
+  return l !== 'en' && !VOICES[l];
+}
+function speak(text, langOverride){
   try {
     if (!window.speechSynthesis) return;
+    const l = langOverride || ((typeof LANG === 'undefined') ? 'en' : LANG);
+    const cfg = VOICE_FOR[l] || VOICE_FOR.en;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(clean(String(text).replace(/\u2026\u2026|____/g,' blank ')));
-    u.lang = 'en-GB';
-    if (VOICE) u.voice = VOICE;
-    u.rate = 0.95; u.pitch = 1;
+    u.lang = cfg.lang;
+    const v = VOICES[l];
+    if (v) u.voice = v;
+    u.rate = (l === 'ar') ? 0.88 : 0.95;
+    u.pitch = 1;
     window.speechSynthesis.speak(u);
   } catch(e){}
 }
 const clean = t => String(t)
   .replace(/[\uD83D\uDD0A\u{1F508}-\u{1F50A}\u{1F507}]/gu,'')   /* the speaker icon itself */
   .replace(/\s+/g,' ').trim();
-const spk = t => '<button class="spk" data-say="' + gEsc(clean(t)).replace(/"/g,'&quot;') +
+const spk = t => voiceMissing() ? '' : '<button class="spk" data-say="' + gEsc(clean(t)).replace(/"/g,'&quot;') +
   '" title="listen (British English)">\uD83D\uDD0A</button>';
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('.spk');
@@ -2604,6 +2635,18 @@ function paintWordList(){
     ? (bk ? (bk.e || '') + ' ' + bk.t : 'Words from books')
     : (wUnit.slice(0,3) === 'AWL' ? 'Academic Word List'
        : (LANG === 'en' ? 'Unit ' + wUnit : (UNAMES[wUnit] || wUnit).split(' \u00b7 ')[0]));
+  const warn = $('#voiceWarn');
+  if (warn){
+    if (voiceMissing()){
+      warn.classList.remove('hide');
+      warn.innerHTML = '\uD83D\uDD07 <b>This device has no ' +
+        (LANG === 'sv' ? 'Swedish' : 'Arabic') + ' voice installed.</b> ' +
+        'The sound is switched off here rather than read with an English accent. ' +
+        (LANG === 'sv'
+          ? 'On Windows: Settings \u2192 Time &amp; language \u2192 Speech \u2192 Add voices \u2192 Svenska.'
+          : 'On Windows: Settings \u2192 Time &amp; language \u2192 Speech \u2192 Add voices \u2192 \u0627\u0644\u0639\u0631\u0628\u064a\u0629.');
+    } else warn.classList.add('hide');
+  }
   const vb = $('#wView');
   if (vb) vb.textContent = wTable ? '\u25a4 Cards' : '\u25a6 Table';
   const sl = $('#wSeen');
