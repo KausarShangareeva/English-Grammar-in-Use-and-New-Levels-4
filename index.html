@@ -207,8 +207,9 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .wactions button.pri{background:var(--sea);border-color:var(--sea);color:#fff}
 .wactions button .qn{margin-left:7px;font-size:10.5px;font-weight:800;opacity:.65}
 .wactions button.pri .qn{opacity:.9}
-.wactions button.resume{background:var(--sand);border-color:var(--sand);color:#3B2F12}
-.wactions button.resume:hover{color:#3B2F12;background:#BE991F}
+.wactions button.resume{border-color:var(--sand);color:#7A6212;background:#FBF3DC}
+.wactions button.resume .qn{opacity:1;color:#8A6E14}
+.wactions button.resume:hover{background:#F6E9C4;color:#7A6212}
 .wactions button.cards{background:var(--rose-l);border-color:#F0DCE2;color:var(--rose)}
 .wactions button.cards:hover{color:var(--rose)}
 .planview{display:none;flex-direction:column;gap:12px}
@@ -1786,7 +1787,6 @@ function buildQuestions(pool){
   }).filter(q => q.prompt && q.answer && (q.kind === 'type' || (q.options && q.options.length > 1)));
 }
 function startQuiz(pool2, title, back){
-  clearResume();
   if (pool2){ quizPool = pool2; quizTitle = title || ''; quizBack = back || 'units'; }
   else { quizPool = null; quizBack = wMode === 'books' ? 'books' : 'units'; quizTitle = ''; }
   const pool = currentPool();
@@ -1881,7 +1881,7 @@ function answerQ(chosen, btn){
   document.getElementById('qNext').onclick = () => { qi++; saveResume(); renderQ(); };
 }
 function finishQuiz(){
-  clearResume();
+  clearResume();          /* this set and this mode only */
   $('#qBar').style.width = '100%';
   $('#qCount').textContent = Q.length + ' / ' + Q.length;
   const pct = Math.round(qRight / Q.length * 100);
@@ -1905,30 +1905,31 @@ function finishQuiz(){
 /* A long round should survive a closed tab: the set, the mode, the order and
    where you had got to are written down after every answer. */
 const RESUME_KEY = 'quiz_resume';
-function resumeSlot(){
-  if (quizPool) return 'pool:' + quizTitle;
-  return 'set:' + wUnit;
-}
+function resumeSlot(){ return quizPool ? 'pool:' + quizTitle : 'set:' + wUnit; }
+function allResumes(){ return readJSON(RESUME_KEY) || {}; }
+function resumeKey(slot, mode){ return slot + '|' + mode; }
 function saveResume(){
   if (!Q.length || qi >= Q.length) return;
-  writeJSON(RESUME_KEY, {
+  const all = allResumes();
+  all[resumeKey(resumeSlot(), qMode)] = {
     slot: resumeSlot(), mode: qMode, qi: qi, right: qRight,
     ids: Q.map(x => x.w.i), title: quizTitle, back: quizBack,
-    poolIds: quizPool ? quizPool.map(w => w.i) : null,
-    savedAt: isoToday()
-  });
+    poolIds: quizPool ? quizPool.map(w => w.i) : null, savedAt: isoToday()
+  };
+  writeJSON(RESUME_KEY, all);
 }
-function clearResume(){
-  try { localStorage.removeItem(RESUME_KEY); } catch(e){}
-  delete MEM[RESUME_KEY];
+function clearResume(slot, mode){
+  const all = allResumes();
+  delete all[resumeKey(slot || resumeSlot(), mode || qMode)];
+  writeJSON(RESUME_KEY, all);
 }
-function savedRound(){
-  const r = readJSON(RESUME_KEY);
+function savedRound(slot, mode){
+  const r = allResumes()[resumeKey(slot, mode)];
   if (!r || !r.ids || r.qi >= r.ids.length) return null;
   return r;
 }
-function resumeQuiz(){
-  const r = savedRound(); if (!r) return;
+function resumeQuiz(slot, mode){
+  const r = savedRound(slot, mode); if (!r) return;
   const byId = {};
   WD.forEach(w => { byId[w.i] = w; });
   const words = r.ids.map(i => byId[i]).filter(Boolean);
@@ -1940,13 +1941,9 @@ function resumeQuiz(){
   quizExit = () => go(quizBack);
   qMode = r.mode || 'mix';
   window.__qmode = qMode;
-  /* rebuild the same questions, in the same order */
   const pool = quizPool || WD.filter(w => w.u === wUnit);
-  Q = words.map((w, ix) => {
-    const saved = buildQuestions([w].concat(
-      shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3)))[0];
-    return saved;
-  }).filter(Boolean);
+  Q = words.map(w => buildQuestions([w].concat(
+        shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3)))[0]).filter(Boolean);
   qi = Math.min(r.qi, Q.length - 1);
   qRight = r.right || 0;
   qLocked = false;
@@ -2103,27 +2100,27 @@ function paintPractise(){
   const pool = currentPool();
   const countFor = mode => pool.filter(w =>
       (mode !== 'cloze' || (w.e && w.e.length)) && (mode !== 'reg' || w.t)).length;
-  const r = savedRound();
-  const mine = r && r.slot === ('set:' + wUnit);
-  box.innerHTML = (mine
-    ? '<button class="pri resume" data-m="resume">\u21ba Continue \u00b7 ' +
-      (r.qi + 1) + '/' + r.ids.length + '</button>' : '') +
-    QMODES.map(m => {
+  const slot = 'set:' + wUnit;
+  box.innerHTML = QMODES.map(m => {
       const n = m[0] === 'mix' ? pool.length : countFor(m[0]);
-      return '<button class="' + (m[0] === 'mix' ? 'pri' : '') + '" data-m="' + m[0] + '">' +
-        (ICON[m[0]] || '') + ' ' + m[1] +
-        '<span class="qn">' + n + '</span></button>';
+      const r = savedRound(slot, m[0]);
+      return '<button class="' + (m[0] === 'mix' ? 'pri' : '') + (r ? ' resume' : '') +
+        '" data-m="' + m[0] + '">' + (ICON[m[0]] || '') + ' ' + m[1] +
+        (r ? '<span class="qn">\u21ba ' + (r.qi + 1) + '/' + r.ids.length + '</span>'
+           : '<span class="qn">' + n + '</span>') + '</button>';
     }).join('') +
     '<button class="cards" data-m="cards">\uD83C\uDCCF Flashcards<span class="qn">' +
     pool.length + '</span></button>';
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
-    if (b.dataset.m === 'resume') return resumeQuiz();
-    if (b.dataset.m === 'cards')  return startCards();
+    if (b.dataset.m === 'cards') return startCards();
+    const slot = 'set:' + wUnit;
+    if (savedRound(slot, b.dataset.m)) return resumeQuiz(slot, b.dataset.m);
     qMode = b.dataset.m;
     startQuiz();
   });
   const hint = $('#wHint');
-  if (hint) hint.textContent = 'the whole set, every word, in the order the shuffle gives';
+  if (hint) hint.textContent =
+    'the whole set \u00b7 leave one half-done and \u21ba appears on that button';
 }
 function paintWordList(){
   const box = $('#wList'); if (!box) return;
