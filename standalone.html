@@ -421,6 +421,30 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   border-radius:999px;padding:10px 16px;font-family:var(--ui);font-size:13px;color:var(--ink);
   background:var(--bg);outline:none}
 .wsearch:focus{border-color:var(--sea);background:var(--panel)}
+.wview{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:10px 15px;
+  font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut);cursor:pointer;
+  white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.wview:hover{color:var(--sea);border-color:var(--line2)}
+.wtabwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.wtab{width:100%;border-collapse:collapse;min-width:900px}
+.wtab th{font-family:var(--ui);font-size:8.5px;font-weight:800;letter-spacing:.9px;
+  text-transform:uppercase;color:var(--rose);text-align:left;padding:0 10px 8px 0;
+  border-bottom:1px solid var(--line2);white-space:nowrap}
+.wtab td{padding:11px 10px 11px 0;border-bottom:1px solid var(--line);vertical-align:top;
+  font-size:13px;line-height:1.55;color:var(--mut)}
+.wtab tr:last-child td{border-bottom:none}
+.wtab td.n0{font-family:var(--ui);font-size:11px;font-weight:800;color:var(--mut2);
+  text-align:right;padding-right:12px}
+.wtab td.w0{font-family:var(--disp);font-size:19px;font-weight:600;color:var(--ink);
+  line-height:1.25;white-space:nowrap}
+.wtab td.w0 .pos2{display:block;font-family:var(--ui);font-size:10px;color:var(--mut2);
+  margin:2px 0 0}
+.wtab td.r0{color:var(--rose);font-weight:700;font-size:13.5px}
+.wtab td.c0{color:var(--sea);font-weight:700}
+.wtab td.e0 b{color:var(--ink)}
+.wtab td.f0{color:var(--mut2);font-size:12px}
+.wtab .tag{font-size:9.5px;font-weight:800;border-radius:999px;padding:2px 7px;margin-left:6px;
+  vertical-align:2px}
 .wchips{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
 .chipdiv{flex:0 0 100%;display:flex;align-items:center;gap:10px;margin:8px 0 2px;
   font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut2)}
@@ -912,6 +936,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
           <div class="wseen" id="wSeen"></div>
         </div>
         <input class="wsearch" id="wSearch" type="search" placeholder="search a word or a translation">
+        <button class="wview" id="wView">▦ Table</button>
       </div>
       <div class="wchips" id="wChips"></div>
       <div class="practise">
@@ -2422,6 +2447,8 @@ function allTrackables(){
 }
 /* ---- the word list, rendered by the platform itself ---- */
 let wMode = 'units', wUnit = null, wShown = 60, wQuery = '';
+/* the academic lists read better as a table; the story words as cards */
+let wTable = (readJSON('word_view') === 'table');
 function wUnitsFor(mode){
   return Object.keys(UNAMES).filter(u =>
     (mode === 'books') === (u.slice(0,2) === 'BK') && WD.some(w => w.u === u));
@@ -2503,6 +2530,8 @@ function paintWordList(){
   $('#wTitle').textContent = wMode === 'books'
     ? (bk ? (bk.e || '') + ' ' + bk.t : 'Words from books')
     : (wUnit.slice(0,3) === 'AWL' ? 'Academic Word List' : 'Unit ' + wUnit);
+  const vb = $('#wView');
+  if (vb) vb.textContent = wTable ? '\u25a4 Cards' : '\u25a6 Table';
   const sl = $('#wSeen');
   if (sl){
     const m = mood('set:' + wUnit);
@@ -2523,6 +2552,34 @@ function paintWordList(){
     return;
   }
   const slice = ws.slice(0, wShown);
+  if (wTable){
+    box.innerHTML = '<div class="wtabwrap"><table class="wtab">' +
+      '<tr><th>\u2116</th><th>word</th><th>\u043f\u0435\u0440\u0435\u0432\u043e\u0434</th>' +
+      '<th>meaning</th><th>collocations</th><th>example</th><th>family \u00b7 warnings</th></tr>' +
+      slice.map((w, ix) => {
+        const ex = (w.e && w.e.length)
+          ? gEsc(String(w.e[0][0])).replace('____', '<b>' + gEsc(w.e[0][1]) + '</b>') : '';
+        return '<tr>' +
+          '<td class="n0">' + (ix + 1) + '</td>' +
+          '<td class="w0">' + gEsc(w.w) + spk(w.w) +
+            (w.t === 'flag' ? '<span class="tag flag">essay</span>' : '') +
+            (w.t === 'red' ? '<span class="tag red">spoken</span>' : '') +
+            (w.p ? '<span class="pos2">' + gEsc(w.p) + '</span>' : '') + '</td>' +
+          '<td class="r0">' + gEsc(w.r || '') + '</td>' +
+          '<td>' + gEsc(w.m || '') + '</td>' +
+          '<td class="c0">' + (w.c ? gSafe(w.c) : '') + '</td>' +
+          '<td class="e0">' + ex + '</td>' +
+          '<td class="f0">' + (w.n ? gSafe(w.n) : '') +
+            (w.fq ? '<br>appears <b>' + w.fq + '</b> times in the book' : '') + '</td>' +
+        '</tr>';
+      }).join('') + '</table></div>' +
+      (ws.length > wShown
+        ? '<button class="wmore" id="wMore">Show ' + Math.min(60, ws.length - wShown) +
+          ' more \u00b7 ' + (ws.length - wShown) + ' left</button>' : '');
+    const m2 = document.getElementById('wMore');
+    if (m2) m2.onclick = () => { wShown += 60; paintWordList(); };
+    return;
+  }
   box.innerHTML = slice.map(w => {
     const ex = (w.e && w.e.length)
       ? gEsc(String(w.e[0][0])).replace('____', '<b>' + gEsc(w.e[0][1]) + '</b>') : '';
@@ -3515,6 +3572,11 @@ if (!storageWorks()){
 }
 $('#backRead').onclick = () => { stopRead(); go('reading'); };
 $('#wSearch').oninput = e => { wQuery = e.target.value; wShown = 60; paintWordList(); };
+$('#wView').onclick = () => {
+  wTable = !wTable;
+  writeJSON('word_view', wTable ? 'table' : 'cards');
+  paintWordList();
+};
 $('#qQuit').onclick = () => { saveResume(); quizExit(); };
 $('#cQuit').onclick = () => go(wMode === 'books' ? 'books' : 'units');
 $('#flipCard').onclick = () => { flipped = !flipped; renderCard(); };
