@@ -677,8 +677,20 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   line-height:1.65;margin-bottom:6px}
 .gramtopic mark{background:var(--sand-l);color:var(--ink);border-radius:4px;padding:0 3px}
 .gramtopic s{color:var(--mut2)}
-.ggroup{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut2);
-  margin:20px 0 9px;font-weight:700}
+/* the section headings inside a topic: big enough to find at a glance */
+.ggroup{display:flex;align-items:center;gap:9px;font-family:var(--ui);font-size:14px;
+  font-weight:800;letter-spacing:.2px;text-transform:none;color:var(--sea);
+  background:var(--sea-l);border-radius:12px;padding:10px 14px;margin:24px 0 10px}
+.ggroup:first-child{margin-top:6px}
+.ggroup .gdot{width:8px;height:8px;border-radius:50%;background:var(--sea);flex:0 0 8px;opacity:.6}
+/* a colour per kind of section, so the eye learns them */
+.ggroup.gk-form{color:#8A6E14;background:#FBF3DC}      .ggroup.gk-form .gdot{background:#C9A227}
+.ggroup.gk-use{color:var(--sage);background:var(--sage-l)} .ggroup.gk-use .gdot{background:var(--sage)}
+.ggroup.gk-pass{color:#6B5BA8;background:#EFECF9}      .ggroup.gk-pass .gdot{background:#6B5BA8}
+.ggroup.gk-warn{color:var(--rose);background:var(--rose-l)} .ggroup.gk-warn .gdot{background:var(--rose)}
+.ggroup.gk-q{color:#2F6E8F;background:#E4F0F6}         .ggroup.gk-q .gdot{background:#3E7FA8}
+.ggroup.gk-time{color:#A65D2E;background:#FBEBE0}      .ggroup.gk-time .gdot{background:#E0713E}
+.ggroup.gk-ex{color:var(--sea);background:var(--sea-l)} .ggroup.gk-ex .gdot{background:var(--sea)}
 .gverb{border:1px solid var(--line);background:var(--panel);border-radius:16px;
   padding:13px 14px;margin-bottom:8px}
 .gverb h4{font-family:var(--disp);font-size:24px;font-weight:600;color:var(--sea);margin:0}
@@ -3422,6 +3434,17 @@ function cellHTML(c){
   return t.replace(/^((?:[\u274c\u2705\u26a0\uFE0F\uD83D\uDC9C\uD83E\uDD69\s]*)[^:.<>]{2,30}):(\s)/,
     '<b class="cellab">$1:</b>$2');
 }
+/* which family a section belongs to, so it can carry its own colour */
+function groupKind(name){
+  const n = String(name).toLowerCase();
+  if (/example/.test(n)) return 'gk-ex';
+  if (/wh-|question/.test(n)) return 'gk-q';
+  if (/time marker|the future/.test(n)) return 'gk-time';
+  if (/passive/.test(n)) return 'gk-pass';
+  if (/wrong|exception|trap|no passive|refuse|\u26a0/.test(n)) return 'gk-warn';
+  if (/form|shape|built/.test(n)) return 'gk-form';
+  return 'gk-use';
+}
 function openGramTopic(ix){
   const g = GR[ix]; if (!g) return;
   markSeen('gram:' + g.id, 'open');
@@ -3440,7 +3463,8 @@ function openGramTopic(ix){
   if (g.intro) html += '<div class="gintro">' + gSafe(g.intro) + '</div>';
   if (g.key)   html += '<div class="gkey">' + gSafe(g.key) + '</div>';
   g.groups.forEach(gr => {
-    html += '<div class="ggroup">' + gEsc(gr.g) + '</div>';
+    html += '<div class="ggroup ' + groupKind(gr.g) + '"><span class="gdot"></span>' +
+      gEsc(gr.g) + '</div>';
     gr.vs.forEach(v => {
       const li = (v.ex || []).map(e =>
         '<tr><td class="lv">' + gEsc(e.l || '') + '</td>' +
