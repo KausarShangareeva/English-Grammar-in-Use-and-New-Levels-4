@@ -695,6 +695,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .gn{margin-top:0}
 .gn{font-size:12.5px;color:var(--mut);margin:3px 0 9px;line-height:1.45}
 .vtab{width:100%;border-collapse:collapse;margin:10px 0 4px;table-layout:fixed}
+.vtabwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.vtabwrap .vtab{min-width:820px}
 .vtab th,.extab th{font-family:var(--ui);font-size:8.5px;font-weight:800;letter-spacing:.9px;
   text-transform:uppercase;color:var(--rose);text-align:left;padding:0 6px 6px;
   border-bottom:1px solid var(--line2)}
@@ -3374,13 +3376,17 @@ function openGramTopic(ix){
       if (v.tb){
         tb = '<table class="vtab">' + CW.map(w => '<col style="width:' + w + '">').join('') +
           '<tr>' + TH.map(h => '<th>' + gEsc(h) + '</th>').join('') + '</tr>' +
-          v.tb.map(r =>
-            '<tr class="vrow"><td>' + gEsc(r[0]) + '</td><td class="v2">' + gEsc(r[1]) + '</td>' +
-            '<td class="v3">' + gEsc(r[2]) + '</td><td class="ru3">' + gEsc(r[3]) + '</td></tr>' +
-            r.slice(4).filter(Boolean).map((x,ix2) =>
-              '<tr class="vex"><td colspan="4"><span class="fm">' +
-              ((v.fm || ['V1','V2','V3'])[ix2] || '') + '</span>' + gEsc(x) + '</td></tr>').join('')
-          ).join('') + '</table>';
+          v.tb.map(r => {
+            /* draw as many cells as the header asks for, whatever that number is */
+            const n = TH.length;
+            const cells = r.slice(0, n).map((c, ci) =>
+              '<td' + (ci === 1 ? ' class="v2"' : ci === 2 ? ' class="v3"'
+                      : ci === n - 1 ? ' class="ru3"' : '') + '>' + gEsc(c) + '</td>').join('');
+            const extra = r.slice(n).filter(Boolean).map((x, ix2) =>
+              '<tr class="vex"><td colspan="' + n + '"><span class="fm">' +
+              ((v.fm || ['V1','V2','V3'])[ix2] || '') + '</span>' + gEsc(x) + '</td></tr>').join('');
+            return '<tr class="vrow">' + cells + '</tr>' + extra;
+          }).join('') + '</table>';
         if (v.wide) tb = '<div class="vtabwrap">' + tb + '</div>' +
           '<div class="swipe">swipe the table sideways \u2192</div>';
       }
