@@ -1632,15 +1632,16 @@ function paintFinish(){
   const g = finishOf('GRAMMAR');
   if (g) add('Grammar in Use', '\uD83D\uDCD8', g.iso, '145 units, two a day');
   /* two sets now, so two lines: each one ends on its own day */
-  const lastOf = (name, needle) => {
+  const lastNumbered = (name, level) => {
     const q = STREAMS_Q[name]; if (!q) return null;
+    const re = new RegExp(level + ' \\d');   /* a level followed by a test number */
     let hit = null;
-    q.forEach(x => { if ((OVERRIDE[x.id] || x.text).indexOf(needle) >= 0) hit = x.id.slice(0,10); });
+    q.forEach(x => { if (re.test(OVERRIDE[x.id] || x.text)) hit = x.id.slice(0,10); });
     return hit;
   };
-  const l1 = lastOf('LISTENING', 'B1 ');
+  const l1 = lastNumbered('LISTENING', 'B1');
   if (l1) add('Listening B1', '\uD83C\uDFA7', l1, '51 tests, two a day');
-  const l2 = lastOf('LISTENING', 'B2 ');
+  const l2 = lastNumbered('LISTENING', 'B2');
   if (l2) add('Listening B2', '\uD83C\uDFA7', l2, '36 tests, two a day \u00b7 then a new set is needed');
   const u = finishOf('UDEMY');
   if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u.iso, '153 sections, one a day');
