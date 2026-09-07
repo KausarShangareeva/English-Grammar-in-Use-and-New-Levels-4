@@ -677,20 +677,20 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   line-height:1.65;margin-bottom:6px}
 .gramtopic mark{background:var(--sand-l);color:var(--ink);border-radius:4px;padding:0 3px}
 .gramtopic s{color:var(--mut2)}
-/* the section headings inside a topic: big enough to find at a glance */
-.ggroup{display:flex;align-items:center;gap:9px;font-family:var(--ui);font-size:14px;
-  font-weight:800;letter-spacing:.2px;text-transform:none;color:var(--sea);
-  background:var(--sea-l);border-radius:12px;padding:10px 14px;margin:24px 0 10px}
-.ggroup:first-child{margin-top:6px}
-.ggroup .gdot{width:8px;height:8px;border-radius:50%;background:var(--sea);flex:0 0 8px;opacity:.6}
-/* a colour per kind of section, so the eye learns them */
-.ggroup.gk-form{color:#8A6E14;background:#FBF3DC}      .ggroup.gk-form .gdot{background:#C9A227}
-.ggroup.gk-use{color:var(--sage);background:var(--sage-l)} .ggroup.gk-use .gdot{background:var(--sage)}
-.ggroup.gk-pass{color:#6B5BA8;background:#EFECF9}      .ggroup.gk-pass .gdot{background:#6B5BA8}
-.ggroup.gk-warn{color:var(--rose);background:var(--rose-l)} .ggroup.gk-warn .gdot{background:var(--rose)}
-.ggroup.gk-q{color:#2F6E8F;background:#E4F0F6}         .ggroup.gk-q .gdot{background:#3E7FA8}
-.ggroup.gk-time{color:#A65D2E;background:#FBEBE0}      .ggroup.gk-time .gdot{background:#E0713E}
-.ggroup.gk-ex{color:var(--sea);background:var(--sea-l)} .ggroup.gk-ex .gdot{background:var(--sea)}
+/* the section headings inside a topic: solid colour, white text, impossible to miss */
+.ggroup{display:flex;align-items:center;gap:9px;font-family:var(--ui);font-size:13.5px;
+  font-weight:800;letter-spacing:.3px;text-transform:none;color:#fff;
+  background:var(--sea);border-radius:11px;padding:9px 14px;margin:26px 0 11px;
+  box-shadow:0 3px 10px rgba(39,107,122,.16)}
+.ggroup:first-child{margin-top:4px}
+.ggroup .gdot{width:7px;height:7px;border-radius:50%;background:#fff;flex:0 0 7px;opacity:.75}
+.ggroup.gk-form{background:#B8901F}
+.ggroup.gk-use{background:#3F7A5C}
+.ggroup.gk-pass{background:#5B4C96}
+.ggroup.gk-warn{background:#C43C63}
+.ggroup.gk-q{background:#2F6E8F}
+.ggroup.gk-time{background:#C75E2A}
+.ggroup.gk-ex{background:#276B7A}
 .gverb{border:1px solid var(--line);background:var(--panel);border-radius:16px;
   padding:13px 14px;margin-bottom:8px}
 .gverb h4{font-family:var(--disp);font-size:24px;font-weight:600;color:var(--sea);margin:0}
