@@ -1410,6 +1410,7 @@ function openEssay(title, level){
   const set = ESSAYS.filter(x => x.title === title);
   if (!set.length) return;
   markSeen('essay:' + title, 'open');
+  saveWhere({ v:'essay', t: title, l: level });
   const e = set.find(x => x.level === level) || set[0];
   $('#essaysView').classList.remove('on');
   hideAll('#reader');
@@ -1755,6 +1756,43 @@ const flagImg = (l, cls) => {
   return '<img class="' + (cls || 'fimg') + '" alt="" width="' + (big ? 24 : 21) +
          '" height="' + (big ? 18 : 16) + '" src="' + FLAGS[l] + '">';
 };
+/* Remember where she was, so a reload does not throw her back to the courses. */
+let restoring = false;
+function saveWhere(w){
+  if (restoring) return;
+  try { writeJSON('last_place', w); } catch(e){}
+}
+function restoreWhere(){
+  const w = readJSON('last_place');
+  if (!w || !w.v) return false;
+  restoring = true;
+  try {
+    if (w.v === 'gramTopic'){
+      const ix = GR.findIndex(g => g.id === w.id);
+      if (ix >= 0){
+        gramOnly = (GR[ix].sec === 'Speaking') ? 'Speaking' : null;
+        openGramTopic(ix);
+      } else go('grammar');
+    } else if (w.v === 'story'){
+      const e = ST.find(x => x.sr === w.sr && x.n === w.n);
+      if (e) openStory(w.sr, w.n); else go('reading');
+    } else if (w.v === 'essay'){
+      openEssay(w.t, w.l || null);
+    } else if (w.v === 'units' || w.v === 'books'){
+      if (w.u) wUnit = w.u;
+      go(w.v);
+    } else if (w.v === 'plan'){
+      if (typeof w.wk === 'number'){
+        $('#planView').dataset.started = '1';
+        wkIx = w.wk;
+      }
+      go('plan');
+      if (typeof w.wk === 'number'){ wkIx = w.wk; paintWeek(); }
+    } else go(w.v);
+  } catch(e){ restoring = false; return false; }
+  restoring = false;
+  return true;
+}
 /* ---- three platforms, one shell ---- */
 const EN = { GR: null, WD: null, ST: null, ESSAYS: null, UNAMES: null, BOOKS: null, SERIES: null };
 let LANG = 'en';
@@ -1785,7 +1823,7 @@ function applyLang(l){
   $('#langFlag').innerHTML = flagImg(l, 'fimg big');
   paintLangMenu();
   refreshGuide();
-  go('dash');
+  if (!restoring) go('dash');
 }
 function paintLangMenu(){
   const fl = $('#langFlag');
@@ -2670,6 +2708,7 @@ function paintWordChips(){
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     wUnit = b.dataset.u; wShown = 60;
     markSeen('set:' + wUnit, 'open');
+    saveWhere({ v: wMode === 'books' ? 'books' : 'units', u: wUnit });
     paintWordChips(); paintWordList();
   });
 }
@@ -3017,6 +3056,7 @@ function paintReadList(){
 function openStory(sr, n){
   const e = ST.find(x => x.sr === sr && x.n === n); if (!e) return;
   markSeen('story:' + sr + n, 'open');
+  saveWhere({ v:'story', sr: sr, n: n });
   $('#readList').classList.remove('on');
   hideAll('#storyView');
     $('#storyView').classList.add('on');
@@ -3362,6 +3402,7 @@ function cellHTML(c){
 function openGramTopic(ix){
   const g = GR[ix]; if (!g) return;
   markSeen('gram:' + g.id, 'open');
+  saveWhere({ v:'gramTopic', id: g.id });
   $('#gramList').classList.remove('on');
   hideAll('#gramTopic');
     $('#gramTopic').classList.add('on');
@@ -3607,6 +3648,9 @@ function hideAll(except){
 }
 
 function go(id){
+  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards'].indexOf(id) >= 0)
+    saveWhere({ v: id, u: (id === 'units' || id === 'books') ? wUnit : undefined,
+                wk: (id === 'plan') ? wkIx : undefined });
   toTop();
   if (id === 'plan'){
     $('#dash').classList.add('off');
@@ -3794,9 +3838,9 @@ $('#backEssays').onclick = () => go('essay');
 let lastGramCard = 'grammar';
 $('#backGram').onclick = () => go(lastGramCard);
 /* stepping through weeks should not throw you back to the top of the page */
-$('#wkPrev').onclick  = () => { if (wkIx > 0){ wkIx--; paintWeek(); } };
-$('#wkNext').onclick  = () => { if (wkIx < WEEKS.length-1){ wkIx++; paintWeek(); } };
-$('#wkToday').onclick = () => { wkIx = weekOfToday(); paintWeek(); };
+$('#wkPrev').onclick  = () => { if (wkIx > 0){ wkIx--; paintWeek(); saveWhere({v:'plan',wk:wkIx}); } };
+$('#wkNext').onclick  = () => { if (wkIx < WEEKS.length-1){ wkIx++; paintWeek(); saveWhere({v:'plan',wk:wkIx}); } };
+$('#wkToday').onclick = () => { wkIx = weekOfToday(); paintWeek(); saveWhere({v:'plan',wk:wkIx}); };
 $('#bkSave').onclick = saveBackup;
 $('#bkLoad').onclick = () => $('#bkFile').click();
 $('#bkFile').onchange = e => { if (e.target.files[0]) restoreBackup(e.target.files[0]); };
@@ -3816,7 +3860,8 @@ document.addEventListener('click', e => {
 });
 try {
   const saved = localStorage.getItem('studyhub_lang');
-  if (saved && (saved === 'en' || PACKS[saved])) applyLang(saved); else { stashEnglish(); paintLangMenu(); }
+  if (saved && (saved === 'en' || PACKS[saved])) applyLang(saved);
+  else { stashEnglish(); paintLangMenu(); }
 } catch(e){ stashEnglish(); paintLangMenu(); }
 $('#wView').onclick = () => {
   wTable = !wTable;
@@ -3842,10 +3887,16 @@ $('#datepill').textContent = new Date().toLocaleDateString('en-GB',
   {weekday:'long',day:'numeric',month:'long'});
 
 paintNav(); paintCalendar(); paintSchedule(); paintCards();
-let start = 'dash';
-try { start = location.hash.slice(1) || localStorage.getItem('studyhub_last') || 'dash'; } catch(e){}
-if (!NAV.some(n => n.id === start)) start = 'dash';
-go(start);
+/* the hash wins, then the exact place she was, then the plain last screen */
+let start = '';
+try { start = location.hash.slice(1) || ''; } catch(e){}
+if (start && NAV.some(n => n.id === start)) go(start);
+else if (!restoreWhere()){
+  let last = 'dash';
+  try { last = localStorage.getItem('studyhub_last') || 'dash'; } catch(e){}
+  if (!NAV.some(n => n.id === last)) last = 'dash';
+  go(last);
+}
 window.addEventListener('hashchange', function(){ try{ go(location.hash.slice(1) || 'dash'); }catch(e){} });
 </script>
 <script type="text/plain" id="app-words"><!DOCTYPE html>
