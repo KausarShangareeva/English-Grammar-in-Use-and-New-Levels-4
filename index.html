@@ -605,6 +605,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .tssub s{color:var(--mut2)}
 .tsg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
   color:var(--mut2);margin:14px 2px 4px}
+.tsrow .pen{display:inline-block;line-height:0;flex:0 0 32px}
 .tsrow{display:flex;align-items:flex-start;gap:12px;width:100%;border:none;background:none;
   padding:10px 8px;border-radius:12px;text-align:left;font-family:var(--ui);cursor:pointer;
   -webkit-tap-highlight-color:transparent}
@@ -1791,6 +1792,26 @@ function restoreWhere(){
   } catch(e){ restoring = false; return false; }
   restoring = false;
   return true;
+}
+/* A pennant with a notched foot, carrying the Murphy unit number. */
+const MURPHY = {"tsPresCont":"1","tsPresSimple":"2","tsPastSimple":"5","tsPastCont":"6","tsPresPerf":"7–8","tsPresPerfCont":"9–11","tsPastPerf":"15","tsPastPerfCont":"16","tsFutSimple":"21–22","tsFutCont":"24","tsFutPerf":"24","tsFutPerfCont":"24","havegot":"17","usedto":"18","stative":"4","verbsys":"1–25","pass":"42–44","rel":"92–96","part":"97–98","art":"69–78","indef":"85–86","comp":"105–108","adv":"98–99","vpat":"53–68","negq":"49–52","irr":"App. 1","edspelling":"App. 6","whenwhile":"25","timemarkers":"7–14","prepTime":"121–122","prepPlace":"123–126","prepDep":"129–136","oneof":"87"};
+const PENNANT_COLOURS = ["#D1495B", "#E0713E", "#E09B2D", "#C9A227", "#7FA83E", "#4F8A6B", "#3E9D8E", "#3E7FA8", "#4F5FA8", "#6B5BA8", "#8E5AA0", "#B2568E"];
+function pennant(id, ix, colour){
+  const u = MURPHY[id];
+  if (!u) return '';
+  const c = colour ||
+    PENNANT_COLOURS[(ix >= 0 ? ix : Object.keys(MURPHY).indexOf(id)) % PENNANT_COLOURS.length];
+  /* the words live inside the drawing, so no browser can push them out of it */
+  const t = String(u);
+  const size = t.length <= 2 ? 17 : t.length <= 4 ? 13 : 9;
+  return '<span class="pen" title="English Grammar in Use \u00b7 unit ' + gEsc(t) + '">' +
+    '<svg width="32" height="38" viewBox="0 0 40 48" aria-hidden="true">' +
+      '<path d="M2 1h36v33l-18 11L2 34z" fill="' + c + '"/>' +
+      '<text x="20" y="17" text-anchor="middle" fill="#fff" font-family="Nunito, sans-serif" ' +
+        'font-size="8" font-weight="400" letter-spacing="1.1" opacity=".92">UNIT</text>' +
+      '<text x="20" y="31" text-anchor="middle" fill="#fff" font-family="Nunito, sans-serif" ' +
+        'font-size="' + size + '" font-weight="800">' + gEsc(t) + '</text>' +
+    '</svg></span>';
 }
 /* ---- three platforms, one shell ---- */
 const EN = { GR: null, WD: null, ST: null, ESSAYS: null, UNAMES: null, BOOKS: null, SERIES: null };
@@ -3338,7 +3359,8 @@ function tenseBlock(){
       const mid = 'gram:' + t.topic;
       const m = mood(mid);
       return '<button class="tsrow"' + (ix >= 0 ? ' data-i="' + ix + '"' : '') + '>' +
-        '<span class="tsdot" style="background:' + t.c + '"></span>' +
+        (pennant(t.topic, TENSES.indexOf(t), t.c) ||
+         '<span class="tsdot" style="background:' + t.c + '"></span>') +
         '<span class="tsmid"><span class="tsn">' + t.n + '</span>' +
         '<span class="tsf">' + t.a +
         (t.p ? ' <span class="tsp">\u00b7 passive:</span> ' + t.p
@@ -3376,7 +3398,8 @@ function paintGramList(){
       const dash = g.t.indexOf(' \u2014 ');
       const kName = dash > 0 ? g.t.slice(0, dash) : g.t;
       const kList = dash > 0 ? g.t.slice(dash + 3) : '';
-      return '<button class="grow" data-i="' + i + '"><span><span class="k">' + gEsc(kName) +
+      return '<button class="grow" data-i="' + i + '">' + pennant(g.id, i) +
+        '<span><span class="k">' + gEsc(kName) +
         (kList ? '<span class="klist">' + gEsc(kList) + '</span>' : '') + '</span>' +
         '<div class="d">' + gEsc(g.sub) + '</div>' +
         '<div class="m">' + nv + ' cards \u00b7 ' + nex + ' examples \u00b7 ' +
