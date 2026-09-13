@@ -890,6 +890,50 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
     display:flex;flex-direction:column;align-items:center;gap:3px}
   .mobbar button[aria-current="true"]{background:var(--sage-l);color:var(--ink);border-color:#CFE3D6}
 }
+
+.phead h2{font-family:var(--disp);font-size:30px;font-weight:600;margin:0 0 6px}
+.psub{font-size:13.5px;color:var(--mut);line-height:1.65;margin:0 0 18px;max-width:640px}
+.pcard{background:var(--panel);border-radius:20px;padding:20px 22px;margin-bottom:14px;
+  box-shadow:0 8px 26px rgba(39,107,122,.07)}
+.pcard h3{font-family:var(--disp);font-size:24px;font-weight:600;margin:0}
+.prole{font-size:12.5px;font-weight:700;color:var(--sea);margin-top:3px}
+.page2{font-size:11.5px;color:var(--mut2);margin-top:3px;font-weight:700}
+.psec{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--rose);margin:16px 0 7px}
+.pline{display:flex;gap:12px;font-size:13.5px;line-height:1.6;padding:6px 0;
+  border-bottom:1px solid var(--line)}
+.pline:last-child{border-bottom:none}
+.pwhen{flex:0 0 118px;font-family:var(--ui);font-size:11px;font-weight:800;color:var(--mut2);
+  padding-top:3px}
+.plist{margin:0;padding-left:18px;font-size:13.5px;line-height:1.75;color:var(--mut)}
+.ptake{margin-top:14px;background:var(--sage-l);border-radius:13px;padding:12px 15px;
+  font-size:13px;line-height:1.7;color:var(--ink)}
+.plink{display:inline-block;margin-top:10px;font-size:12px;font-weight:700;color:var(--sea)}
+.pdel{float:right;border:none;background:none;color:var(--mut2);font-size:11px;font-weight:700;
+  cursor:pointer}
+.pdel:hover{color:var(--rose)}
+.doors{background:var(--panel);border-radius:20px;padding:20px 22px;margin:20px 0 14px;
+  box-shadow:0 8px 26px rgba(39,107,122,.07)}
+.doors h3{font-family:var(--disp);font-size:23px;font-weight:600;margin:0 0 4px}
+.doorline{padding:11px 0;border-bottom:1px solid var(--line)}
+.doorline:last-child{border-bottom:none}
+.doorname{font-weight:800;font-size:13.5px;color:var(--sea)}
+.doorwho{font-size:11.5px;font-weight:700;color:var(--rose);margin:2px 0 4px}
+.doorwhat{font-size:13px;line-height:1.65;color:var(--mut)}
+.doorwhen{font-size:11.5px;color:var(--mut2);margin-top:3px}
+.addpbtn{border:1px dashed var(--line2);background:none;border-radius:14px;padding:12px 18px;
+  font-family:var(--ui);font-size:13px;font-weight:800;color:var(--sea);cursor:pointer;width:100%}
+.addform{background:var(--panel);border-radius:18px;padding:16px;margin-top:10px;
+  display:flex;flex-direction:column;gap:8px}
+.addform.hide{display:none}
+.addform input,.addform textarea{border:1px solid var(--line);border-radius:11px;padding:10px 12px;
+  font-family:var(--ui);font-size:13px;color:var(--ink);background:var(--bg)}
+.addrow{display:flex;gap:8px}
+.addrow button{flex:1;border:none;border-radius:11px;padding:11px;font-family:var(--ui);
+  font-size:13px;font-weight:800;cursor:pointer}
+#pfSave{background:var(--sea);color:#fff}
+#pfCancel{background:var(--bg);color:var(--mut)}
+
 </style>
 </head>
 <body>
@@ -943,6 +987,30 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       </div>
     </div>
 
+    <section id="peopleView" class="view">
+      <div class="phead">
+        <h2>People who did it here</h2>
+        <p class="psub">Not the headlines — the actual sequence. What they studied, what they
+        built before anyone noticed, and how long it took.</p>
+      </div>
+      <div id="peopleList"></div>
+      <div class="doors" id="doorsCard"></div>
+      <div class="addp">
+        <button class="addpbtn" id="addPerson">+ Add someone</button>
+        <div class="addform hide" id="addForm">
+          <input id="pfName" placeholder="Name">
+          <input id="pfRole" placeholder="What they do — role and company">
+          <input id="pfAge" placeholder="Age">
+          <input id="pfEdu" placeholder="Education — separated by ;">
+          <textarea id="pfPath" rows="4" placeholder="The path — one step a line: 2021 | first job at a startup"></textarea>
+          <input id="pfAwards" placeholder="Awards — separated by ;">
+          <input id="pfMade" placeholder="What they created — separated by ;">
+          <textarea id="pfTake" rows="2" placeholder="What I take from this"></textarea>
+          <input id="pfLink" placeholder="A link (optional)">
+          <div class="addrow"><button id="pfSave">Save</button><button id="pfCancel">Cancel</button></div>
+        </div>
+      </div>
+    </section>
     <div class="awards" id="awards">
       <div class="awhead">
         <div>
@@ -1223,6 +1291,7 @@ const $ = s => document.querySelector(s);
 const NAV = [
   { id:'dash', icon:'\u25A6',            label:'Courses'  },
   { id:'plan',   icon:'\uD83D\uDDD3\uFE0F', label:'Schedule' },
+  { id:'people', icon:'\u2728',          label:'People'   },
   { id:'awards', icon:'\uD83C\uDFC5',        label:'IT goals'  }
 ];
 
@@ -1920,6 +1989,79 @@ writeJSON = (k, v) => _writeJSON(lkey(k), v);
     localStorage.setItem('seed_missed_20260913', '1');
   } catch(e){}
 })();
+
+/* ---- the people whose path is worth studying ---- */
+const PEOPLE_SEED = [{"id":"osika","name":"Anton Osika","role":"Co-founder and CEO, Lovable","age":"born 10 August 1990 · 35","edu":["BSc Physics — Hong Kong University of Science and Technology","MSc Engineering Physics and Applied Mathematics — KTH, Stockholm, 2015"],"path":[["age 12","started coding"],["after KTH","worked at CERN"],["2017","first hire and founding engineer at Sana Labs, a Stockholm AI startup"],["2020","co-founder and CTO of Depict.ai — a Y Combinator startup that raised $20m"],["2023","built GPT Engineer over a weekend after ChatGPT appeared, put it on GitHub, woke up to tens of thousands of stars"],["Nov 2023","co-founded Lovable in Stockholm with Fabian Hedin; $8m seed from Hummingbird within weeks"],["Dec 2024","the product renamed Lovable"],["2025","KTH Innovation Award; $100m annual revenue eight months after launch"],["Dec 2025","$330m round at $6.6bn"],["Aug 2026","Series C at $13.3bn; the founders still hold about 24% each"]],"awards":["KTH Innovation Award 2025, funded by KTH with donations from Mathias Uhlén and Daniel Ek","Signed the Founders Pledge — half of any exit to charity"],"made":["GPT Engineer — open source, tens of thousands of GitHub stars","Lovable — build an app by describing it in chat","Depict.ai, and early engineering at Sana Labs"],"take":"He did not start with a company. He started with a weekend hack that he published. 💜 The public artefact came first, the company came after — and everything before it was ten years of working at other people's startups."},{"id":"hedin","name":"Fabian Hedin","role":"Co-founder and CTO, Lovable","age":"26","edu":["No famous degree in the public record — he was building companies instead"],"path":[["age 10","started building ventures"],["high school","sold a prop-tech company"],["before Lovable","worked on Stephen Hawking's communication interface and on technology for people with disabilities, alongside former SpaceX engineers"],["2022","front-end engineering lead at Depict.ai, where he met Osika"],["Nov 2023","co-founded Lovable as CTO"],["Dec 2025","one of the youngest self-made billionaires in Europe, at 26"]],"awards":["KTH Innovation Award 2025, jointly with Osika","Among the world's self-made billionaires under 30"],"made":["Lovable, as CTO","A prop-tech company sold while still at school"],"take":"💜 He is the counter-example to ‘I need the right degree first’. What he had instead was fifteen years of shipping things, starting at ten."},{"id":"guuled","name":"Guuled Mohamed","role":"— to fill in","age":"—","edu":["—"],"path":[["—","I could not open his LinkedIn page — it is behind a login wall, and I will not invent a career for a real person. Open the profile and paste what it says, and I will write this card properly."]],"awards":["—"],"made":["—"],"link":"https://www.linkedin.com/in/guuled-mohamed-94b7a7295/","take":""}];
+const DOORS = [["KTH Innovation","students, researchers and alumni of KTH","equity-free, 6–12 months: coaching, labs, co-working. No fee, no equity.","applications twice a year, spring and autumn","kth.se/innovation"],["SSE Business Lab","anyone connected to the Stockholm School of Economics","equity-free incubator: office space, coaching, investor network. Klarna, Voi and Budbee came through it.","twice a year, spring and autumn","hhs.se/businesslab"],["Sting","early-stage founders in Stockholm, no university needed","Sweden's best-known accelerator since 2002: funding, coaching, network.","several intakes a year","sting.co"],["Antler","individuals without a team or an idea yet","a ‘day zero’ programme: you arrive alone and leave with a co-founder and about €100k.","twice a year","antler.co"],["Norrsken","impact startups","Norrsken House in Stockholm is the physical hub; the accelerator invests in early impact companies.","annual cohorts","norrsken.org"],["Founder Institute Nordics","people still in a job, with an idea","a pre-seed programme you can do in the evenings.","rolling cohorts","fi.co"]];
+function peopleAll(){
+  const extra = readJSON('people_extra') || [];
+  const gone  = readJSON('people_hidden') || [];
+  return PEOPLE_SEED.filter(p => gone.indexOf(p.id) < 0).concat(extra);
+}
+function paintPeople(){
+  const box = $('#peopleList'); if (!box) return;
+  box.innerHTML = peopleAll().map(p => {
+    const block = (title, body) => body ? '<div class="psec">' + title + '</div>' + body : '';
+    const list = a => (a && a.length && a[0] !== '\u2014')
+      ? '<ul class="plist">' + a.map(x => '<li>' + gSafe(x) + '</li>').join('') + '</ul>' : '';
+    const path = (p.path || []).map(st =>
+      '<div class="pline"><span class="pwhen">' + gEsc(st[0]) + '</span><span>' +
+      gSafe(st[1]) + '</span></div>').join('');
+    return '<article class="pcard">' +
+      (p.own ? '<button class="pdel" data-del="' + gEsc(p.id) + '">remove</button>' : '') +
+      '<h3>' + gEsc(p.name) + '</h3>' +
+      '<div class="prole">' + gEsc(p.role || '') + '</div>' +
+      '<div class="page2">' + gEsc(p.age || '') + '</div>' +
+      block('education', list(p.edu)) +
+      block('the actual path', path) +
+      block('awards', list(p.awards)) +
+      block('what they created', list(p.made)) +
+      (p.take ? '<div class="ptake">' + gSafe(p.take) + '</div>' : '') +
+      (p.link ? '<a class="plink" href="' + gEsc(p.link) + '" target="_blank" rel="noopener">open the profile \u2197</a>' : '') +
+    '</article>';
+  }).join('');
+  box.querySelectorAll('.pdel').forEach(b => b.onclick = () => {
+    const extra = (readJSON('people_extra') || []).filter(x => x.id !== b.dataset.del);
+    writeJSON('people_extra', extra);
+    paintPeople();
+  });
+  const d = $('#doorsCard');
+  if (d) d.innerHTML = '<h3>The doors that actually exist in Stockholm</h3>' +
+    '<p class="psub">Every one of these takes applications from people with no company yet.</p>' +
+    DOORS.map(x => '<div class="doorline"><div class="doorname">' + gEsc(x[0]) + '</div>' +
+      '<div class="doorwho">for ' + gEsc(x[1]) + '</div>' +
+      '<div class="doorwhat">' + gSafe(x[2]) + '</div>' +
+      '<div class="doorwhen">' + gEsc(x[3]) + ' \u00b7 ' + gEsc(x[4]) + '</div></div>').join('');
+}
+function wirePeople(){
+  const add = $('#addPerson'), form = $('#addForm');
+  if (!add) return;
+  add.onclick = () => form.classList.toggle('hide');
+  $('#pfCancel').onclick = () => form.classList.add('hide');
+  $('#pfSave').onclick = () => {
+    const val = id => ($('#' + id).value || '').trim();
+    if (!val('pfName')) return;
+    const split = t => t.split(/[;\n]/).map(x => x.trim()).filter(Boolean);
+    const person = {
+      id: 'own' + Date.now(), own: 1,
+      name: val('pfName'), role: val('pfRole'), age: val('pfAge'),
+      edu: split(val('pfEdu')),
+      path: split(val('pfPath')).map(l => {
+        const i = l.indexOf('|');
+        return i > 0 ? [l.slice(0, i).trim(), l.slice(i + 1).trim()] : ['', l];
+      }),
+      awards: split(val('pfAwards')), made: split(val('pfMade')),
+      take: val('pfTake'), link: val('pfLink')
+    };
+    const extra = readJSON('people_extra') || [];
+    extra.push(person);
+    writeJSON('people_extra', extra);
+    ['pfName','pfRole','pfAge','pfEdu','pfPath','pfAwards','pfMade','pfTake','pfLink']
+      .forEach(x => $('#' + x).value = '');
+    form.classList.add('hide');
+    paintPeople();
+  };
+}
 /* ---- the plan, rendered by the platform itself ---- */
 /* which of the three the task belongs to */
 /* in the order the day actually happens: you get up, then the Quran, then study */
@@ -3758,7 +3900,7 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
 function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 /* one place that knows every screen, so none can be left open by accident */
 const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
-  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView'];
+  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView'];
 function hideAll(except){
   try { clearGuideMarks(); refreshGuide(); paintFollow(); } catch(e){}
   SCREENS.forEach(x => { const el = $(x); if (el && x !== except) el.classList.remove('on'); });
@@ -3769,7 +3911,7 @@ function hideAll(except){
 }
 
 function go(id){
-  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards'].indexOf(id) >= 0)
+  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people'].indexOf(id) >= 0)
     saveWhere({ v: id, u: (id === 'units' || id === 'books') ? wUnit : undefined,
                 wk: (id === 'plan') ? wkIx : undefined });
   toTop();
@@ -3867,6 +4009,17 @@ function go(id){
   const lit = (id === 'plan' || id === 'awards') ? id : 'dash';
   document.querySelectorAll('#nav button, #mobbar button')
     .forEach(b => b.setAttribute('aria-current', b.dataset.id === lit));
+  if (id === 'people'){ paintPeople(); }
+  if (id === 'people'){
+    $('#dash').classList.add('off');
+    $('#view').classList.remove('on');
+    hideAll('#peopleView');
+    $('#peopleView').classList.add('on');
+    $('#tagline').textContent = 'How other people got there, and which doors are open here.';
+    paintPeople();
+    try { localStorage.setItem('studyhub_last', 'people'); } catch(e){}
+    return;
+  }
   if (id === 'awards'){
     $('#dash').classList.add('off');
     $('#view').classList.remove('on');
@@ -4007,7 +4160,8 @@ $('#tagline').textContent = dayLine();
 $('#datepill').textContent = new Date().toLocaleDateString('en-GB',
   {weekday:'long',day:'numeric',month:'long'});
 
-paintNav(); paintCalendar(); paintSchedule(); paintCards();
+paintNav();
+wirePeople(); paintCalendar(); paintSchedule(); paintCards();
 /* where she actually was wins; the hash is only a fallback, because go() writes
    the hash itself and it would otherwise always drag her back to a list */
 if (!restoreWhere()){
