@@ -2290,6 +2290,12 @@ function toggleTask(id, then){
   recomputeQueues();          /* a \u2715 shifts everything after it */
   if (then) then();
 }
+/* Itslearning week 5 fell on Saturday 5 September 2026, so that whole week is week 5 */
+function courseWeek(iso){
+  const monday = new Date(iso + 'T00:00:00');
+  const base = new Date('2026-08-31T00:00:00');
+  return 5 + Math.round((monday - base) / (7 * 24 * 3600 * 1000));
+}
 function paintWeek(){
   const wk = WEEKS[wkIx]; if (!wk) return;
   recomputeQueues();
@@ -2297,7 +2303,8 @@ function paintWeek(){
   const all = wk.days.reduce((a,d) => a + rowsForDay(d.iso).length, 0);
   const done = wk.days.reduce((a,d) =>
     a + rowsForDay(d.iso).filter(r => Number(st[r.i]) === 1).length, 0);
-  $('#wkTitle').textContent = 'Week ' + wk.w;
+  /* the number the course itself uses: the week of 5 September was week 5 */
+  $('#wkTitle').textContent = 'Week ' + courseWeek(wk.days[0].iso);
   $('#wkSub').textContent = (wk.ti || '').replace(/^WEEK \d+ \u00b7 /,'') +
     ' \u00b7 ' + done + ' of ' + all + ' done';
   $('#wkPrev').disabled = wkIx === 0;
