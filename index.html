@@ -1906,6 +1906,20 @@ function lkey(k){
 }
 readJSON  = k => _readJSON(lkey(k));
 writeJSON = (k, v) => _writeJSON(lkey(k), v);
+
+/* One-off: the week of 8–13 September was Tech Nordic Week, so those days are
+   marked as missed. Anything already ticked by hand is left alone. */
+(function seedMissedWeek(){
+  try {
+    if (localStorage.getItem('seed_missed_20260913')) return;
+    const st = readJSON('task-status-8weeks') || {};
+    ["2026-09-08--wake", "2026-09-08--quran-review", "2026-09-08--quran-tafsir", "2026-09-08--udemy", "2026-09-08--grammar", "2026-09-08--listening", "2026-09-08--movie", "2026-09-08--ejoy", "2026-09-08--book", "2026-09-08--oshima-2", "2026-09-08--sv-grammar", "2026-09-08--sv-reading", "2026-09-08--listening-2", "2026-09-08--sv-writing", "2026-09-08--sv-duolingo", "2026-09-09--wake", "2026-09-09--quran-review", "2026-09-09--quran-tafsir", "2026-09-09--udemy", "2026-09-09--grammar", "2026-09-09--listening", "2026-09-09--movie", "2026-09-09--ejoy", "2026-09-09--book", "2026-09-09--oshima-2", "2026-09-09--sv-grammar", "2026-09-09--sv-reading", "2026-09-09--listening-2", "2026-09-09--sv-writing", "2026-09-09--sv-duolingo", "2026-09-10--wake", "2026-09-10--quran-review", "2026-09-10--quran-tafsir", "2026-09-10--udemy", "2026-09-10--grammar", "2026-09-10--listening", "2026-09-10--movie", "2026-09-10--ejoy", "2026-09-10--book", "2026-09-10--oshima-2", "2026-09-10--sv-grammar", "2026-09-10--sv-reading", "2026-09-10--listening-2", "2026-09-10--sv-writing", "2026-09-10--sv-duolingo", "2026-09-11--wake", "2026-09-11--quran-review", "2026-09-11--quran-tafsir", "2026-09-11--udemy", "2026-09-11--grammar", "2026-09-11--listening", "2026-09-11--movie", "2026-09-11--ejoy", "2026-09-11--book", "2026-09-11--oshima-2", "2026-09-11--sv-grammar", "2026-09-11--sv-reading", "2026-09-11--listening-2", "2026-09-11--sv-writing", "2026-09-11--sv-duolingo", "2026-09-12--wake", "2026-09-12--quran-review", "2026-09-12--quran-tafsir", "2026-09-12--udemy", "2026-09-12--grammar", "2026-09-12--listening", "2026-09-12--oshima", "2026-09-12--itslearning", "2026-09-12--essay", "2026-09-12--movie", "2026-09-12--ejoy", "2026-09-12--book", "2026-09-12--oshima-2", "2026-09-12--sv-grammar", "2026-09-12--sv-reading", "2026-09-12--listening-2", "2026-09-12--sv-writing", "2026-09-12--sv-duolingo", "2026-09-13--wake", "2026-09-13--quran-review", "2026-09-13--quran-lesson", "2026-09-13--quran-tafsir", "2026-09-13--udemy", "2026-09-13--oshima", "2026-09-13--essay"].forEach(id => {
+      if (st[id] === undefined) st[id] = 2;
+    });
+    writeJSON('task-status-8weeks', st);
+    localStorage.setItem('seed_missed_20260913', '1');
+  } catch(e){}
+})();
 /* ---- the plan, rendered by the platform itself ---- */
 /* which of the three the task belongs to */
 /* in the order the day actually happens: you get up, then the Quran, then study */
