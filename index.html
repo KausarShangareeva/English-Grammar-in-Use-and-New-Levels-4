@@ -896,6 +896,16 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .pcard{background:var(--panel);border-radius:20px;padding:20px 22px;margin-bottom:14px;
   box-shadow:0 8px 26px rgba(39,107,122,.07)}
 .pcard h3{font-family:var(--disp);font-size:24px;font-weight:600;margin:0}
+.phdr{display:flex;align-items:flex-start;gap:15px}
+.pwho{min-width:0;flex:1}
+.pav{width:66px;height:66px;border-radius:18px;flex:0 0 66px;object-fit:cover;display:block;
+  box-shadow:0 4px 14px rgba(39,107,122,.18)}
+.pav.mono{display:flex;align-items:center;justify-content:center;color:#fff;
+  font-family:var(--ui);font-size:24px;font-weight:800;letter-spacing:.5px}
+.pphoto{border:none;background:none;padding:4px 0 0;font-family:var(--ui);font-size:10.5px;
+  font-weight:700;color:var(--mut2);cursor:pointer}
+.pphoto:hover{color:var(--sea)}
+@media (max-width:520px){ .pav{width:54px;height:54px;flex:0 0 54px;border-radius:15px} }
 .prole{font-size:12.5px;font-weight:700;color:var(--sea);margin-top:3px}
 .page2{font-size:11.5px;color:var(--mut2);margin-top:3px;font-weight:700}
 .psec{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:1.3px;
@@ -1007,6 +1017,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
           <input id="pfMade" placeholder="What they created — separated by ;">
           <textarea id="pfTake" rows="2" placeholder="What I take from this"></textarea>
           <input id="pfLink" placeholder="A link (optional)">
+          <input id="pfPhoto" placeholder="A photo link (optional) — or add one on the card later">
           <div class="addrow"><button id="pfSave">Save</button><button id="pfCancel">Cancel</button></div>
         </div>
       </div>
@@ -1998,6 +2009,38 @@ function peopleAll(){
   const gone  = readJSON('people_hidden') || [];
   return PEOPLE_SEED.filter(p => gone.indexOf(p.id) < 0).concat(extra);
 }
+/* a monogram until she puts a real photo in; the photo is stored in the file itself */
+const AV_COLOURS = ['#276B7A','#4F8A6B','#B8901F','#C43C63','#5B4C96','#C75E2A','#2F6E8F'];
+function initials(name){
+  const p = String(name).trim().split(/\s+/).filter(Boolean);
+  return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+}
+function avatarFor(p){
+  const photos = readJSON('people_photos') || {};
+  const src = photos[p.id] || p.photo || '';
+  if (src) return '<img class="pav" alt="" src="' + gEsc(src) + '">';
+  let h = 0;
+  String(p.name).split('').forEach(c => h = (h * 31 + c.charCodeAt(0)) % 9973);
+  const c = AV_COLOURS[h % AV_COLOURS.length];
+  return '<span class="pav mono" style="background:' + c + '">' + gEsc(initials(p.name)) + '</span>';
+}
+/* shrink whatever she picks, so the file does not balloon */
+function readPhoto(file, done){
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const n = 200, cv = document.createElement('canvas');
+      cv.width = n; cv.height = n;
+      const ctx = cv.getContext('2d');
+      const side = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, n, n);
+      done(cv.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(file);
+}
 function paintPeople(){
   const box = $('#peopleList'); if (!box) return;
   box.innerHTML = peopleAll().map(p => {
@@ -2009,9 +2052,12 @@ function paintPeople(){
       gSafe(st[1]) + '</span></div>').join('');
     return '<article class="pcard">' +
       (p.own ? '<button class="pdel" data-del="' + gEsc(p.id) + '">remove</button>' : '') +
-      '<h3>' + gEsc(p.name) + '</h3>' +
-      '<div class="prole">' + gEsc(p.role || '') + '</div>' +
-      '<div class="page2">' + gEsc(p.age || '') + '</div>' +
+      '<div class="phdr">' + avatarFor(p) +
+        '<div class="pwho"><h3>' + gEsc(p.name) + '</h3>' +
+        '<div class="prole">' + gEsc(p.role || '') + '</div>' +
+        '<div class="page2">' + gEsc(p.age || '') + '</div>' +
+        '<button class="pphoto" data-photo="' + gEsc(p.id) + '">add a photo</button>' +
+      '</div></div>' +
       block('education', list(p.edu)) +
       block('the actual path', path) +
       block('awards', list(p.awards)) +
@@ -2020,6 +2066,21 @@ function paintPeople(){
       (p.link ? '<a class="plink" href="' + gEsc(p.link) + '" target="_blank" rel="noopener">open the profile \u2197</a>' : '') +
     '</article>';
   }).join('');
+  box.querySelectorAll('.pphoto').forEach(b => b.onclick = () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      readPhoto(f, data => {
+        const ph = readJSON('people_photos') || {};
+        ph[b.dataset.photo] = data;
+        writeJSON('people_photos', ph);
+        paintPeople();
+      });
+    };
+    inp.click();
+  });
   box.querySelectorAll('.pdel').forEach(b => b.onclick = () => {
     const extra = (readJSON('people_extra') || []).filter(x => x.id !== b.dataset.del);
     writeJSON('people_extra', extra);
@@ -2051,12 +2112,12 @@ function wirePeople(){
         return i > 0 ? [l.slice(0, i).trim(), l.slice(i + 1).trim()] : ['', l];
       }),
       awards: split(val('pfAwards')), made: split(val('pfMade')),
-      take: val('pfTake'), link: val('pfLink')
+      take: val('pfTake'), link: val('pfLink'), photo: val('pfPhoto')
     };
     const extra = readJSON('people_extra') || [];
     extra.push(person);
     writeJSON('people_extra', extra);
-    ['pfName','pfRole','pfAge','pfEdu','pfPath','pfAwards','pfMade','pfTake','pfLink']
+    ['pfName','pfRole','pfAge','pfEdu','pfPath','pfAwards','pfMade','pfTake','pfLink','pfPhoto']
       .forEach(x => $('#' + x).value = '');
     form.classList.add('hide');
     paintPeople();
