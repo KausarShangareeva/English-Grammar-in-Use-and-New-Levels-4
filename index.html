@@ -1050,6 +1050,16 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       <div id="awList"></div>
     </div>
 
+    <div class="awards" id="textbooks">
+      <div class="awhead">
+        <div>
+          <h2 id="tbTitle">My textbooks</h2>
+          <div class="ps" id="tbSub">English, then Swedish at every level, and only then maths.</div>
+        </div>
+      </div>
+      <div id="tbList"></div>
+    </div>
+
     <div class="planview" id="planView">
       <div class="panelcard finish" id="finishCard"></div>
       <div class="panelcard today" id="todayTop2"></div>
@@ -1352,9 +1362,35 @@ const $ = s => document.querySelector(s);
 const NAV = [
   { id:'dash', icon:'\u25A6',            label:'Courses'  },
   { id:'books', icon:'\uD83D\uDCDA',        label:'Library'  },
+  { id:'textbooks', icon:'\uD83D\uDCD6',    label:'Textbooks'  },
   { id:'plan',   icon:'\uD83D\uDDD3\uFE0F', label:'Schedule' },
   { id:'people', icon:'\u2728',          label:'People'   },
   { id:'awards', icon:'\uD83C\uDFC5',        label:'IT goals'  }
+];
+/* the physical books she owns, shelved in the order she is working through them */
+const TEXTBOOKS = [
+  { g:'\uD83D\uDCD5 English', s:'First \u2014 nothing else starts until this is moving',
+    items:[
+      { t:'English Grammar in Use', n:'Raymond Murphy \u00b7 Fifth Edition \u00b7 Cambridge' },
+      { t:'Writing Academic English', n:'Alice Oshima, Ann Hogue \u00b7 Fourth Edition, Level 4 \u00b7 Pearson Longman' }
+    ] },
+  { g:'\uD83D\uDCD7 Swedish \u2014 every level', s:'SFI through to gymnasiet, in order',
+    items:[
+      { t:'Sfi studiev\u00e4g 1', n:'Anna Bjurs\u00e9n \u00b7 Gleerups' },
+      { t:'Sfi studiev\u00e4g 2', n:'Fredrik Harstad \u00b7 Gleerups' },
+      { t:'Sfi studiev\u00e4g 3, Kurs C och D', n:'Josefin Lindholm, Angela Reiser \u00b7 Gleerups' },
+      { t:'Grundhjulet start', n:'Kristina Asker \u00b7 Sanoma Utbildning' },
+      { t:'Grundhjulet', n:'Kristina Asker' },
+      { t:'Grundhjulet \u2014 \u00d6vningsbok i grammatik', n:'Ewa Holm, Kristina Asker' },
+      { t:'Cordanova, Delkurs 1 och 2', n:'Danielsson, Gabrielsson, L\u00f6fstrand, Bellander \u00b7 Gleerups' },
+      { t:'Cordanova, Delkurs 3', n:'Danielsson, Gabrielsson, L\u00f6fstrand \u00b7 Gleerups' },
+      { t:'Cordanova, Delkurs 4', n:'Danielsson, Gabrielsson, L\u00f6fstrand \u00b7 Gleerups' }
+    ] },
+  { g:'\uD83D\uDCD8 Maths', s:'Only after English and Swedish are moving',
+    items:[
+      { t:'Exponent 1c \u2014 Matematik f\u00f6r gymnasiet', n:'Gennow, Gustafsson, Silborn \u00b7 Gleerups' },
+      { t:'Exponent 2c \u2014 Matematik f\u00f6r gymnasiet', n:'Gennow, Gustafsson, Silborn \u00b7 Gleerups' }
+    ] }
 ];
 
 /* some browsers refuse storage to a file opened from disk; keep a copy in memory
@@ -3952,6 +3988,16 @@ function paintCalendar(){
   $('#calSub').textContent = 'Today is ' + now.toLocaleDateString('en-GB',
     {weekday:'long',day:'numeric',month:'long'});
 }
+function paintTextbooks(){
+  const box = $('#tbList'); if (!box) return;
+  box.innerHTML = TEXTBOOKS.map(g =>
+    '<div class="awgroup"><h4>' + g.g + '</h4><div class="gs">' + g.s + '</div>' +
+    g.items.map(i =>
+      '<div class="aw" style="cursor:default">' +
+      '<span><span class="t">' + i.t + '</span>' +
+      (i.n ? '<span class="n">' + i.n + '</span>' : '') + '</span></div>').join('') +
+    '</div>').join('');
+}
 function paintSchedule(){
   const now = new Date();
   const days = d => Math.max(0, Math.round((new Date(d + 'T00:00:00') - now)/86400000));
@@ -4068,7 +4114,7 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
   desc:'Every day from now to June 2027 \u2014 tick things off as you go.', go:null };
 function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 /* one place that knows every screen, so none can be left open by accident */
-const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
+const SCREENS = ['#view','#awards','#textbooks','#essaysView','#reader','#gramList','#gramTopic',
   '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView'];
 function hideAll(except){
   try { clearGuideMarks(); refreshGuide(); paintFollow(); } catch(e){}
@@ -4080,7 +4126,7 @@ function hideAll(except){
 }
 
 function go(id){
-  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people'].indexOf(id) >= 0)
+  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people','textbooks'].indexOf(id) >= 0)
     saveWhere({ v: id, u: (id === 'units' || id === 'books') ? wUnit : undefined,
                 wk: (id === 'plan') ? wkIx : undefined });
   toTop();
@@ -4175,7 +4221,7 @@ function go(id){
   }
   $('#essaysView').classList.remove('on');
   $('#reader').classList.remove('on');
-  const lit = (id === 'plan' || id === 'awards') ? id : 'dash';
+  const lit = (id === 'plan' || id === 'awards' || id === 'textbooks') ? id : 'dash';
   document.querySelectorAll('#nav button, #mobbar button')
     .forEach(b => b.setAttribute('aria-current', b.dataset.id === lit));
   if (id === 'people'){ paintPeople(); }
@@ -4196,6 +4242,17 @@ function go(id){
     $('#awards').classList.add('on');
     $('#tagline').textContent = 'Certificates, projects, people, work \u2014 in that order.';
     paintAwards();
+    try { localStorage.setItem('studyhub_last', id); } catch(e){}
+    try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
+    return;
+  }
+  if (id === 'textbooks'){
+    $('#dash').classList.add('off');
+    $('#view').classList.remove('on');
+    hideAll('#textbooks');
+    $('#textbooks').classList.add('on');
+    $('#tagline').textContent = 'English, then Swedish at every level, and only then maths.';
+    paintTextbooks();
     try { localStorage.setItem('studyhub_last', id); } catch(e){}
     try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
     return;
