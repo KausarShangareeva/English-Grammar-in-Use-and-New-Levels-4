@@ -976,6 +976,33 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 #pfSave{background:var(--sea);color:#fff}
 #pfCancel{background:var(--bg);color:var(--mut)}
 
+
+.typequiz{display:none}
+.typequiz.on{display:block}
+.tqpaper{max-width:680px}
+.tqhead{font-family:var(--ui);font-size:10.5px;font-weight:800;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--rose);margin-bottom:10px}
+.tqprompt{font-family:var(--disp);font-size:25px;font-weight:600;line-height:1.3;margin-bottom:4px}
+.tqprompt .ru{display:block;font-family:var(--ui);font-size:13px;font-weight:700;color:var(--mut);
+  margin-top:6px}
+.tqsent{font-family:var(--disp);font-size:18px;color:var(--sea);line-height:1.7;margin:14px 0 16px;
+  padding:13px 15px;background:var(--sage-l);border-radius:14px}
+.tqsent b{background:#FBE38A;color:var(--ink);padding:1px 16px;border-radius:3px}
+#tqInput{width:100%;box-sizing:border-box;border:1.5px solid var(--line2);border-radius:13px;
+  padding:14px 16px;font-family:var(--ui);font-size:16px;color:var(--ink);background:var(--bg)}
+#tqInput:focus{outline:none;border-color:var(--sea)}
+.tqrow{display:flex;gap:9px;margin-top:11px}
+.tqrow button{flex:1;border:none;border-radius:13px;padding:13px;font-family:var(--ui);
+  font-size:14px;font-weight:800;cursor:pointer}
+#tqCheck{background:var(--sea);color:#fff}
+#tqSkip{background:var(--panel);color:var(--mut);border:1px solid var(--line)}
+.tqfb{margin-top:13px;font-size:14px;line-height:1.7;min-height:22px}
+.tqfb.ok{color:var(--sage)}
+.tqfb.no{color:var(--rose)}
+.tqfb b{background:#FBE38A;color:var(--ink);padding:1px 4px}
+.tqscore{font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut2)}
+.endquiz .eh2{font-size:12px;color:var(--mut2);margin-top:3px}
+
 </style>
 </head>
 <body>
@@ -1191,6 +1218,27 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
         <button class="openraw" id="markRead"></button>
       </div>
       <article class="paper" id="paper"></article>
+    </div>
+
+
+    <div class="typequiz" id="typeQuiz">
+      <div class="viewbar">
+        <button class="back" id="tqBack">&larr; Back to the text</button>
+        <div class="spacer"></div>
+        <div class="tqscore" id="tqScore"></div>
+      </div>
+      <article class="paper tqpaper">
+        <div class="tqhead" id="tqHead"></div>
+        <div class="tqprompt" id="tqPrompt"></div>
+        <div class="tqsent" id="tqSent"></div>
+        <input id="tqInput" autocomplete="off" autocapitalize="off" spellcheck="false"
+               placeholder="type it here">
+        <div class="tqrow">
+          <button id="tqCheck">Check</button>
+          <button id="tqSkip">Show me</button>
+        </div>
+        <div class="tqfb" id="tqFb"></div>
+      </article>
     </div>
 
     <div class="view" id="view">
@@ -1577,6 +1625,177 @@ function essaysRead(){ return readJSON('oshima_essays-read') || {}; }
 const key = e => e.title + ' \u00b7 ' + e.level;
 const esc = t => String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 function isRead(k){ const r = essaysRead(); return Array.isArray(r) ? r.includes(k) : !!r[k]; }
+
+/* ---- typing practice: the words and the linking phrases of one essay ---- */
+const LINKERS = [
+  ["in my opinion","по моему мнению","stating your view"],
+  ["i strongly believe that","я твёрдо убеждена, что","stating your view, stronger"],
+  ["it seems to me that","мне кажется, что","a softer opinion"],
+  ["however","однако","turning to the other side"],
+  ["nevertheless","тем не менее","conceding, then continuing"],
+  ["on the other hand","с другой стороны","the opposite view"],
+  ["while i accept that","хотя я признаю, что","a real concession"],
+  ["it is worth conceding","стоит признать","a concession that costs you"],
+  ["although","хотя","joining two opposite ideas"],
+  ["moreover","более того","adding weight"],
+  ["furthermore","кроме того","adding weight, formal"],
+  ["in addition","вдобавок","adding"],
+  ["secondly","во-вторых","the second argument"],
+  ["finally","наконец","the last argument"],
+  ["as a result","в результате","cause and effect"],
+  ["consequently","следовательно","cause and effect, formal"],
+  ["therefore","поэтому","drawing a conclusion"],
+  ["for example","например","introducing an example"],
+  ["in other words","иначе говоря","rephrasing"],
+  ["in conclusion","в заключение","closing the essay"],
+  ["to sum up","подводя итог","closing, less formal"],
+  ["in the end","в конце концов","closing a story"],
+  ["at first","сначала","the beginning of a story"],
+  ["suddenly","внезапно","the turn in a story"],
+  ["by the time","к тому времени как","time in a narrative"],
+  ["as though","как будто","an unreal comparison"],
+  ["unless","если не","the condition that prevents it"],
+  ["despite","несмотря на","concession + noun"],
+  ["due to","из-за","cause + noun"],
+  ["according to","согласно","citing a source"],
+  ["the evidence suggests","данные говорят о том, что","hedging a claim"],
+  ["tends to","как правило","hedging a claim"],
+  ["is likely to","вероятно","hedging a prediction"],
+  ["i would argue that","я бы сказала, что","a measured opinion"],
+  ["what is more","более того","adding, informal"],
+  ["first of all","прежде всего","the first argument"]
+];
+function essayPractice(e, title){
+  /* the vocabulary that is tagged, plus every linking phrase actually used here */
+  const byWord = {};
+  WD.forEach(w => { const k = w.w.toLowerCase(); if (!byWord[k]) byWord[k] = w; });
+  const paper = $('#paper');
+  const items = [];
+  const seen = {};
+  paper.querySelectorAll('.voc,.bonus').forEach(v => {
+    const t = v.textContent.trim();
+    const k = t.toLowerCase();
+    if (seen[k]) return;
+    const w = byWord[k];
+    const sent = sentenceAround(v);
+    if (!sent) return;
+    seen[k] = 1;
+    items.push({ a: t, ru: w ? (w.r || '') : '', role: w ? (w.m || '') : 'a word from the text',
+                 sent: sent });
+  });
+  const plain = paper.textContent.toLowerCase();
+  /* a text with few tagged words still deserves a practice: take the words it
+     shares with her own lists */
+  if (items.length < 8){
+    const words = plain.replace(/[^a-z' ]/g,' ').split(/\s+/);
+    const uniq = [...new Set(words)].filter(w => w.length >= 5);
+    uniq.forEach(w => {
+      if (items.length >= 12) return;
+      if (seen[w]) return;
+      const dict = byWord[w];
+      if (!dict || !dict.r) return;
+      const el = [...paper.querySelectorAll('p')]
+        .map(p => p.textContent.replace(/\s+/g,' ').trim())
+        .map(t => t.split(/(?<=[.!?])\s+/).find(x => new RegExp('\\b'+w+'\\b','i').test(x)))
+        .find(Boolean);
+      if (!el) return;
+      seen[w] = 1;
+      items.push({ a: dict.w, ru: dict.r || '', role: dict.m || 'a word from the text', sent: el });
+    });
+  }
+  LINKERS.forEach(([ph, ru, role]) => {
+    if (seen[ph]) return;
+    if (plain.indexOf(ph) < 0) return;
+    const sent = sentenceWith(paper, ph);
+    if (!sent) return;
+    seen[ph] = 1;
+    items.push({ a: ph, ru: ru, role: role, sent: sent, phrase: 1 });
+  });
+  return items;
+}
+function sentenceAround(el){
+  const p = el.closest('p'); if (!p) return '';
+  const text = p.textContent.replace(/\s+/g,' ').trim();
+  const word = el.textContent.trim();
+  const parts = text.split(/(?<=[.!?])\s+/);
+  const hit = parts.find(x => x.indexOf(word) >= 0);
+  return hit || text;
+}
+function sentenceWith(paper, phrase){
+  const ps = [...paper.querySelectorAll('p')];
+  for (const p of ps){
+    const text = p.textContent.replace(/\s+/g,' ').trim();
+    const parts = text.split(/(?<=[.!?])\s+/);
+    const hit = parts.find(x => x.toLowerCase().indexOf(phrase) >= 0);
+    if (hit) return hit;
+  }
+  return '';
+}
+let TQ = { list: [], i: 0, right: 0, back: null };
+function norm(t){
+  return String(t).toLowerCase().replace(/[’']/g,"'").replace(/[^a-z' ]/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+function startTypeQuiz(items, head, back){
+  if (!items.length) return;
+  TQ = { list: items.slice().sort(() => Math.random() - 0.5).slice(0, 15),
+         i: 0, right: 0, back: back };
+  hideAll('#typeQuiz');
+  $('#dash').classList.add('off');
+  $('#typeQuiz').classList.add('on');
+  $('#tqHead').textContent = head;
+  paintTypeQ();
+  window.scrollTo(0,0);
+}
+function paintTypeQ(){
+  const it = TQ.list[TQ.i];
+  if (!it){
+    $('#tqPrompt').innerHTML = 'Done \u2014 ' + TQ.right + ' of ' + TQ.list.length + ' right.';
+    $('#tqSent').innerHTML = ''; $('#tqInput').style.display = 'none';
+    $('#tqFb').textContent = ''; $('#tqCheck').textContent = 'Back to the text';
+    $('#tqCheck').onclick = () => TQ.back && TQ.back();
+    $('#tqSkip').style.display = 'none';
+    return;
+  }
+  $('#tqScore').textContent = (TQ.i + 1) + ' / ' + TQ.list.length;
+  $('#tqPrompt').innerHTML = gEsc(it.ru || it.role || '') +
+    (it.ru && it.role ? '<span class="ru">' + gEsc(it.role) + '</span>' : '');
+  const re = new RegExp(it.a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'i');
+  $('#tqSent').innerHTML = gEsc(it.sent).replace(re, '<b>&nbsp;</b>');
+  const inp = $('#tqInput');
+  inp.value = ''; inp.style.display = ''; inp.focus();
+  $('#tqFb').textContent = ''; $('#tqFb').className = 'tqfb';
+  $('#tqSkip').style.display = '';
+  $('#tqCheck').textContent = 'Check';
+  $('#tqCheck').onclick = checkTypeQ;
+  $('#tqSkip').onclick = () => {
+    $('#tqFb').className = 'tqfb no';
+    $('#tqFb').innerHTML = 'It was <b>' + gEsc(it.a) + '</b>';
+    $('#tqCheck').textContent = 'Next';
+    $('#tqCheck').onclick = () => { TQ.i++; paintTypeQ(); };
+  };
+  inp.onkeydown = ev => { if (ev.key === 'Enter') $('#tqCheck').click(); };
+}
+function checkTypeQ(){
+  const it = TQ.list[TQ.i];
+  const given = norm($('#tqInput').value);
+  const want = norm(it.a);
+  const fb = $('#tqFb');
+  if (!given) return;
+  if (given === want){
+    TQ.right++;
+    fb.className = 'tqfb ok';
+    fb.innerHTML = '\u2713 Yes \u2014 <b>' + gEsc(it.a) + '</b>';
+  } else {
+    fb.className = 'tqfb no';
+    const close = given.length > 2 && want.indexOf(given) === 0;
+    fb.innerHTML = (close ? 'Almost \u2014 it was <b>' : 'Not this time \u2014 it was <b>') +
+      gEsc(it.a) + '</b>';
+  }
+  $('#tqCheck').textContent = 'Next';
+  $('#tqCheck').onclick = () => { TQ.i++; paintTypeQ(); };
+}
+
 function paintEssays(){
   const box = $('#eList'); if (!box) return;
   /* the same essay exists at three levels, so one card per topic and the level
@@ -1686,21 +1905,22 @@ function openEssay(title, level){
     v.addEventListener('mousemove', moveTip);
     v.addEventListener('mouseleave', hideTip);
   });
-  const evoc = [...new Set([...$('#paper').querySelectorAll('.voc,.bonus')]
-    .map(v => v.textContent.trim().toLowerCase()))];
-  const epool = WD.filter(w => evoc.indexOf(w.w.toLowerCase()) >= 0);
+  /* every level has its own practice, built from this version of the text */
+  const epool = essayPractice(e, title);
   const eq = $('#essayQuiz');
-  eq.className = 'openraw quiz' + (epool.length < 6 ? ' hide' : '');
-  eq.textContent = '\u25b6 Practise the ' + epool.length + ' words';
-  const backToEssay = () => { essayKeyNow = 'essay:' + title;
-                              startQuiz(epool, 'Words from \u201c' + e.topic + '\u201d', 'essay');
-                              quizExit = () => openEssay(title, e.level); };
+  eq.className = 'openraw quiz' + (epool.length < 3 ? ' hide' : '');
+  const nPhr = epool.filter(x => x.phrase).length;
+  eq.textContent = '\u25b6 Practise \u00b7 ' + epool.length +
+    (nPhr ? ' words and phrases' : ' words');
+  const backToEssay = () => startTypeQuiz(epool,
+    e.topic + ' \u00b7 ' + e.level, () => openEssay(title, e.level));
   eq.onclick = backToEssay;
   { const role = guideRole('essay:' + title); if (role) markGuide(eq, role === 'pink'); }
-  if (epool.length >= 6){
+  if (epool.length >= 3){
     $('#paper').insertAdjacentHTML('beforeend',
-      '<div class="endquiz"><div class="eh">Now try the words this essay is built on.</div>' +
-      '<button id="eEndQuiz">\u25b6 Practise the ' + epool.length + ' words</button></div>');
+      '<div class="endquiz"><div class="eh">Now try the words and phrases this version is built on.</div>' +
+      '<div class="eh2">You type the answer \u2014 the Russian and the job it does are the clue.</div>' +
+      '<button id="eEndQuiz">\u25b6 Practise \u00b7 ' + epool.length + '</button></div>');
     document.getElementById('eEndQuiz').onclick = backToEssay;
   }
   const mk = $('#markRead');
@@ -4164,7 +4384,7 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
 function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 /* one place that knows every screen, so none can be left open by accident */
 const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
-  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView','#textbooks'];
+  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView','#textbooks','#typeQuiz'];
 function hideAll(except){
   try { clearGuideMarks(); refreshGuide(); paintFollow(); } catch(e){}
   SCREENS.forEach(x => { const el = $(x); if (el && x !== except) el.classList.remove('on'); });
@@ -4383,6 +4603,7 @@ function go(id){
   try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
 }
 $('#back').onclick = () => go('dash');
+$('#tqBack').onclick = () => { if (TQ.back) TQ.back(); else go('essay'); };
 $('#backEssays').onclick = () => go('essay');
 let lastGramCard = 'grammar';
 $('#backGram').onclick = () => go(lastGramCard);
