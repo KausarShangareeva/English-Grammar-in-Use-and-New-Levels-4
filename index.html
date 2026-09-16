@@ -1052,6 +1052,34 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .prwhere{margin-top:16px;background:var(--sand-l);border-radius:13px;padding:12px 15px;
   font-size:12.5px;line-height:1.65;color:var(--ink)}
 
+
+.dlchips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.dlchips button{border:1px solid var(--line);background:var(--panel);border-radius:999px;
+  padding:8px 15px;font-family:var(--ui);font-size:12.5px;font-weight:800;color:var(--mut);cursor:pointer}
+.dlchips button.on{background:var(--sea);color:#fff;border-color:var(--sea)}
+.dlcard{background:var(--panel);border-radius:18px;padding:16px 18px;margin-bottom:11px;
+  box-shadow:0 6px 20px rgba(39,107,122,.06);border-left:4px solid var(--line2)}
+.dlcard.s-check{border-left-color:var(--rose)}
+.dlcard.s-soon{border-left-color:var(--sand)}
+.dlcard.s-open{border-left-color:var(--sage)}
+.dlcard.s-later{border-left-color:var(--sea)}
+.dlcard.s-past{opacity:.55}
+.dlhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dlt{font-family:var(--disp);font-size:21px;font-weight:600;color:var(--ink)}
+.dlby{font-size:11.5px;font-weight:700;color:var(--mut2)}
+.dlbadge{margin-left:auto;font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:.8px;
+  text-transform:uppercase;border-radius:999px;padding:4px 10px;color:#fff;white-space:nowrap}
+.b-check{background:var(--rose)} .b-soon{background:#B8901F} .b-open{background:var(--sage)}
+.b-later{background:var(--sea)} .b-past{background:var(--mut2)}
+.dlwhen{font-family:var(--ui);font-size:12.5px;font-weight:800;color:var(--sea);margin:7px 0 2px}
+.dlcount{font-size:11.5px;color:var(--mut2);font-weight:700}
+.dlwhat{font-size:13.5px;line-height:1.7;color:var(--mut);margin-top:8px}
+.dlwho{font-size:13px;line-height:1.65;margin-top:7px;background:var(--sage-l);border-radius:11px;
+  padding:9px 12px}
+.dlnote{font-size:12.5px;line-height:1.6;margin-top:7px;color:var(--ink)}
+.dllink{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:800;color:var(--sea)}
+.dldel{float:right;border:none;background:none;color:var(--mut2);font-size:11px;font-weight:700;cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -1105,6 +1133,27 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
       </div>
     </div>
 
+
+
+    <section id="deadView" class="view">
+      <div class="phead">
+        <h2>Deadlines</h2>
+        <p class="psub">What is open now, what comes round again, and when. ⚠️ Dates move
+        every year &mdash; the ones marked <b>check</b> are worth opening today.</p>
+      </div>
+      <div class="dlchips" id="dlChips"></div>
+      <div id="dlList"></div>
+      <div class="addp">
+        <button class="addpbtn" id="addDl">+ Add a deadline of your own</button>
+        <div class="addform hide" id="dlForm">
+          <input id="dfName" placeholder="What is it">
+          <input id="dfWhen" placeholder="Date: 2027-03-25">
+          <input id="dfUrl" placeholder="Link (optional)">
+          <input id="dfNote" placeholder="A note to yourself (optional)">
+          <div class="addrow"><button id="dfSave">Save</button><button id="dfCancel">Cancel</button></div>
+        </div>
+      </div>
+    </section>
 
     <section id="poemsView" class="view">
       <div class="phead">
@@ -1552,6 +1601,7 @@ const NAV = [
   { id:'dash', icon:'\u25A6',            label:'Courses'  },
   { id:'textbooks', icon:'\uD83D\uDCD6',    label:'Textbooks'  },
   { id:'plan',   icon:'\uD83D\uDDD3\uFE0F', label:'Schedule' },
+  { id:'deadlines', icon:'\u23f0', label:'Deadlines' },
   { id:'poems', icon:'\uD83C\uDFB5', label:'Songs & poems' },
   { id:'people', icon:'\u2728',          label:'People'   },
   { id:'awards', icon:'\uD83C\uDFC5',        label:'IT goals'  }
@@ -2484,6 +2534,80 @@ const SONGS = [{"id":"richman","t":"If I Were a Rich Man","a":"Bock and Harnick 
 let pFilter = 'all', prNow = null, prTimer = null;
 /* whatever she pastes herself: kept in her browser, never in the published file */
 function myPoems(){ return readJSON('my_poems') || []; }
+
+/* ---- deadlines ---- */
+const DEADLINES = [{"id":"impactcup","t":"Impact Cup","by":"Drivhuset · Stockholms universitet · Södertörn · Stockholms stad","what":"A pitch competition for early sustainable ideas — health, environment or society. 10 000 kr, coaching, workshops in IP, pitching and shareholder agreements for the top six.","who":"⚠️ At least one person on the team must be an active student at Stockholm University or Södertörn. Until you are enrolled, you would need a team member who is.","when":"2026-10-01","whenTxt":"final on 1 October 2026 · applications opened 20 May","status":"check","note":"💜 This one may still be open — the final has not happened yet. Worth an email today.","url":"https://impactcup.se/"},{"id":"venturecup","t":"Venture Cup · IDEA and STARTUP","by":"Venture Cup Sverige","what":"Sweden's largest national startup competition, free to enter. Two tracks: IDEA for a raw idea, STARTUP for something already verified. Written feedback on every entry, regional finals, and a national final in October.","who":"Anyone with their own idea. For STARTUP, turnover and external capital must be under 1 000 000 SEK. 💜 No university required.","when":"2027-03-25","whenTxt":"STARTUP usually closes in late March · IDEA earlier in the spring","status":"soon","note":"⚠️ The exact 2027 dates are not published yet — check the site in January.","url":"https://www.venturecup.se/en/tavla/"},{"id":"redbull","t":"Red Bull Basement","by":"Red Bull","what":"A student competition for an idea built with AI. National final in Sweden, then a world final abroad — Matija Cvitic won the Swedish round at 19 with an app he wrote himself.","who":"Students, 18 and over. Individually or as a pair.","when":"2026-10-15","whenTxt":"entries usually open in September and close in October","status":"check","note":"💜 Check now — this is the season.","url":"https://www.redbull.com/int-en/projects/red-bull-basement"},{"id":"techtjej","t":"Årets Tech-tjej","by":"Microsoft Sverige","what":"An award and a year as an ambassador with a Microsoft mentor. Naher Islam won it in 2026.","who":"⚠️ You apply yourself, no nomination needed — but you must be studying at a university.","when":"2027-02-18","whenTxt":"applications closed 18 February in 2026; the same window is likely","status":"later","note":"💜 Put it in the calendar for January 2027 — by then you may be enrolled.","url":"https://www.microsoft.com/sv-se/"},{"id":"kompassrosen","t":"Kompassrosen","by":"Konungens Stiftelse Ungt Ledarskap","what":"The King's award for young leadership — 50 000 kr, handed over at the Royal Palace. Guuled Mohamed took it in 2025, Safa Al-Amirtaha in 2026.","who":"Under 25, and ⚠️ it runs on nominations — 713 of them last year. Somebody has to nominate you, or you can put yourself forward.","when":"2027-01-31","whenTxt":"nominations usually close in the winter, award in late May","status":"later","note":"💜 Ask someone who has seen your work to write the nomination.","url":"https://ungtledarskap.se/"},{"id":"antler","t":"Antler Stockholm","by":"Antler","what":"A day-zero programme: you arrive without a team or an idea and leave with a co-founder and around €100k.","who":"Anyone, no company needed. Two cohorts a year.","when":"","whenTxt":"rolling applications, two intakes a year","status":"open","note":"💜 Applications are open almost all year — no deadline to miss.","url":"https://www.antler.co/location/sweden"},{"id":"kthinno","t":"KTH Innovation","by":"KTH","what":"Equity-free support for 6–12 months: coaching, labs, co-working. No fee, no shares taken.","who":"⚠️ Students, researchers and alumni of KTH. If you are not one, team up with someone who is.","when":"","whenTxt":"intakes twice a year, spring and autumn","status":"open","note":"","url":"https://www.kth.se/innovation"},{"id":"ssebl","t":"SSE Business Lab","by":"Stockholm School of Economics","what":"Equity-free incubator: office space, coaching, investor network. Klarna, Voi and Budbee came through it.","who":"Anyone connected to SSE.","when":"","whenTxt":"twice a year, spring and autumn","status":"open","note":"","url":"https://www.hhs.se/en/outreach/sse-initiatives/business-lab/"},{"id":"sting","t":"Sting Accelerate","by":"Sting","what":"Stockholm's best-known accelerator since 2002 — funding, coaching, network.","who":"Early-stage founders. No university needed.","when":"","whenTxt":"several intakes a year","status":"open","note":"","url":"https://sting.co/"},{"id":"yc","t":"Y Combinator","by":"Y Combinator, San Francisco","what":"$500 000 on acceptance, three months in San Francisco, Demo Day at the end. Airbnb, Stripe, Dropbox — and Depict.ai, where Anton Osika was a co-founder.","who":"Anyone, no recommendation needed. ⚠️ About 1% get in, and teams with a live product do far better than teams with an idea.","when":"","whenTxt":"four batches a year, so a deadline comes round every quarter","status":"open","note":"💜 Late applications are still read.","url":"https://www.ycombinator.com/apply"},{"id":"imaginecup","t":"Microsoft Imagine Cup","by":"Microsoft","what":"A global student competition for a startup built on Microsoft technology. Teams of up to four.","who":"Students, 16 and over.","when":"2027-01-20","whenTxt":"submissions usually close in January","status":"later","note":"","url":"https://imaginecup.microsoft.com/"},{"id":"ntw","t":"Nordic Tech Week","by":"Nordic Tech Week","what":"Five days, 300+ events, 25 000 people, free to attend. 💜 Anyone can register their own event in the programme — that is how a hackathon of yours gets on a national stage.","who":"Anyone.","when":"","whenTxt":"every autumn · the event call opens in the summer","status":"open","note":"","url":"https://www.nordictechweek.org/"},{"id":"fi","t":"Founder Institute Nordics","by":"Founder Institute","what":"A pre-seed programme you can do in the evenings, while still working.","who":"Anyone with an idea.","when":"","whenTxt":"rolling cohorts","status":"open","note":"","url":"https://fi.co/"}];
+let dlFilter = 'all';
+function myDeadlines(){ return readJSON('my_deadlines') || []; }
+function dlDays(iso){
+  if (!iso) return null;
+  const a = new Date(iso + 'T00:00:00'), b = new Date(isoToday() + 'T00:00:00');
+  return Math.round((a - b) / 86400000);
+}
+function paintDeadlines(){
+  const chips = $('#dlChips');
+  chips.innerHTML = [['all','Everything'],['check','\u26a0\ufe0f Check today'],
+    ['open','Always open'],['later','Later this year']]
+    .map(([k,l]) => '<button data-d="' + k + '"' + (dlFilter===k?' class="on"':'') + '>' + l +
+      '</button>').join('');
+  chips.querySelectorAll('button').forEach(b => b.onclick = () => { dlFilter = b.dataset.d; paintDeadlines(); });
+  const all = DEADLINES.concat(myDeadlines().map(x => Object.assign({ own:1, status:'later',
+    what:'', who:'', by:'your own note' }, x)));
+  all.forEach(d => {
+    d.days = dlDays(d.when);
+    if (d.days !== null && d.days < 0) d.st = 'past';
+    else d.st = d.status || 'later';
+  });
+  all.sort((a, b) => {
+    const rank = { check:0, soon:1, later:2, open:3, past:4 };
+    if (rank[a.st] !== rank[b.st]) return rank[a.st] - rank[b.st];
+    if (a.days === null) return 1;
+    if (b.days === null) return -1;
+    return a.days - b.days;
+  });
+  const LABEL = { check:'check today', soon:'coming up', open:'always open',
+                  later:'later', past:'closed' };
+  const shown = all.filter(d => dlFilter === 'all' || d.st === dlFilter ||
+    (dlFilter === 'later' && d.st === 'soon'));
+  $('#dlList').innerHTML = shown.map(d =>
+    '<div class="dlcard s-' + d.st + '">' +
+      (d.own ? '<button class="dldel" data-del="' + gEsc(d.id) + '">remove</button>' : '') +
+      '<div class="dlhead"><span class="dlt">' + gEsc(d.t) + '</span>' +
+      '<span class="dlby">' + gEsc(d.by || '') + '</span>' +
+      '<span class="dlbadge b-' + d.st + '">' + LABEL[d.st] + '</span></div>' +
+      '<div class="dlwhen">' + gEsc(d.whenTxt || d.when || '') + '</div>' +
+      (d.days !== null && d.days !== undefined
+        ? '<div class="dlcount">' + (d.days < 0 ? Math.abs(d.days) + ' days ago'
+            : d.days === 0 ? 'today' : 'in ' + d.days + ' days') + '</div>' : '') +
+      (d.what ? '<div class="dlwhat">' + d.what + '</div>' : '') +
+      (d.who ? '<div class="dlwho">' + d.who + '</div>' : '') +
+      (d.note ? '<div class="dlnote">' + d.note + '</div>' : '') +
+      (d.url ? '<a class="dllink" href="' + gEsc(d.url) + '" target="_blank" rel="noopener">open the site \u2197</a>' : '') +
+    '</div>').join('');
+  $('#dlList').querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    writeJSON('my_deadlines', myDeadlines().filter(x => x.id !== b.dataset.del));
+    paintDeadlines();
+  });
+}
+function wireDeadlines(){
+  const add = $('#addDl'), form = $('#dlForm');
+  if (!add) return;
+  add.onclick = () => form.classList.toggle('hide');
+  $('#dfCancel').onclick = () => form.classList.add('hide');
+  $('#dfSave').onclick = () => {
+    const t = ($('#dfName').value || '').trim();
+    if (!t) return;
+    const list = myDeadlines();
+    list.push({ id:'dl' + Date.now(), t: t, when: ($('#dfWhen').value || '').trim(),
+                whenTxt: ($('#dfWhen').value || '').trim(),
+                url: ($('#dfUrl').value || '').trim(), note: ($('#dfNote').value || '').trim() });
+    writeJSON('my_deadlines', list);
+    ['dfName','dfWhen','dfUrl','dfNote'].forEach(x => $('#' + x).value = '');
+    form.classList.add('hide');
+    paintDeadlines();
+  };
+}
+
 function paintPoems(){
   const chips = $('#pChips');
   if (chips) chips.innerHTML =
@@ -4615,7 +4739,7 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
 function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 /* one place that knows every screen, so none can be left open by accident */
 const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
-  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView','#textbooks','#typeQuiz','#poemsView','#poemRead'];
+  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView','#textbooks','#typeQuiz','#poemsView','#poemRead','#deadView'];
 function hideAll(except){
   try { clearGuideMarks(); refreshGuide(); paintFollow(); } catch(e){}
   SCREENS.forEach(x => { const el = $(x); if (el && x !== except) el.classList.remove('on'); });
@@ -4626,7 +4750,7 @@ function hideAll(except){
 }
 
 function go(id){
-  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people','textbooks','poems'].indexOf(id) >= 0)
+  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people','textbooks','poems','deadlines'].indexOf(id) >= 0)
     saveWhere({ v: id, u: (id === 'units' || id === 'books') ? wUnit : undefined,
                 wk: (id === 'plan') ? wkIx : undefined });
   toTop();
@@ -4733,6 +4857,16 @@ function go(id){
     paintTextbooks();
     try { localStorage.setItem('studyhub_last', id); } catch(e){}
     try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
+    return;
+  }
+  if (id === 'deadlines'){
+    $('#dash').classList.add('off');
+    $('#view').classList.remove('on');
+    hideAll('#deadView');
+    $('#deadView').classList.add('on');
+    $('#tagline').textContent = 'Nothing here should surprise you twice.';
+    paintDeadlines();
+    try { localStorage.setItem('studyhub_last', id); } catch(e){}
     return;
   }
   if (id === 'poems'){
@@ -4902,7 +5036,8 @@ $('#datepill').textContent = new Date().toLocaleDateString('en-GB',
 
 paintNav();
 wirePeople();
-wireSongs(); paintCalendar(); paintSchedule(); paintCards();
+wireSongs();
+wireDeadlines(); paintCalendar(); paintSchedule(); paintCards();
 /* where she actually was wins; the hash is only a fallback, because go() writes
    the hash itself and it would otherwise always drag her back to a list */
 if (!restoreWhere()){
