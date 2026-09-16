@@ -1128,6 +1128,54 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   .prline{font-size:17px}
 }
 
+
+/* ---- dark ---- */
+html[data-theme="dark"]{
+  --bg:#141A1C; --panel:#1C2427;
+  --line:#2A3437; --line2:#374447;
+  --ink:#E4EDEF; --mut:#A9BABF; --mut2:#7C8F95;
+  --sea:#7FC4D2; --sea-l:#1E3238;
+  --rose:#E2A9B7; --rose-l:#33242A;
+  --sand:#D9B647; --sage:#79C79C; --sage-l:#1D2E26;
+}
+html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
+html[data-theme="dark"] .paper,
+html[data-theme="dark"] .side,
+html[data-theme="dark"] .course,
+html[data-theme="dark"] .ecard,
+html[data-theme="dark"] .pcard2,
+html[data-theme="dark"] .dlcard,
+html[data-theme="dark"] .gverb,
+html[data-theme="dark"] .day,
+html[data-theme="dark"] .tbcard{box-shadow:0 6px 20px rgba(0,0,0,.28)}
+html[data-theme="dark"] .hl,
+html[data-theme="dark"] .prline.now,
+html[data-theme="dark"] .tqsent b{background:#6B5A12;color:#F6EFD6}
+html[data-theme="dark"] .g-pass{background:#3A2530}
+html[data-theme="dark"] .g-ppc,html[data-theme="dark"] .g-perf{background:#1E3238}
+html[data-theme="dark"] .g-part,html[data-theme="dark"] .g-partp,
+html[data-theme="dark"] .g-mod{background:#1D3327}
+html[data-theme="dark"] .g-ger,html[data-theme="dark"] .g-cont{background:#38281C}
+html[data-theme="dark"] .g-cond,html[data-theme="dark"] .g-pperf,
+html[data-theme="dark"] .g-link{background:#272340}
+html[data-theme="dark"] .g-inv,html[data-theme="dark"] .g-pres,
+html[data-theme="dark"] .g-past{background:#38311A}
+html[data-theme="dark"] .ecard.rules{background:linear-gradient(140deg,#262017,#1E2427);
+  border-color:#3D3320}
+html[data-theme="dark"] .ecard.rules .et{color:#E0C15C}
+html[data-theme="dark"] .whylevel{background:#221E14}
+html[data-theme="dark"] .whylevel b{color:#E0C15C}
+html[data-theme="dark"] .glogo{background:#232D30}
+html[data-theme="dark"] img.pcimg,html[data-theme="dark"] .tbcov{filter:brightness(.92)}
+html[data-theme="dark"] input,html[data-theme="dark"] textarea,
+html[data-theme="dark"] select{background:var(--panel);color:var(--ink);
+  border-color:var(--line2)}
+html[data-theme="dark"] .fr,html[data-theme="dark"] iframe{filter:invert(.92) hue-rotate(180deg)}
+.themebtn{border:1px solid var(--line);background:var(--panel);border-radius:999px;
+  width:34px;height:34px;flex:0 0 34px;font-size:15px;cursor:pointer;color:var(--mut);
+  display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.themebtn:hover{border-color:var(--sea);color:var(--sea)}
+
 </style>
 </head>
 <body>
@@ -1140,6 +1188,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
           <span id="langName">Study English</span></b>
         <i class="bs">Kausar <span class="carr">\u25be</span></i></button>
       <div class="langmenu" id="langMenu"></div>
+      <button class="themebtn" id="themeBtn" title="light or dark">☾</button>
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="followbox" id="followBox"></div>
@@ -2855,6 +2904,27 @@ function paintPeople(){
       '<div class="doorwhat">' + gSafe(x[2]) + '</div>' +
       '<div class="doorwhen">' + gEsc(x[3]) + ' \u00b7 ' + gEsc(x[4]) + '</div></div>').join('');
 }
+
+/* ---- light or dark ---- */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  const b = $('#themeBtn');
+  if (b) b.textContent = (t === 'dark' ? '\u2600' : '\u263e');
+  try { localStorage.setItem('studyhub_theme', t); } catch(e){}
+}
+function initTheme(){
+  let t = null;
+  try { t = localStorage.getItem('studyhub_theme'); } catch(e){}
+  if (!t){
+    t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ? 'dark' : 'light';
+  }
+  applyTheme(t);
+  const b = $('#themeBtn');
+  if (b) b.onclick = () => applyTheme(
+    document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+
 function wireSongs(){
   const add = $('#addSong'), form = $('#songForm');
   if (!add) return;
@@ -5085,6 +5155,7 @@ $('#datepill').textContent = new Date().toLocaleDateString('en-GB',
 paintNav();
 wirePeople();
 wireSongs();
+initTheme();
 wireDeadlines(); paintCalendar(); paintSchedule(); paintCards();
 /* where she actually was wins; the hash is only a fallback, because go() writes
    the hash itself and it would otherwise always drag her back to a list */
