@@ -999,6 +999,14 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 #tqInput{width:100%;box-sizing:border-box;border:1.5px solid var(--line2);border-radius:13px;
   padding:14px 16px;font-family:var(--ui);font-size:16px;color:var(--ink);background:var(--bg)}
 #tqInput:focus{outline:none;border-color:var(--sea)}
+.tqopts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.tqopt{text-align:left;border:1.5px solid var(--line2);background:var(--panel);border-radius:13px;
+  padding:13px 15px;font-family:var(--ui);font-size:14.5px;color:var(--ink);cursor:pointer;
+  line-height:1.5}
+.tqopt:hover{border-color:var(--sea)}
+.tqopt.done{cursor:default}
+.tqopt.right{border-color:var(--sage);background:var(--sage-l);font-weight:800}
+.tqopt.wrong{border-color:var(--rose);background:var(--rose-l)}
 .tqrow{display:flex;gap:9px;margin-top:11px}
 .tqrow button{flex:1;border:none;border-radius:13px;padding:13px;font-family:var(--ui);
   font-size:14px;font-weight:800;cursor:pointer}
@@ -1461,8 +1469,7 @@ html[data-theme="dark"] .fr,html[data-theme="dark"] iframe{filter:invert(.92) hu
         <div class="tqhead" id="tqHead"></div>
         <div class="tqprompt" id="tqPrompt"></div>
         <div class="tqsent" id="tqSent"></div>
-        <input id="tqInput" autocomplete="off" autocapitalize="off" spellcheck="false"
-               placeholder="type it here">
+        <div class="tqopts" id="tqOpts"></div>
         <div class="tqrow">
           <button id="tqCheck">Check</button>
           <button id="tqSkip">Show me</button>
@@ -1858,110 +1865,207 @@ const key = e => e.title + ' \u00b7 ' + e.level;
 const esc = t => String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 function isRead(k){ const r = essaysRead(); return Array.isArray(r) ? r.includes(k) : !!r[k]; }
 
-/* ---- typing practice: the words and the linking phrases of one essay ---- */
-const LINKERS = [
-  ["in my opinion","по моему мнению","stating your view"],
-  ["i strongly believe that","я твёрдо убеждена, что","stating your view, stronger"],
-  ["it seems to me that","мне кажется, что","a softer opinion"],
-  ["however","однако","turning to the other side"],
-  ["nevertheless","тем не менее","conceding, then continuing"],
-  ["on the other hand","с другой стороны","the opposite view"],
-  ["while i accept that","хотя я признаю, что","a real concession"],
-  ["it is worth conceding","стоит признать","a concession that costs you"],
-  ["although","хотя","joining two opposite ideas"],
-  ["moreover","более того","adding weight"],
-  ["furthermore","кроме того","adding weight, formal"],
-  ["in addition","вдобавок","adding"],
-  ["secondly","во-вторых","the second argument"],
-  ["finally","наконец","the last argument"],
-  ["as a result","в результате","cause and effect"],
-  ["consequently","следовательно","cause and effect, formal"],
-  ["therefore","поэтому","drawing a conclusion"],
-  ["for example","например","introducing an example"],
-  ["in other words","иначе говоря","rephrasing"],
-  ["in conclusion","в заключение","closing the essay"],
-  ["to sum up","подводя итог","closing, less formal"],
-  ["in the end","в конце концов","closing a story"],
-  ["at first","сначала","the beginning of a story"],
-  ["suddenly","внезапно","the turn in a story"],
-  ["by the time","к тому времени как","time in a narrative"],
-  ["as though","как будто","an unreal comparison"],
-  ["unless","если не","the condition that prevents it"],
-  ["despite","несмотря на","concession + noun"],
-  ["due to","из-за","cause + noun"],
-  ["according to","согласно","citing a source"],
-  ["the evidence suggests","данные говорят о том, что","hedging a claim"],
-  ["tends to","как правило","hedging a claim"],
-  ["is likely to","вероятно","hedging a prediction"],
-  ["i would argue that","я бы сказала, что","a measured opinion"],
-  ["what is more","более того","adding, informal"],
-  ["first of all","прежде всего","the first argument"]
+/* ---- essay practice: questions about the craft, not the vocabulary ---- */
+const LINKER_SETS = [
+  ["however",["however","moreover","therefore","for example"],"turning to the other side"],
+  ["moreover",["moreover","however","nevertheless","in conclusion"],"adding weight"],
+  ["nevertheless",["nevertheless","furthermore","similarly","for instance"],"conceding, then continuing"],
+  ["furthermore",["furthermore","however","instead","in contrast"],"adding weight, formal"],
+  ["in addition",["in addition","in contrast","in conclusion","as a result"],"adding"],
+  ["consequently",["consequently","however","for example","meanwhile"],"cause and effect"],
+  ["therefore",["therefore","although","besides","in fact"],"drawing a conclusion"],
+  ["for example",["for example","however","therefore","in conclusion"],"introducing an example"],
+  ["in conclusion",["in conclusion","first of all","however","in addition"],"closing the essay"],
+  ["on the other hand",["on the other hand","in the same way","as a result","for instance"],"the opposite view"],
+  ["although",["although","despite","because of","due to"],"a clause follows, not a noun"],
+  ["despite",["despite","although","even though","whereas"],"a noun follows, not a clause"],
+  ["while i accept that",["while I accept that","in my opinion","for example","in conclusion"],"a real concession"],
+  ["secondly",["secondly","however","therefore","in conclusion"],"the second argument"],
+  ["finally",["finally","firstly","however","for example"],"the last argument"],
+  ["in the end",["in the end","at first","for example","moreover"],"closing a story"],
+  ["indoors",["indoors","however","therefore","in conclusion"],"moving to a new place"],
+  ["then",["then","however","therefore","because"],"the next thing that happened"],
+  ["overall",["overall","for example","secondly","although"],"the closing summary"],
+  ["is associated with",["is associated with","proves","causes","guarantees"],"hedging a claim"],
+  ["tends to",["tends to","always does","never does","must"],"hedging a claim"],
+  ["has been linked to",["has been linked to","definitely causes","cures","prevents"],"hedging a claim"]
 ];
-function essayPractice(e, title){
-  /* the vocabulary that is tagged, plus every linking phrase actually used here */
-  const byWord = {};
-  WD.forEach(w => { const k = w.w.toLowerCase(); if (!byWord[k]) byWord[k] = w; });
-  const paper = $('#paper');
-  const items = [];
-  const seen = {};
-  paper.querySelectorAll('.voc,.bonus').forEach(v => {
-    const t = v.textContent.trim();
-    const k = t.toLowerCase();
-    if (seen[k]) return;
-    const w = byWord[k];
-    const sent = sentenceAround(v);
-    if (!sent) return;
-    seen[k] = 1;
-    items.push({ a: t, ru: w ? (w.r || '') : '', role: w ? (w.m || '') : 'a word from the text',
-                 sent: sent });
-  });
-  const plain = paper.textContent.toLowerCase();
-  /* a text with few tagged words still deserves a practice: take the words it
-     shares with her own lists */
-  if (items.length < 8){
-    const words = plain.replace(/[^a-z' ]/g,' ').split(/\s+/);
-    const uniq = [...new Set(words)].filter(w => w.length >= 5);
-    uniq.forEach(w => {
-      if (items.length >= 12) return;
-      if (seen[w]) return;
-      const dict = byWord[w];
-      if (!dict || !dict.r) return;
-      const el = [...paper.querySelectorAll('p')]
-        .map(p => p.textContent.replace(/\s+/g,' ').trim())
-        .map(t => t.split(/(?<=[.!?])\s+/).find(x => new RegExp('\\b'+w+'\\b','i').test(x)))
-        .find(Boolean);
-      if (!el) return;
-      seen[w] = 1;
-      items.push({ a: dict.w, ru: dict.r || '', role: dict.m || 'a word from the text', sent: el });
-    });
-  }
-  LINKERS.forEach(([ph, ru, role]) => {
-    if (seen[ph]) return;
-    if (plain.indexOf(ph) < 0) return;
-    const sent = sentenceWith(paper, ph);
-    if (!sent) return;
-    seen[ph] = 1;
-    items.push({ a: ph, ru: ru, role: role, sent: sent, phrase: 1 });
-  });
-  return items;
-}
-function sentenceAround(el){
-  const p = el.closest('p'); if (!p) return '';
-  const text = p.textContent.replace(/\s+/g,' ').trim();
-  const word = el.textContent.trim();
-  const parts = text.split(/(?<=[.!?])\s+/);
-  const hit = parts.find(x => x.indexOf(word) >= 0);
-  return hit || text;
-}
-function sentenceWith(paper, phrase){
+const CRAFT = {
+  argumentative: [
+    ["Where does your own position belong?","at the end of the introduction",
+     ["at the end of the introduction","in the counter-argument paragraph","only in the conclusion","in the title"],
+     "\uD83D\uDC9C State it once at the end of the introduction, and again in different words at the end."],
+    ["How long should the counter-argument paragraph be?","shorter than your own side",
+     ["shorter than your own side","longer than your own side","the same length","as long as possible"],
+     "\u26a0\ufe0f If it is the longest paragraph, the reader remembers the other side better than yours."],
+    ["What goes inside the counter-argument paragraph?","their case, stated fairly, with no rebuttal yet",
+     ["their case, stated fairly, with no rebuttal yet","their case and your answer to it","only the weakest of their arguments","a joke about them"],
+     "\uD83D\uDC9C Answer it in the next paragraph, not inside this one."],
+    ["Which opening is safest in an exam?","a situation or a contrast",
+     ["a situation or a contrast","a dictionary definition","a statistic you remember roughly","since the dawn of time"],
+     "\u26a0\ufe0f A half-remembered number is worse than no number."],
+    ["Which thesis shape shows most control?","Although A, X, because B",
+     ["Although A, X, because B","X is good","I will write about X","Everybody knows X"],
+     "\uD83D\uDC9C The concessive thesis proves you know the other side before you begin."],
+    ["What must the conclusion never contain?","a new argument",
+     ["a new argument","your position in new words","a summary","a final sentence"],
+     "New evidence in the conclusion reads as bad planning."],
+    ["Which is correct?","The test was easy; however, few passed.",
+     ["The test was easy; however, few passed.","The test was easy, however few passed.","The test was easy however, few passed.","The test was easy, however, few passed."],
+     "\u26a0\ufe0f A comma cannot join two clauses. Semicolon, or a full stop."],
+    ["Which is wrong?","Despite it rained, we went out.",
+     ["Despite it rained, we went out.","Despite the rain, we went out.","Although it rained, we went out.","Despite being late, she passed."],
+     "\u26a0\ufe0f <b>Despite</b> takes a noun or an -ing form, never a clause."],
+    ["A source gives you a statistic. What is the strongest move?","use it in your own sentence and name the source",
+     ["use it in your own sentence and name the source","quote the whole sentence","copy it and change two words","leave it out"],
+     "\uD83D\uDC9C Changing two words is still copying; a real paraphrase changes the structure."],
+    ["Which shows source criticism without a separate paragraph?","the article claims that\u2026",
+     ["the article claims that\u2026","the article says that\u2026","the article is about\u2026","according to the article\u2026"],
+     "\uD83D\uDC9C <b>Claims</b> and <b>assumes</b> signal doubt; <b>shows</b> and <b>notes</b> signal agreement."],
+    ["In the exam, which side should you argue?","the one you can support with examples",
+     ["the one you can support with examples","the one you personally believe","the one that is morally right","the more popular one"],
+     "You are marked on the argument, not the opinion."],
+    ["Which is the Rogerian order?","their side, what you accept, your side, common ground",
+     ["their side, what you accept, your side, common ground","your side, their side, rebuttal","claim, grounds, warrant","introduction and three arguments"],
+     "\uD83D\uDC9C Rogerian is the shape for topics that divide people."]
+  ],
+  descriptive: [
+    ["What should you decide before writing?","the one feeling the reader should leave with",
+     ["the one feeling the reader should leave with","how many adjectives to use","which metaphors to include","the number of paragraphs"],
+     "\uD83D\uDC9C One dominant impression, and every detail serves it."],
+    ["How many senses should one paragraph use?","two, chosen for the moment",
+     ["two, chosen for the moment","all five, always","only sight","none \u2014 stick to facts"],
+     "\u26a0\ufe0f Forcing all five turns a description into a list."],
+    ["Which is showing rather than telling?","On the metro nobody looked up.",
+     ["On the metro nobody looked up.","It was very quiet.","The silence was beautiful.","Everyone was calm and peaceful."],
+     "\uD83D\uDC9C Show the behaviour; let the reader name the feeling."],
+    ["Which phrase should be cut?","sparkling like diamonds",
+     ["sparkling like diamonds","the water held the colour of the trees","every step sounded like paper tearing","the radiator had been repainted many times"],
+     "\u26a0\ufe0f If it fits a pond, a chandelier and a ring equally, it describes nothing."],
+    ["Which order suits a flat or a museum?","spatial",
+     ["spatial","chronological","thematic","alphabetical"],
+     "Outside \u2192 door \u2192 first room \u2192 far corner."],
+    ["Which order suits a day out?","chronological",
+     ["chronological","spatial","thematic","by importance of adjective"],
+     "Setting off \u2192 arriving \u2192 what happened \u2192 leaving."],
+    ["What makes a description C1 rather than B2?","two feelings at once, held without resolving them",
+     ["two feelings at once, held without resolving them","longer words","more similes","more adjectives per noun"],
+     "\uD83D\uDC9C The light is lovely <i>and</i> the bathroom has damp."],
+    ["How should a descriptive text end?","with a detail that carries the meaning",
+     ["with a detail that carries the meaning","with a summary of the paragraphs","with a moral","with a question to the reader"],
+     "\u26a0\ufe0f <i>It was etched into my memory forever</i> is the opposite of describing."],
+    ["What does rhythm mean in description?","varying sentence length on purpose",
+     ["varying sentence length on purpose","using rhyme","writing in the present tense","repeating a word for effect"],
+     "\uD83D\uDC9C A short sentence after a long one lands."],
+    ["Which mistake do the online samples make?","every detail supports the same easy mood",
+     ["every detail supports the same easy mood","too much grammar","too few paragraphs","no conclusion"],
+     "Nobody in them is ever bored, irritated or disappointed."]
+  ],
+  informative: [
+    ["What is the third part of a body paragraph?","the explanation of why the detail matters",
+     ["the explanation of why the detail matters","another fact","a quotation","the conclusion"],
+     "\uD83D\uDC9C Topic sentence \u2192 detail \u2192 <b>why it matters</b> \u2192 transition. The third is where marks live."],
+    ["Which thesis belongs in an informative text?","This text explains what causes X, what it damages, and what can be done.",
+     ["This text explains what causes X, what it damages, and what can be done.","X is a terrible problem that must be stopped.","I think X is important.","Everybody should care about X."],
+     "An informative thesis is a map, not an opinion."],
+    ["Which is properly hedged?","is associated with lower reported stress",
+     ["is associated with lower reported stress","cures depression","always improves mental health","guarantees better sleep"],
+     "\u26a0\ufe0f Overclaiming is the fastest way to lose a knowledgeable reader."],
+    ["Can an informative text contain an opinion?","yes, if it is clearly somebody else's",
+     ["yes, if it is clearly somebody else's","no, never","yes, yours, in the conclusion","only in the introduction"],
+     "\uD83D\uDC9C <i>Planners disagree about whether\u2026</i> \u2014 theirs, reported by you."],
+    ["Which tense carries an informative text?","present simple",
+     ["present simple","past simple","present perfect","future"],
+     "It describes what is generally true."],
+    ["Why is the passive common here?","the doer often does not matter",
+     ["the doer often does not matter","it sounds more academic","it is shorter","it avoids tenses"],
+     "<i>The area is monitored by satellite</i> \u2014 who monitors it is not the point."],
+    ["What should the conclusion do?","state the point without adding new facts",
+     ["state the point without adding new facts","introduce the strongest fact last","repeat the introduction word for word","give your opinion at last"],
+     ""],
+    ["Which is wrong in an informative text?","I think wildfires are frightening.",
+     ["I think wildfires are frightening.","Most wildfires now begin with human activity.","The damage is measured in hectares.","Prevention is cheaper than suppression."],
+     "\u26a0\ufe0f No <i>I think</i>, and no dramatic adjectives."]
+  ],
+  email: [
+    ["How does an informal email open?","with something about them",
+     ["with something about them","with your news","with Dear Sir or Madam","with the reason you are writing"],
+     "\uD83D\uDC9C <i>How are you?</i> or <i>Sorry for the late reply</i> comes before anything of yours."],
+    ["Which belongs in an informal email?","I'm, don't, we'll",
+     ["I'm, don't, we'll","I am writing to inform you","Furthermore","Yours faithfully"],
+     "Contractions are what make it sound like a person."],
+    ["What must the middle contain?","an answer to every point the task lists",
+     ["an answer to every point the task lists","as much news as possible","a joke","a description of the weather"],
+     "\u26a0\ufe0f Three points in the task means three in the email."],
+    ["What is usually missing from a weak email?","a question back to them",
+     ["a question back to them","a greeting","a sign-off","paragraphs"],
+     "Without one it reads as a diary entry."]
+  ],
+  letter: [
+    ["After <i>Dear Sir or Madam</i>, you close with\u2026","Yours faithfully",
+     ["Yours faithfully","Yours sincerely","Best wishes","Take care"],
+     "\u26a0\ufe0f Name \u2192 sincerely. No name \u2192 faithfully. Examiners check this."],
+    ["Where does the reason for writing go?","the first sentence",
+     ["the first sentence","the second paragraph","the conclusion","the subject line only"],
+     "<i>I am writing to complain about\u2026</i>"],
+    ["What do weak complaint letters forget?","to say what they want to happen",
+     ["to say what they want to happen","to describe the problem","to be angry enough","to give the date"],
+     "\uD83D\uDC9C A complaint without a request gets a polite reply and nothing else."],
+    ["Which belongs in a formal letter?","I would be grateful if you could\u2026",
+     ["I would be grateful if you could\u2026","Can you sort this out?","I'm really annoyed","Drop me a line"],
+     ""]
+  ],
+  blog: [
+    ["Which genre may address the reader as <i>you</i>?","a blog post",
+     ["a blog post","an informative text","a formal letter","an argumentative essay"],
+     "\uD83D\uDC9C The one place it is correct."],
+    ["How should a blog post end?","a takeaway and a question to the reader",
+     ["a takeaway and a question to the reader","a summary of the paragraphs","a formal sign-off","a list of sources"],
+     ""],
+    ["What is still required in a blog post?","paragraphs and linkers",
+     ["paragraphs and linkers","formal vocabulary","the passive voice","a thesis statement"],
+     "\u26a0\ufe0f Informal is not the same as unstructured."],
+    ["What makes a good blog title?","a question or a promise",
+     ["a question or a promise","the topic in one word","a dictionary definition","the date"],
+     ""]
+  ]
+};
+function sentenceWithPhrase(paper, phrase){
   const ps = [...paper.querySelectorAll('p')];
   for (const p of ps){
-    const text = p.textContent.replace(/\s+/g,' ').trim();
+    const text = p.textContent.replace(/[\uD83D\uDD0A\u25b6\u266a]/g,'')
+      .replace(/\s+/g,' ').trim();
     const parts = text.split(/(?<=[.!?])\s+/);
-    const hit = parts.find(x => x.toLowerCase().indexOf(phrase) >= 0);
-    if (hit) return hit;
+    const hit = parts.find(x => new RegExp('(^|[\\s\u2014(])' + phrase + '([\\s,.;:]|$)','i').test(x));
+    if (hit && hit.length < 260) return hit;
   }
   return '';
+}
+function essayPractice(e, title){
+  const paper = $('#paper');
+  const items = [];
+  /* questions built from this very text */
+  const used = {};
+  LINKER_SETS.forEach(([phrase, options, role]) => {
+    if (items.length >= 6) return;
+    if (used[phrase]) return;
+    const sent = sentenceWithPhrase(paper, phrase);
+    if (!sent) return;
+    used[phrase] = 1;
+    const correct = sent.match(new RegExp(phrase,'i'))[0];
+    items.push({
+      q: 'Which fits the gap, in this sentence from the text?',
+      sent: sent.replace(new RegExp(phrase,'i'), '\u2003____\u2003'),
+      a: correct.toLowerCase(),
+      o: options.slice(),
+      e: '\uD83D\uDC9C ' + role + '.'
+    });
+  });
+  /* and questions about the genre */
+  const bank = (CRAFT[e.genre] || []).slice();
+  bank.sort(() => Math.random() - 0.5);
+  bank.forEach(([q, a, o, ex]) => items.push({ q: q, sent: '', a: a, o: o.slice(), e: ex }));
+  return items;
 }
 let TQ = { list: [], i: 0, right: 0, back: null };
 function norm(t){
@@ -1983,30 +2087,44 @@ function paintTypeQ(){
   const it = TQ.list[TQ.i];
   if (!it){
     $('#tqPrompt').innerHTML = 'Done \u2014 ' + TQ.right + ' of ' + TQ.list.length + ' right.';
-    $('#tqSent').innerHTML = ''; $('#tqInput').style.display = 'none';
-    $('#tqFb').textContent = ''; $('#tqCheck').textContent = 'Back to the text';
+    $('#tqSent').innerHTML = '';
+    $('#tqOpts').innerHTML = '';
+    $('#tqFb').textContent = '';
+    $('#tqCheck').textContent = 'Back to the text';
+    $('#tqCheck').style.display = '';
     $('#tqCheck').onclick = () => TQ.back && TQ.back();
     $('#tqSkip').style.display = 'none';
     return;
   }
   $('#tqScore').textContent = (TQ.i + 1) + ' / ' + TQ.list.length;
-  $('#tqPrompt').innerHTML = gEsc(it.ru || it.role || '') +
-    (it.ru && it.role ? '<span class="ru">' + gEsc(it.role) + '</span>' : '');
-  const re = new RegExp(it.a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'i');
-  $('#tqSent').innerHTML = gEsc(it.sent).replace(re, '<b>&nbsp;</b>');
-  const inp = $('#tqInput');
-  inp.value = ''; inp.style.display = ''; inp.focus();
+  $('#tqPrompt').innerHTML = it.q;
+  $('#tqSent').innerHTML = it.sent ? gEsc(it.sent).replace('\u2003____\u2003','<b>&nbsp;</b>') : '';
+  $('#tqSent').style.display = it.sent ? '' : 'none';
   $('#tqFb').textContent = ''; $('#tqFb').className = 'tqfb';
-  $('#tqSkip').style.display = '';
-  $('#tqCheck').textContent = 'Check';
-  $('#tqCheck').onclick = checkTypeQ;
-  $('#tqSkip').onclick = () => {
-    $('#tqFb').className = 'tqfb no';
-    $('#tqFb').innerHTML = 'It was <b>' + gEsc(it.a) + '</b>';
+  $('#tqCheck').style.display = 'none';
+  $('#tqSkip').style.display = 'none';
+  const opts = it.o.slice().sort(() => Math.random() - 0.5);
+  $('#tqOpts').innerHTML = opts.map((o, i) =>
+    '<button class="tqopt" data-i="' + i + '">' + o + '</button>').join('');
+  $('#tqOpts').querySelectorAll('.tqopt').forEach((b, i) => b.onclick = () => {
+    if (b.classList.contains('done')) return;
+    const chosen = opts[i];
+    const ok = String(chosen).toLowerCase().replace(/[.,;:]/g,'').trim() ===
+               String(it.a).toLowerCase().replace(/[.,;:]/g,'').trim();
+    $('#tqOpts').querySelectorAll('.tqopt').forEach((x, j) => {
+      x.classList.add('done');
+      const isRight = String(opts[j]).toLowerCase().replace(/[.,;:]/g,'').trim() ===
+                      String(it.a).toLowerCase().replace(/[.,;:]/g,'').trim();
+      if (isRight) x.classList.add('right');
+      else if (j === i) x.classList.add('wrong');
+    });
+    if (ok) TQ.right++;
+    $('#tqFb').className = 'tqfb ' + (ok ? 'ok' : 'no');
+    $('#tqFb').innerHTML = (ok ? '\u2713 ' : '') + (it.e || '');
+    $('#tqCheck').style.display = '';
     $('#tqCheck').textContent = 'Next';
     $('#tqCheck').onclick = () => { TQ.i++; paintTypeQ(); };
-  };
-  inp.onkeydown = ev => { if (ev.key === 'Enter') $('#tqCheck').click(); };
+  });
 }
 function checkTypeQ(){
   const it = TQ.list[TQ.i];
@@ -2141,18 +2259,16 @@ function openEssay(title, level){
   const epool = essayPractice(e, title);
   const eq = $('#essayQuiz');
   eq.className = 'openraw quiz' + (epool.length < 3 ? ' hide' : '');
-  const nPhr = epool.filter(x => x.phrase).length;
-  eq.textContent = '\u25b6 Practise \u00b7 ' + epool.length +
-    (nPhr ? ' words and phrases' : ' words');
+  eq.textContent = '\u25b6 Practise \u00b7 ' + epool.length + ' questions on this text';
   const backToEssay = () => startTypeQuiz(epool,
     e.topic + ' \u00b7 ' + e.level, () => openEssay(title, e.level));
   eq.onclick = backToEssay;
   { const role = guideRole('essay:' + title); if (role) markGuide(eq, role === 'pink'); }
   if (epool.length >= 3){
     $('#paper').insertAdjacentHTML('beforeend',
-      '<div class="endquiz"><div class="eh">Now try the words and phrases this version is built on.</div>' +
-      '<div class="eh2">You type the answer \u2014 the Russian and the job it does are the clue.</div>' +
-      '<button id="eEndQuiz">\u25b6 Practise \u00b7 ' + epool.length + '</button></div>');
+      '<div class="endquiz"><div class="eh">Now check that you can build one yourself.</div>' +
+      '<div class="eh2">Questions on structure, linkers and register \u2014 not on vocabulary.</div>' +
+      '<button id="eEndQuiz">\u25b6 Practise \u00b7 ' + epool.length + ' questions</button></div>');
     document.getElementById('eEndQuiz').onclick = backToEssay;
   }
   const mk = $('#markRead');
