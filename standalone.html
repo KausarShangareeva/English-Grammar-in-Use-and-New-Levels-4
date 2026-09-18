@@ -2916,6 +2916,7 @@ function paintAdj(){
 }
 let AQ = { list: [], i: 0, right: 0, hint: 0 };
 function startAdjQuiz(pool){
+  if (!Array.isArray(pool)) pool = null;
   pool = pool || ADJ.words.filter(w => adjCat === 'all' || w.c === adjCat);
   if (!pool.length) return;
   AQ = { list: pool.slice().sort(() => Math.random() - 0.5), i: 0, right: 0, hint: 0,
@@ -3044,7 +3045,7 @@ function stopAdjQuiz(){
 function wireAdj(){
   if (!$('#adjSearch')) return;
   $('#adjSearch').oninput = e => { adjQ = e.target.value; paintAdj(); };
-  $('#adjQuizBtn').onclick = startAdjQuiz;
+  $('#adjQuizBtn').onclick = () => startAdjQuiz();
   $('#aqBack').onclick = () => go('adjectives');
   $('#aqStop').onclick = stopAdjQuiz;
 }
