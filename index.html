@@ -1246,6 +1246,17 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
 .cmpnote{font-size:11.5px;color:var(--mut2);margin-top:4px}
 @media (max-width:760px){ .cmp{padding:15px 13px;border-radius:16px} .cmph{font-size:22px} }
 
+
+.ldiff{font-family:var(--disp);font-size:22px;letter-spacing:1px;margin-top:8px;display:flex;
+  align-items:baseline;flex-wrap:wrap}
+.ldiff .ll{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:.9px;
+  text-transform:uppercase;color:var(--mut2);margin-right:9px;letter-spacing:1px}
+.ldiff i{font-style:normal}
+.ldiff i.ok{color:var(--mut2)}
+.ldiff i.bad{color:#fff;background:var(--rose);border-radius:4px;padding:0 3px;margin:0 1px}
+.ldiff i.miss{color:#fff;background:var(--sage);border-radius:4px;padding:0 3px;margin:0 1px}
+.lagain{font-family:var(--ui);font-size:11.5px;font-weight:700;color:var(--sand);margin-top:9px}
+
 </style>
 </head>
 <body>
@@ -2917,7 +2928,8 @@ function paintAdjQ(){
     return;
   }
   AQ.hint = 0;
-  $('#aqScore').textContent = (AQ.i + 1) + ' / ' + AQ.list.length;
+  $('#aqScore').textContent = (AQ.i + 1) + ' / ' + AQ.list.length +
+    (it.again ? ' \u00b7 \u21ba again' : '');
   $('#aqPrompt').innerHTML = gEsc(it.m || it.r) +
     '<span class="ru">' + gEsc(it.r) +
     (it.x ? ' \u00b7 instead of \u201c' + gEsc(it.x) + '\u201d' : '') +
@@ -2937,12 +2949,32 @@ function paintAdjQ(){
   };
   $('#aqSkip').onclick = () => {
     $('#aqFb').className = 'tqfb no';
-    $('#aqFb').innerHTML = 'It was <b>' + gEsc(it.w) + '</b>';
+    $('#aqFb').innerHTML = 'It was <b>' + gEsc(it.w) + '</b>' +
+      '<div class="lagain">\u21ba it comes back later in this round</div>';
+    if (!it.tries)
+      AQ.list.splice(Math.min(AQ.i + 4, AQ.list.length), 0, Object.assign({}, it, { again:1, tries:1 }));
     $('#aqCheck').textContent = 'Next';
     $('#aqCheck').onclick = () => { AQ.i++; paintAdjQ(); };
   };
   inp.onkeydown = ev => { if (ev.key === 'Enter') $('#aqCheck').click(); };
 }
+
+/* which letters were wrong, and where */
+function letterDiff(given, want){
+  const g = String(given), w = String(want);
+  let you = '', right = '';
+  const n = Math.max(g.length, w.length);
+  for (let i = 0; i < n; i++){
+    const a = g[i], b = w[i];
+    if (a === undefined){ right += '<i class="miss">' + b + '</i>'; continue; }
+    if (b === undefined){ you += '<i class="bad">' + a + '</i>'; continue; }
+    if (a === b){ you += '<i class="ok">' + a + '</i>'; right += '<i class="ok">' + b + '</i>'; }
+    else { you += '<i class="bad">' + a + '</i>'; right += '<i class="miss">' + b + '</i>'; }
+  }
+  return '<div class="ldiff"><span class="ll">you wrote</span>' + you + '</div>' +
+         '<div class="ldiff"><span class="ll">it is</span>' + right + '</div>';
+}
+
 function checkAdjQ(){
   const it = AQ.list[AQ.i];
   const given = String($('#aqInput').value || '').toLowerCase().replace(/[^a-z-]/g,'').trim();
@@ -2953,13 +2985,22 @@ function checkAdjQ(){
   seen[it.w] = 1;
   writeJSON('adj_seen', seen);
   if (given === want){
-    if (!AQ.hint) AQ.right++;
+    if (!AQ.hint && !it.again) AQ.right++;
     fb.className = 'tqfb ok';
-    fb.innerHTML = '\u2713 ' + gEsc(it.w) + (AQ.hint ? ' \u2014 with a hint' : '');
+    fb.innerHTML = '\u2713 ' + gEsc(it.w) +
+      (AQ.hint ? ' \u2014 with a hint' : '') +
+      (it.again ? ' \u2014 second time right' : '');
   } else {
     fb.className = 'tqfb no';
     fb.innerHTML = (want.indexOf(given) === 0 && given.length > 2
-      ? 'Almost \u2014 it was <b>' : 'Not this time \u2014 it was <b>') + gEsc(it.w) + '</b>';
+        ? 'Almost.' : 'Not this time.') + letterDiff(given, want) +
+      ((it.tries || 0) ? '' : '<div class="lagain">\u21ba it comes back twice more in this round</div>');
+    /* the word comes back, but only twice in a round */
+    const tries = (it.tries || 0) + 1;
+    if (tries === 1){
+      AQ.list.splice(Math.min(AQ.i + 3, AQ.list.length), 0, Object.assign({}, it, { again:1, tries:1 }));
+      AQ.list.splice(Math.min(AQ.i + 8, AQ.list.length), 0, Object.assign({}, it, { again:1, tries:2 }));
+    }
   }
   $('#aqHint').style.display = 'none'; $('#aqSkip').style.display = 'none';
   $('#aqCheck').textContent = 'Next';
