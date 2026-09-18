@@ -2918,8 +2918,10 @@ function paintAdjQ(){
   }
   AQ.hint = 0;
   $('#aqScore').textContent = (AQ.i + 1) + ' / ' + AQ.list.length;
-  $('#aqPrompt').innerHTML = gEsc(it.m) +
-    '<span class="ru">' + gEsc(it.r) + ' \u00b7 instead of \u201c' + gEsc(it.x) + '\u201d</span>';
+  $('#aqPrompt').innerHTML = gEsc(it.m || it.r) +
+    '<span class="ru">' + gEsc(it.r) +
+    (it.x ? ' \u00b7 instead of \u201c' + gEsc(it.x) + '\u201d' : '') +
+    (it.u ? ' \u00b7 ' + gEsc(it.u) : '') + '</span>';
   $('#aqSent').innerHTML = gEsc(it.e).replace(new RegExp(it.w, 'i'), '<b>&nbsp;</b>');
   const inp = $('#aqInput');
   inp.value = ''; inp.style.display = ''; inp.focus();
