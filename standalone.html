@@ -1216,6 +1216,33 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
   padding-left:11px;border-left:3px solid var(--line2)}
 .adjcount{font-family:var(--ui);font-size:12px;font-weight:700;color:var(--mut2);margin-bottom:10px}
 
+
+.cmp{background:var(--panel);border-radius:22px;padding:20px 18px;margin-top:14px;
+  box-shadow:0 8px 26px rgba(39,107,122,.07)}
+.cmph{font-family:var(--disp);font-size:26px;font-weight:600;color:var(--ink)}
+.cmpsub{font-size:13px;color:var(--mut);line-height:1.7;margin:5px 0 14px}
+.cmpchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.cmpchips button{border:1px solid var(--line);background:var(--bg);border-radius:999px;
+  padding:7px 13px;font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut);cursor:pointer}
+.cmpchips button.on{background:var(--sea);color:#fff;border-color:var(--sea)}
+.cmpset{margin-bottom:6px}
+.cmpt{font-family:var(--disp);font-size:20px;font-weight:600;color:var(--sea)}
+.cmps{font-size:12.5px;color:var(--mut);line-height:1.65;margin:3px 0 11px}
+.cmprow{display:flex;gap:11px;align-items:flex-start;padding:10px 11px;border-radius:13px}
+.cmprow:nth-child(odd){background:var(--bg)}
+.cmpdot{width:9px;height:9px;border-radius:50%;flex:0 0 9px;margin-top:7px}
+.cmpn{font-family:var(--ui);font-size:11.5px;font-weight:800;color:var(--ink);display:block}
+.cmpwhen{font-family:var(--ui);font-size:10.5px;font-weight:700;color:var(--mut2);display:block;
+  margin-top:1px}
+.cmpmid{flex:1;min-width:0}
+.cmpa{font-family:var(--disp);font-size:17px;color:var(--ink);line-height:1.55;margin-top:5px}
+.cmpp{font-family:var(--disp);font-size:16px;color:var(--rose);line-height:1.55;margin-top:3px}
+.cmplab{font-family:var(--ui);font-size:9.5px;font-weight:800;letter-spacing:.9px;
+  text-transform:uppercase;margin-right:6px}
+.cmplab.a{color:var(--sage)} .cmplab.p{color:var(--rose)}
+.cmpnote{font-size:11.5px;color:var(--mut2);margin-top:4px}
+@media (max-width:760px){ .cmp{padding:15px 13px;border-radius:16px} .cmph{font-size:22px} }
+
 </style>
 </head>
 <body>
@@ -4774,6 +4801,43 @@ function langFormsBlock(){
       '<span class="tsnote">' + r[5] + '</span></span></div>').join('') +
     '<div class="tsfoot">' + b.note + '</div></div>';
 }
+
+/* ---- compare the tenses ---- */
+const CMP = [{"k":"cont","t":"Continuous — in the middle of it","sub":"Tina is in her office at ten o'clock. The action is under way at that moment.","rows":[["Past Continuous","at 10 o'clock yesterday","She <b>was working</b>.","The report <b>was being written</b>.","#C9773E","under way at a past moment"],["Present Continuous","at 10 o'clock now","She <b>is working</b>.","The report <b>is being written</b>.","#E09B2D","under way at this moment"],["Future Continuous","at 10 o'clock tomorrow","She <b>will be working</b>.","The report <b>will be being written</b> — ⚠️ possible but nobody says it","#B2568E","under way at a future moment"]]},{"k":"simple","t":"Simple — the whole action, as a fact","sub":"The same office, but now the action is complete, habitual or scheduled.","rows":[["Past Simple","yesterday","She <b>wrote</b> the report.","The report <b>was written</b>.","#C9A227","finished, at a known past time"],["Present Simple","every Monday","She <b>writes</b> the report.","The report <b>is written</b> every Monday.","#4F8A6B","a habit, a fact, a timetable"],["Future Simple","tomorrow","She <b>will write</b> the report.","The report <b>will be written</b>.","#3E7FA8","a decision, an offer, a prediction"]]},{"k":"perf","t":"Perfect — finished before another point","sub":"Each one looks back from a moment: from now, from a past moment, from a future one.","rows":[["Past Perfect","by 9 o'clock yesterday","She <b>had written</b> it.","It <b>had been written</b>.","#6B5BA8","finished before a past point"],["Present Perfect","by now","She <b>has written</b> it.","It <b>has been written</b>.","#276B7A","finished, and it matters now"],["Future Perfect","by 9 o'clock tomorrow","She <b>will have written</b> it.","It <b>will have been written</b>.","#A8536B","finished before a future point"]]},{"k":"perfcont","t":"Perfect continuous — how long, up to a point","sub":"⚠️ These four have <b>no passive at all</b>. Nobody says <s>it had been being written</s>.","rows":[["Past Perfect Continuous","by 10, she had been there two hours","She <b>had been working</b> since eight.",null,"#4F5FA8","how long, up to a past point"],["Present Perfect Continuous","and she is still at it","She <b>has been working</b> since eight.",null,"#3E9D8E","how long, up to now"],["Future Perfect Continuous","by 10 tomorrow, two hours in","She <b>will have been working</b> for two hours.",null,"#8F4F63","how long, up to a future point"]]}];
+const CMP_VOICE = {"t":"🔄 Active and passive, side by side","sub":"The passive keeps the tense and changes who is in the sentence. 💜 <b>be</b> carries the tense, and the main verb never changes: always <b>V3</b>.","rows":[["Present Simple","—","She writes it.","It <b>is</b> written.","#4F8A6B","is + V3"],["Present Continuous","—","She is writing it.","It <b>is being</b> written.","#E09B2D","is being + V3"],["Present Perfect","—","She has written it.","It <b>has been</b> written.","#276B7A","has been + V3"],["Past Simple","—","She wrote it.","It <b>was</b> written.","#C9A227","was + V3"],["Past Continuous","—","She was writing it.","It <b>was being</b> written.","#C9773E","was being + V3"],["Past Perfect","—","She had written it.","It <b>had been</b> written.","#6B5BA8","had been + V3"],["Future Simple","—","She will write it.","It <b>will be</b> written.","#3E7FA8","will be + V3"],["Future Perfect","—","She will have written it.","It <b>will have been</b> written.","#A8536B","will have been + V3"],["⚠️ the four continuous perfects","—","She has been writing it.","— no passive exists","#9AAAB0","not used"]]};
+let cmpSet = 'cont';
+function cmpRows(set){
+  return set.rows.map(r =>
+    '<div class="cmprow"><span class="cmpdot" style="background:' + r[4] + '"></span>' +
+    '<span class="cmpmid"><span class="cmpn">' + r[0] + '</span>' +
+    '<span class="cmpwhen">' + r[1] + '</span>' +
+    '<div class="cmpa"><span class="cmplab a">active</span>' + r[2] + '</div>' +
+    (r[3] ? '<div class="cmpp"><span class="cmplab p">passive</span>' + r[3] + '</div>'
+          : '<div class="cmpp"><span class="cmplab p">passive</span>\u2014 none exists</div>') +
+    '<div class="cmpnote">' + r[5] + '</div></span></div>').join('');
+}
+function compareBlock(){
+  const chips = CMP.map(c =>
+    '<button data-c="' + c.k + '"' + (cmpSet === c.k ? ' class="on"' : '') + '>' +
+    c.t.split(' \u2014 ')[0] + '</button>').join('') +
+    '<button data-c="voice"' + (cmpSet === 'voice' ? ' class="on"' : '') + '>\u21c4 Active \u00b7 passive</button>';
+  const set = cmpSet === 'voice' ? CMP_VOICE : CMP.find(c => c.k === cmpSet);
+  return '<div class="cmp"><div class="cmph">Compare the tenses</div>' +
+    '<div class="cmpsub">One person, one office, one report \u2014 and twelve ways to say it. ' +
+    'Pick an aspect and read the three rows downwards: past, present, future.</div>' +
+    '<div class="cmpchips" id="cmpChips">' + chips + '</div>' +
+    '<div class="cmpset"><div class="cmpt">' + set.t + '</div>' +
+    '<div class="cmps">' + set.sub + '</div>' + cmpRows(set) + '</div></div>';
+}
+function wireCompare(){
+  const box = document.getElementById('cmpChips');
+  if (!box) return;
+  box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    cmpSet = b.dataset.c;
+    paintGramList();
+  });
+}
+
 function tenseBlock(){
   const byGroup = ['Present','Past','Future'].map(g =>
     '<div class="tsg">' + g + ' tenses</div>' +
@@ -4812,7 +4876,8 @@ function paintGramList(){
     if (!s2){ s2 = { k:g.sec, items:[] }; secs.push(s2); }
     s2.items.push([g,i]);
   });
-  box.innerHTML = (gramOnly ? '' : (LANG === 'en' ? tenseBlock() : langFormsBlock())) +
+  box.innerHTML = (gramOnly ? '' : (LANG === 'en' ? tenseBlock() + compareBlock()
+                                                    : langFormsBlock())) +
     secs.map(s2 =>
     '<div class="gsec">' + s2.k + ' \u00b7 ' + s2.items.length + '</div>' +
     s2.items.map(([g,i]) => {
@@ -4837,6 +4902,7 @@ function paintGramList(){
     const role = guideRole('gram:' + (GR[Number(b.dataset.i)] || {}).id);
     if (role) markGuide(b, role === 'pink');
   });
+  wireCompare();
 }
 /* a cell that starts with a short label and a colon reads better with the label
    picked out: \u2018past simple: I drove to work\u2019 */
