@@ -1259,6 +1259,13 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
 .ldiff i.miss{color:#fff;background:var(--sage);border-radius:4px;padding:0 3px;margin:0 1px}
 .lagain{font-family:var(--ui);font-size:11.5px;font-weight:700;color:var(--sand);margin-top:9px}
 
+
+.misshead{display:block;font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:1.1px;
+  text-transform:uppercase;color:var(--rose);margin-bottom:8px}
+.missw{display:inline-block;font-family:var(--disp);font-size:17px;color:var(--ink);
+  background:var(--panel);border:1px solid var(--line2);border-radius:9px;padding:4px 10px;
+  margin:0 6px 6px 0}
+
 </style>
 </head>
 <body>
@@ -2908,11 +2915,11 @@ function paintAdj(){
     '<div class="adje">' + w.e + '</div></div>').join('');
 }
 let AQ = { list: [], i: 0, right: 0, hint: 0 };
-function startAdjQuiz(){
-  const pool = ADJ.words.filter(w => adjCat === 'all' || w.c === adjCat);
+function startAdjQuiz(pool){
+  pool = pool || ADJ.words.filter(w => adjCat === 'all' || w.c === adjCat);
   if (!pool.length) return;
   AQ = { list: pool.slice().sort(() => Math.random() - 0.5), i: 0, right: 0, hint: 0,
-         total: pool.length };
+         total: pool.length, missed: [] };
   hideAll('#adjQuiz');
   $('#dash').classList.add('off');
   $('#adjQuiz').classList.add('on');
@@ -2930,8 +2937,21 @@ function paintAdjQ(){
     $('#aqSent').innerHTML = ''; $('#aqInput').style.display = 'none';
     $('#aqFb').textContent = ''; $('#aqHint').style.display = 'none'; $('#aqSkip').style.display = 'none';
     if ($('#aqStop')) $('#aqStop').style.display = 'none';
-    $('#aqCheck').textContent = 'Back to the words';
-    $('#aqCheck').onclick = () => go('adjectives');
+    const miss = (AQ.missed || []).filter(x => !x.again);
+    $('#aqSent').innerHTML = miss.length
+      ? '<span class="misshead">the ones that went wrong</span>' +
+        miss.map(x => '<span class="missw">' + gEsc(x.w) + '</span>').join('')
+      : '';
+    $('#aqCheck').textContent = miss.length ? 'Redo the misses only \u00b7 ' + miss.length
+                                            : 'Back to the words';
+    $('#aqCheck').onclick = miss.length
+      ? () => startAdjQuiz(miss.map(x => Object.assign({}, x, { again:0, tries:0 })))
+      : () => go('adjectives');
+    if ($('#aqSkip')){
+      $('#aqSkip').style.display = miss.length ? '' : 'none';
+      $('#aqSkip').textContent = 'Back to the words';
+      $('#aqSkip').onclick = () => go('adjectives');
+    }
     return;
   }
   AQ.hint = 0;
@@ -2957,6 +2977,7 @@ function paintAdjQ(){
   };
   $('#aqSkip').onclick = () => {
     $('#aqFb').className = 'tqfb no';
+    if (!AQ.missed.some(x => x.w === it.w)) AQ.missed.push(it);
     $('#aqFb').innerHTML = 'It was <b>' + gEsc(it.w) + '</b>' +
       '<div class="lagain">\u21ba it comes back later in this round</div>';
     if (!it.tries)
@@ -3000,6 +3021,7 @@ function checkAdjQ(){
       (it.again ? ' \u2014 second time right' : '');
   } else {
     fb.className = 'tqfb no';
+    if (!AQ.missed.some(x => x.w === it.w)) AQ.missed.push(it);
     fb.innerHTML = (want.indexOf(given) === 0 && given.length > 2
         ? 'Almost.' : 'Not this time.') + letterDiff(given, want) +
       ((it.tries || 0) ? '' : '<div class="lagain">\u21ba it comes back twice more in this round</div>');
