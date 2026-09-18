@@ -1022,6 +1022,8 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
   font-size:14px;font-weight:800;cursor:pointer}
 #tqCheck{background:var(--sea);color:#fff}
 #tqSkip{background:var(--panel);color:var(--mut);border:1px solid var(--line)}
+.tqrow2{margin-top:9px;text-align:center}
+#aqStop{border:none;background:none;color:var(--mut2);font-family:var(--ui);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline}
 .tqfb{margin-top:13px;font-size:14px;line-height:1.7;min-height:22px}
 .tqfb.ok{color:var(--sage)}
 .tqfb.no{color:var(--rose)}
@@ -1346,6 +1348,7 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
           <button id="aqHint">Hint</button>
           <button id="aqSkip">Show me</button>
         </div>
+        <div class="tqrow2"><button id="aqStop">Finish here</button></div>
         <div class="tqfb" id="aqFb"></div>
       </article>
     </div>
@@ -2908,7 +2911,8 @@ let AQ = { list: [], i: 0, right: 0, hint: 0 };
 function startAdjQuiz(){
   const pool = ADJ.words.filter(w => adjCat === 'all' || w.c === adjCat);
   if (!pool.length) return;
-  AQ = { list: pool.slice().sort(() => Math.random() - 0.5).slice(0, 15), i: 0, right: 0, hint: 0 };
+  AQ = { list: pool.slice().sort(() => Math.random() - 0.5), i: 0, right: 0, hint: 0,
+         total: pool.length };
   hideAll('#adjQuiz');
   $('#dash').classList.add('off');
   $('#adjQuiz').classList.add('on');
@@ -2920,16 +2924,19 @@ function startAdjQuiz(){
 function paintAdjQ(){
   const it = AQ.list[AQ.i];
   if (!it){
-    $('#aqPrompt').innerHTML = 'Done \u2014 ' + AQ.right + ' of ' + AQ.list.length + ' right.';
+    $('#aqPrompt').innerHTML = 'Done \u2014 ' + AQ.right + ' of ' + AQ.list.length +
+      ' right' + (AQ.total && AQ.list.length < AQ.total
+        ? ', out of ' + AQ.total + ' in this group' : '') + '.';
     $('#aqSent').innerHTML = ''; $('#aqInput').style.display = 'none';
     $('#aqFb').textContent = ''; $('#aqHint').style.display = 'none'; $('#aqSkip').style.display = 'none';
+    if ($('#aqStop')) $('#aqStop').style.display = 'none';
     $('#aqCheck').textContent = 'Back to the words';
     $('#aqCheck').onclick = () => go('adjectives');
     return;
   }
   AQ.hint = 0;
   $('#aqScore').textContent = (AQ.i + 1) + ' / ' + AQ.list.length +
-    (it.again ? ' \u00b7 \u21ba again' : '');
+    ' \u00b7 ' + AQ.right + ' right' + (it.again ? ' \u00b7 \u21ba again' : '');
   $('#aqPrompt').innerHTML = gEsc(it.m || it.r) +
     '<span class="ru">' + gEsc(it.r) +
     (it.x ? ' \u00b7 instead of \u201c' + gEsc(it.x) + '\u201d' : '') +
@@ -2939,6 +2946,7 @@ function paintAdjQ(){
   inp.value = ''; inp.style.display = ''; inp.focus();
   $('#aqFb').textContent = ''; $('#aqFb').className = 'tqfb';
   $('#aqHint').style.display = ''; $('#aqSkip').style.display = '';
+  if ($('#aqStop')) $('#aqStop').style.display = '';
   $('#aqCheck').textContent = 'Check';
   $('#aqCheck').onclick = checkAdjQ;
   $('#aqHint').onclick = () => {
@@ -3006,11 +3014,17 @@ function checkAdjQ(){
   $('#aqCheck').textContent = 'Next';
   $('#aqCheck').onclick = () => { AQ.i++; paintAdjQ(); };
 }
+function stopAdjQuiz(){
+  AQ.list = AQ.list.slice(0, AQ.i);
+  AQ.i = AQ.list.length;
+  paintAdjQ();
+}
 function wireAdj(){
   if (!$('#adjSearch')) return;
   $('#adjSearch').oninput = e => { adjQ = e.target.value; paintAdj(); };
   $('#adjQuizBtn').onclick = startAdjQuiz;
   $('#aqBack').onclick = () => go('adjectives');
+  $('#aqStop').onclick = stopAdjQuiz;
 }
 
 /* ---- deadlines ---- */
