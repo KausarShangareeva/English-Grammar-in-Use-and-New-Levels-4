@@ -1249,6 +1249,14 @@ html[data-theme="dark"] .fr,html[data-theme="dark"] iframe{filter:invert(.92) hu
 #adjSearch:focus{outline:none;border-color:var(--sea)}
 #adjQuizBtn{border:none;background:var(--sea);color:#fff;border-radius:13px;padding:11px 20px;
   font-family:var(--ui);font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.adjdecks{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-4px 0 14px}
+.adjdecks .dlab{font-family:var(--ui);font-size:10.5px;font-weight:800;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--mut2);margin-right:4px}
+.adjdecks button{min-width:34px;border:1px solid var(--line2);background:var(--panel);border-radius:10px;
+  padding:6px 8px;font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut);cursor:pointer}
+.adjdecks button:hover{border-color:var(--sea);color:var(--sea)}
+.adjdecks button.done{background:var(--sage-l);border-color:var(--sage);color:var(--sage)}
+.adjdecks button.next{background:var(--sea);border-color:var(--sea);color:#fff}
 .adjcard{background:var(--panel);border-radius:16px;padding:14px 16px;margin-bottom:9px;
   box-shadow:0 5px 16px rgba(39,107,122,.05)}
 .adjtop{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -1399,6 +1407,7 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
         <input id="adjSearch" placeholder="search a word or a meaning">
         <button id="adjQuizBtn">&#9654; Practise</button>
       </div>
+      <div class="adjdecks" id="adjDecks"></div>
       <div id="adjList"></div>
     </section>
     <div class="typequiz" id="adjQuiz">
@@ -2879,7 +2888,7 @@ function paintLangMenu(){
 }
 /* The three languages keep their own study progress \u2014 but the schedule, the
    IT goals and the settings belong to you, not to a language, so those stay shared. */
-const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites',
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck',
                      'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
 function lkey(k){
@@ -3012,19 +3021,56 @@ function paintAdj(){
     (w.x ? '<span class="adjx">instead of \u201c' + w.x + '\u201d</span>' : '') +
     (w.u ? '<span class="adju">' + w.u + '</span>' : '') +
     '<div class="adje">' + w.e + aSpk(w.e) + '</div>' + adjEssay(w) + '</div>').join('');
+  paintAdjDecks();
+}
+/* Twenty words a round is what sticks. Each group is cut into decks of twenty in
+   the order of the list; Practise takes the next one, and the row shows which are done. */
+const ADJ_DECK = 20;
+function adjPool(cat){ cat = cat || adjCat; return ADJ.words.filter(w => cat === 'all' || w.c === cat); }
+function adjDeckState(cat){
+  const d = (readJSON('adj-deck') || {})[cat || adjCat] || {};
+  return { next: d.next || 0, done: d.done || {} };
+}
+function saveAdjDeck(cat, k, n){
+  const all = readJSON('adj-deck') || {};
+  const d = all[cat] || { next: 0, done: {} };
+  d.done = d.done || {}; d.done[k] = 1; d.next = (k + 1) % n;
+  all[cat] = d; writeJSON('adj-deck', all);
+}
+function paintAdjDecks(){
+  const box = $('#adjDecks'); if (!box) return;
+  const pool = adjPool(), n = Math.ceil(pool.length / ADJ_DECK), st = adjDeckState();
+  const next = n ? st.next % n : 0;
+  $('#adjQuizBtn').innerHTML = '\u25b6 Practise' + (n > 1 ? ' \u00b7 deck ' + (next + 1) + ' of ' + n : '');
+  if (n < 2){ box.innerHTML = ''; return; }
+  let h = '<span class="dlab">Decks of ' + ADJ_DECK + '</span>';
+  for (let k = 0; k < n; k++)
+    h += '<button data-deck="' + k + '" class="' + (k === next ? 'next' : st.done[k] ? 'done' : '') + '" title="words ' +
+      (k * ADJ_DECK + 1) + '\u2013' + Math.min(pool.length, (k + 1) * ADJ_DECK) + '">' +
+      (st.done[k] && k !== next ? '\u2713' : k + 1) + '</button>';
+  box.innerHTML = h;
+  box.querySelectorAll('[data-deck]').forEach(b => b.onclick = () => startAdjDeck(+b.dataset.deck));
+}
+function startAdjDeck(k, cat){
+  if (cat) adjCat = cat;
+  const pool = adjPool(), n = Math.ceil(pool.length / ADJ_DECK);
+  if (!n) return;
+  k = ((k % n) + n) % n;
+  startAdjQuiz(pool.slice(k * ADJ_DECK, (k + 1) * ADJ_DECK), { cat: adjCat, k: k, n: n });
 }
 let AQ = { list: [], i: 0, right: 0, hint: 0 };
-function startAdjQuiz(pool){
+function startAdjQuiz(pool, deck, after){
   if (!Array.isArray(pool)) pool = null;
   pool = pool || ADJ.words.filter(w => adjCat === 'all' || w.c === adjCat);
   if (!pool.length) return;
   AQ = { list: pool.slice().sort(() => Math.random() - 0.5), i: 0, right: 0, hint: 0,
-         total: pool.length, missed: [] };
+         total: pool.length, missed: [], deck: deck || null, after: after || null };
   hideAll('#adjQuiz');
   $('#dash').classList.add('off');
   $('#adjQuiz').classList.add('on');
   const cat = ADJ.cats.find(c => c.k === adjCat);
-  $('#aqHead').textContent = 'Adjectives \u00b7 ' + (cat ? cat.t : 'everything');
+  $('#aqHead').textContent = 'Adjectives \u00b7 ' + (cat ? cat.t : 'everything') +
+    (deck ? ' \u00b7 deck ' + (deck.k + 1) + ' of ' + deck.n : after ? ' \u00b7 the misses' : '');
   paintAdjQ();
   window.scrollTo(0, 0);
 }
@@ -3038,19 +3084,24 @@ function paintAdjQ(){
     $('#aqFb').textContent = ''; $('#aqHint').style.display = 'none'; $('#aqSkip').style.display = 'none';
     if ($('#aqStop')) $('#aqStop').style.display = 'none';
     const miss = (AQ.missed || []).filter(x => !x.again);
+    const dk = AQ.deck || AQ.after;
+    if (AQ.deck && !AQ.stopped && !AQ.saved){ saveAdjDeck(AQ.deck.cat, AQ.deck.k, AQ.deck.n); AQ.saved = 1; }
+    const nextLabel = dk ? (dk.k + 1 < dk.n ? 'Next ' + ADJ_DECK + ' \u00b7 deck ' + (dk.k + 2) + ' of ' + dk.n
+                                            : 'All decks done \u2014 start again from deck 1') : '';
+    const toNext = () => startAdjDeck(dk.k + 1, dk.cat);
     $('#aqSent').innerHTML = miss.length
       ? '<span class="misshead">the ones that went wrong</span>' +
         miss.map(x => '<span class="missw">' + gEsc(x.w) + '</span>').join('')
       : '';
     $('#aqCheck').textContent = miss.length ? 'Redo the misses only \u00b7 ' + miss.length
-                                            : 'Back to the words';
+                                            : (nextLabel || 'Back to the words');
     $('#aqCheck').onclick = miss.length
-      ? () => startAdjQuiz(miss.map(x => Object.assign({}, x, { again:0, tries:0 })))
-      : () => go('adjectives');
+      ? () => startAdjQuiz(miss.map(x => Object.assign({}, x, { again:0, tries:0 })), null, dk)
+      : (dk ? toNext : () => go('adjectives'));
     if ($('#aqSkip')){
-      $('#aqSkip').style.display = miss.length ? '' : 'none';
-      $('#aqSkip').textContent = 'Back to the words';
-      $('#aqSkip').onclick = () => go('adjectives');
+      $('#aqSkip').style.display = (miss.length || dk) ? '' : 'none';
+      $('#aqSkip').textContent = (miss.length && dk) ? nextLabel : 'Back to the words';
+      $('#aqSkip').onclick = (miss.length && dk) ? toNext : () => go('adjectives');
     }
     return;
   }
@@ -3137,6 +3188,7 @@ function checkAdjQ(){
   $('#aqCheck').onclick = () => { AQ.i++; paintAdjQ(); };
 }
 function stopAdjQuiz(){
+  AQ.stopped = 1;
   AQ.list = AQ.list.slice(0, AQ.i);
   AQ.i = AQ.list.length;
   paintAdjQ();
@@ -3144,7 +3196,7 @@ function stopAdjQuiz(){
 function wireAdj(){
   if (!$('#adjSearch')) return;
   $('#adjSearch').oninput = e => { adjQ = e.target.value; paintAdj(); };
-  $('#adjQuizBtn').onclick = () => startAdjQuiz();
+  $('#adjQuizBtn').onclick = () => startAdjDeck(adjDeckState().next);
   $('#aqBack').onclick = () => go('adjectives');
   $('#aqStop').onclick = stopAdjQuiz;
 }
