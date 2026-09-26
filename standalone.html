@@ -5869,48 +5869,39 @@ function adWireLevelBar(key){
   document.querySelectorAll('[data-adlvsel]').forEach(x => x.onclick = () => { const s = adState(); s[key] = x.dataset.adlvsel; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); });
 }
 function adPaintCards(){
-  const st = adState(), lv = st.card || 'b1';
-  const all = adSents(lv), list = st.onlyLiked ? all.filter(x => adLikedS(x.k)) : all;
+  const st = adState(), lv = ['a2','b1','b2'].includes(st.card) ? st.card : 'b1';
+  const liked = st.onlyLiked ? adNow.lv.o.map((_, i) => i).filter(adLiked) : adNow.lv.o.map((_, i) => i);
   $('#adTools').innerHTML = '';
-  const bar = '<div class="adcardbar">' + adLevelBar('card', 'b1') +
-    '<button class="liked' + (st.onlyLiked ? ' on' : '') + '" id="adOnlyLiked">\u2665 only liked</button></div>';
-  if (!list.length){
-    $('#adGrid').innerHTML = bar + '<div class="adempty">\u2661 No liked sentences at this level yet \u2014 press the heart on a card to keep it.</div>';
-  } else {
-    adCard = Math.max(0, Math.min(list.length - 1, adCard));
-    const c = list[adCard], on = adLikedS(c.k);
-    $('#adGrid').innerHTML = bar +
-      '<div class="adstack"><div class="adcard one"><div class="acs"><span class="lab">' + AD_LV.find(x => x[0] === lv)[1] + ' \u00b7 part ' + (c.i + 1) + '</span>' +
-        '<div class="txt">' + gEsc(c.en).replace(/\n/g, '<br>') + '</div>' + (c.ru ? '<div class="ru">' + gEsc(c.ru) + '</div>' : '') + '</div></div></div>' +
-      '<div class="adcardnav"><span class="cnt">Card ' + (adCard + 1) + ' of ' + list.length + (st.onlyLiked ? ' liked' : '') + '</span>' +
-        '<span class="keys">\u2190 \u2192 turn \u00b7 \u2191 listen</span>' +
-        '<button class="heart' + (on ? ' on' : '') + '" id="adLike" title="keep this sentence to study again">' + (on ? '\u2665' : '\u2661') + '</button>' +
-        '<button id="adSpeak" title="listen (\u2191)">\uD83D\uDD0A</button>' +
-        '<button id="adPrev"' + (adCard === 0 ? ' disabled' : '') + '>\u2039</button><button id="adNext"' + (adCard === list.length - 1 ? ' disabled' : '') + '>\u203a</button></div>';
-    $('#adLike').onclick = () => { adToggleS(c.k); paintAdapt(); };
-    $('#adSpeak').onclick = () => adSay(c.en);
-    $('#adPrev').onclick = () => { adCard--; paintAdapt(); };
-    $('#adNext').onclick = () => { adCard++; paintAdapt(); };
+  if (!liked.length){
+    $('#adGrid').innerHTML = '<div class="adempty">\u2661 No liked cards yet in this part \u2014 press the heart on a card to keep it here.' +
+      '<br><button id="adAllCards">Show every card</button></div>';
+    $('#adAllCards').onclick = () => { const s = adState(); s.onlyLiked = 0; writeJSON('adapt-view', s); paintAdapt(); };
+    return;
   }
-  adWireLevelBar('card');
+  adCard = Math.max(0, Math.min(liked.length - 1, adCard));
+  const i = liked[adCard], ru = adRu(lv, i), on = adLiked(i);
+  $('#adGrid').innerHTML =
+    '<div class="adcardbar"><span class="lab">right side</span>' + ['a2','b1','b2'].map(k => '<button data-adcardlv="' + k + '"' +
+      (lv === k ? ' class="on"' : '') + '>' + AD_LV.find(x => x[0] === k)[1] + '</button>').join('') +
+      '<button class="liked' + (st.onlyLiked ? ' on' : '') + '" id="adOnlyLiked">\u2665 only liked</button></div>' +
+    '<div class="adstack"><div class="adcard">' +
+      '<div class="acs"><span class="lab">\uD83D\uDFEA Original</span><div class="txt">' + gEsc(adNow.lv.o[i]).replace(/\n/g, '<br>') + '</div>' +
+      (adRu('o', i) ? '<div class="ru">' + gEsc(adRu('o', i)) + '</div>' : '') + '</div>' +
+      '<div class="acs r"><span class="lab">' + AD_LV.find(x => x[0] === lv)[1] + '</span><div class="txt">' + gEsc(adNow.lv[lv][i]).replace(/\n/g, '<br>') + '</div>' +
+      (ru ? '<div class="ru">' + gEsc(ru) + '</div>' : '') + '</div></div></div>' +
+    '<div class="adcardnav"><span class="cnt">Card ' + (i + 1) + (st.onlyLiked ? ' \u00b7 ' + (adCard + 1) + ' of ' + liked.length + ' liked' : ' of ' + adNow.lv.o.length) +
+      '</span><span class="keys">\u2190 \u2192 turn \u00b7 \u2191 listen</span>' +
+      '<button class="heart' + (on ? ' on' : '') + '" id="adLike" title="keep this card to study again">' + (on ? '\u2665' : '\u2661') + '</button>' +
+      '<button id="adSpeak" title="listen (\u2191)">\uD83D\uDD0A</button>' +
+      '<button id="adPrev"' + (adCard === 0 ? ' disabled' : '') + '>\u2039</button><button id="adNext"' + (adCard === liked.length - 1 ? ' disabled' : '') + '>\u203a</button></div>';
+  document.querySelectorAll('[data-adcardlv]').forEach(x => x.onclick = () => { const s = adState(); s.card = x.dataset.adcardlv; writeJSON('adapt-view', s); paintAdapt(); });
   $('#adOnlyLiked').onclick = () => { const s = adState(); s.onlyLiked = s.onlyLiked ? 0 : 1; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); };
+  $('#adLike').onclick = () => { adToggleLike(i); paintAdapt(); };
+  $('#adSpeak').onclick = () => adSay(adPlain(lv, i));
+  $('#adPrev').onclick = () => { adCard--; paintAdapt(); };
+  $('#adNext').onclick = () => { adCard++; paintAdapt(); };
 }
-function adPaintLines(){
-  const st = adState(), lv = st.lines || 'o';
-  $('#adTools').innerHTML = '';
-  let last = -1;
-  $('#adGrid').innerHTML = '<div class="adcardbar">' + adLevelBar('lines', 'o') + '</div><div class="adlines">' +
-    adSents(lv).map(x => { const head = x.i !== last ? '<div class="sec">' + (x.i + 1) + '</div>' : ''; last = x.i;
-      const on = adLikedS(x.k);
-      return head + '<div class="ln"><div class="en">' + gEsc(x.en).replace(/\n/g, '<br>') +
-        '<button class="adspk" data-adline="' + x.k + '" title="listen">\uD83D\uDD0A</button>' +
-        '<button class="adheart' + (on ? ' on' : '') + '" data-adlk="' + x.k + '" title="keep this sentence">' + (on ? '\u2665' : '\u2661') + '</button></div>' +
-        (x.ru ? '<div class="ru">' + gEsc(x.ru) + '</div>' : '') + '</div>'; }).join('') + '</div>';
-  adWireLevelBar('lines');
-  const byK = k => adSents(lv).find(x => x.k === k);
-  $('#adGrid').querySelectorAll('[data-adline]').forEach(b => b.onclick = () => adSay(byK(b.dataset.adline).en));
-  $('#adGrid').querySelectorAll('[data-adlk]').forEach(b => b.onclick = () => { adToggleS(b.dataset.adlk); paintAdapt(); });
-}
+
 /* dictation: hear a sentence, type it, see word by word what was right */
 const adWordsOf = t => String(t).toLowerCase().replace(/[\u2019\u2018]/g, "'").replace(/[\u2014\u2013]/g, ' ')
   .replace(/[^a-z0-9'\- ]+/g, ' ').replace(/(^|\s)'|'(\s|$)/g, ' ').split(/\s+/).filter(Boolean);
