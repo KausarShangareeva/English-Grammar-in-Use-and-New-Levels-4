@@ -34,7 +34,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
   display:flex;flex-direction:column;position:sticky;top:14px;height:calc(100dvh - 28px);
   box-shadow:0 6px 22px rgba(39,107,122,.06)}
 .langbtn{border:none;background:none;padding:0;text-align:left;cursor:pointer;font-family:var(--ui)}
-.langbtn .carr{font-size:9px;margin-left:4px;opacity:.7}
+.langbtn .carr{font-size:11px;margin-left:2px;color:var(--mut2)}
 .langbtn .bt{display:flex;align-items:center;gap:7px}
 .curflag{font-size:15px;line-height:1;margin-right:2px}
 .langmenu button .fl{font-size:16px;width:20px;margin-right:6px;text-align:center;flex:0 0 20px}
@@ -49,7 +49,7 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .curflag{display:flex;align-items:center}
 .fimg{width:21px;height:16px;border-radius:3px;object-fit:cover;flex:0 0 21px;display:block;
   box-shadow:0 0 0 1px rgba(0,0,0,.10)}
-.fimg.big{width:24px;height:18px;flex:0 0 24px}
+.fimg.big{width:20px;height:15px;flex:0 0 20px}
 .langmenu button .fimg{margin-right:3px}
 
 .langmenu button[aria-current="true"]{background:var(--sea-l);color:var(--sea)}
@@ -71,6 +71,8 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .nav button[aria-current="true"]{background:var(--sage-l);color:var(--ink)}
 .sidefoot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
 .who{display:flex;align-items:center;gap:10px;padding:6px 8px 2px}
+.who .themebtn{margin-left:auto}
+.brand .langbtn .bt{display:flex;align-items:center;gap:7px}
 .av{width:30px;height:30px;border-radius:50%;background:var(--rose-l);color:var(--rose);
   display:grid;place-items:center;font-family:var(--disp);font-size:15px;font-weight:700;flex:0 0 30px}
 .build{font-size:9.5px;color:var(--line2);padding:9px 8px 0;letter-spacing:.3px}
@@ -1500,17 +1502,15 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
       <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#276B7A"/><path d="M13 47V17h6.2v24.4h13.1V47z" fill="#FAF7F2"/><path d="M53 39.9h-4.6V47h-5.7v-7.1H30.6v-4.4L43.1 17h5.3v17.7H53zM36.4 34.7h6.6V24.4z" fill="#E8B4BC"/></svg>
       <button class="btext langbtn" id="langBtn">
         <b class="bt"><span class="curflag" id="langFlag">🇬🇧</span>
-          <span id="langName">Study English</span></b>
-        <i class="bs">Kausar <span class="carr">\u25be</span></i></button>
+          <span id="langName">Study English</span><span class="carr">&#9662;</span></b></button>
       <div class="langmenu" id="langMenu"></div>
-      <button class="themebtn" id="themeBtn" title="light or dark">☾</button>
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="followbox" id="followBox"></div>
     <div class="sidefoot">
       <div class="who"><span class="av">K</span>
-        <span class="txt"><span class="nm">Kausar</span><span class="sub">Student</span></span></div>
-      <div class="build">build 05 Sep 2026, 07:12 UTC</div>
+        <span class="txt"><span class="nm">Kausar</span><span class="sub">Student</span></span>
+        <button class="themebtn" id="themeBtn" title="light or dark">☾</button></div>
     </div>
   </aside>
 
