@@ -678,15 +678,22 @@ details.qmore summary{cursor:pointer;font-family:var(--ui);font-size:12px;font-w
   padding:6px 14px;font-family:var(--ui);font-size:12px;font-weight:800;cursor:pointer}
 .gflagnote button.on{background:#E0434B;color:#fff}
 .qcnt{color:var(--sage);font-weight:800}
-.gsat{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:2px solid var(--sea);background:var(--panel);
-  color:var(--ink);border-radius:18px;padding:14px 16px;margin-bottom:12px;cursor:pointer;font-family:var(--ui);
-  box-shadow:0 6px 20px rgba(39,107,122,.1);transition:transform .15s}
-.gsat:hover{transform:translateY(-2px)}
-.gsat.today{background:linear-gradient(135deg,#FFF7E0,#E4EFF1);border-color:#E0A800}
-.gsat .ic{font-size:28px}
-.gsat .tx{flex:1;min-width:0;font-size:12.5px;color:var(--mut);line-height:1.5}
-.gsat .tx b{display:block;font-family:var(--disp);font-size:21px;font-weight:600;color:var(--ink)}
-.gsat .go{background:var(--sea);color:#fff;border-radius:999px;padding:8px 15px;font-size:13px;font-weight:800;white-space:nowrap}
+/* gold, so it is the first thing you see on the page */
+.gsat{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%;text-align:left;
+  border:none;border-radius:20px;padding:18px 20px;margin-bottom:14px;font-family:var(--ui);color:#3B2A05;
+  background:linear-gradient(135deg,#FFF3C4 0%,#F7D774 35%,#E6B32E 70%,#C99A1C 100%);
+  box-shadow:0 10px 28px rgba(201,154,28,.35),inset 0 1px 0 rgba(255,255,255,.6)}
+.gsat:after{content:'';position:absolute;top:-60%;left:-30%;width:40%;height:220%;transform:rotate(25deg);pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.35),rgba(255,255,255,0))}
+.gsat.today{box-shadow:0 0 0 3px #FFF3C4,0 12px 32px rgba(201,154,28,.5)}
+.gsat .ic{font-size:34px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.15))}
+.gsat .tx{flex:1;min-width:220px;font-size:12.5px;color:#5C4510;line-height:1.5;font-weight:700}
+.gsat .tx b{display:block;font-family:var(--disp);font-size:24px;font-weight:700;color:#2E2003}
+.gsat .gos{display:flex;gap:7px;flex-wrap:wrap;position:relative;z-index:1}
+.gsat .gos button{border:none;border-radius:999px;padding:9px 14px;font-family:var(--ui);font-size:12.5px;font-weight:800;
+  cursor:pointer;background:rgba(46,32,3,.12);color:#2E2003;white-space:nowrap;transition:transform .12s}
+.gsat .gos button:hover{transform:translateY(-1px)}
+.gsat .gos button.on{background:#2E2003;color:#FFE9A3}
 .qfrom{margin-left:8px;font-weight:700;letter-spacing:.3px;text-transform:none;color:var(--mut2)}
 .satmiss{text-align:left;margin:14px 0 4px;background:var(--rose-l);border-radius:14px;padding:12px 14px}
 .satmiss b{display:block;font-family:var(--ui);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#B0476E;margin-bottom:8px}
@@ -3203,7 +3210,7 @@ function paintLangMenu(){
 }
 /* The three languages keep their own study progress \u2014 but the schedule, the
    IT goals and the settings belong to you, not to a language, so those stay shared. */
-const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace','sat-quiz',
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace','sat-quiz','sat-per',
                      'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
 function lkey(k){
@@ -5329,12 +5336,14 @@ function gqButtons(g){
    listed at the end. */
 let gqMix = false, gqMissed = [];
 const satPool = g => g.items.filter(i => Array.isArray(i.o) && i.o.length && /^(B2|C1)/.test(String(i.l || '')));
-function startSaturdayQuiz(){
+function startSaturdayQuiz(per){
+  per = per || 1;
+  writeJSON('sat-per', per);
   const pick = [];
   GR.forEach(g => {
     if (g.sec === 'Speaking') return;
-    const p = satPool(g); if (!p.length) return;
-    pick.push(Object.assign({}, p[Math.floor(Math.random() * p.length)], { _src: g.id, _lesson: g.t }));
+    shuffle(satPool(g).slice()).slice(0, per).forEach(q =>
+      pick.push(Object.assign({}, q, { _src: g.id, _lesson: g.t })));
   });
   if (!pick.length) return;
   gqMix = true; gqMissed = []; gqIx = -1;
@@ -5346,7 +5355,7 @@ function startSaturdayQuiz(){
    '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
   hideAll('#quizView');
   $('#quizView').classList.add('on');
-  $('#tagline').textContent = '\uD83D\uDCC5 Saturday quiz \u2014 one B2\u2013C1 question from every lesson';
+  $('#tagline').textContent = '\uD83C\uDFC6 Saturday quiz \u2014 ' + per + ' B2\u2013C1 ' + (per === 1 ? 'question' : 'questions') + ' from every grammar lesson';
   toTop();
   renderGQ();
 }
@@ -5944,10 +5953,16 @@ function paintGramList(){
   if (!nFlag) gramFlagOnly = false;
   const sat = readJSON('sat-quiz'), isSat = new Date().getDay() === 6;
   const satN = GR.filter(g => g.sec !== 'Speaking' && satPool(g).length).length;
+  const satPer = readJSON('sat-per') || 1;
+  const satAll = GR.filter(g => g.sec !== 'Speaking').reduce((a, g) => a + satPool(g).length, 0);
+  const satCount = per => GR.filter(g => g.sec !== 'Speaking').reduce((a, g) => a + Math.min(per, satPool(g).length), 0);
   const satBtn = (gramOnly || gramFlagOnly) ? '' :
-    '<button class="gsat' + (isSat ? ' today' : '') + '" id="gSat"><span class="ic">\uD83D\uDCC5</span><span class="tx"><b>Saturday quiz' +
-    (isSat ? ' \u00b7 it\u2019s Saturday!' : '') + '</b>one B2\u2013C1 question from every lesson \u00b7 ' + satN + ' questions \u00b7 ' +
-    (sat ? 'last time ' + fmtDate(sat.d) + ', ' + sat.r + '/' + sat.n : 'not done yet') + '</span><span class="go">Start \u25b6</span></button>';
+    '<div class="gsat' + (isSat ? ' today' : '') + '"><span class="ic">\uD83C\uDFC6</span><span class="tx"><b>Saturday quiz' +
+    (isSat ? ' \u00b7 it\u2019s Saturday!' : '') + '</b>B2\u2013C1 questions from all ' + satN + ' grammar lessons, drawn from ' + satAll +
+    ' \u00b7 ' + (sat ? 'last time ' + fmtDate(sat.d) + ', ' + sat.r + '/' + sat.n : 'not done yet') + '</span>' +
+    '<span class="gos">' + [[1,'Quick'],[2,'Full'],[3,'Marathon']].map(([p, l]) => '<button data-satper="' + p + '"' +
+      (p === satPer ? ' class="on"' : '') + ' title="' + p + (p === 1 ? ' question' : ' questions') + ' from every lesson">' + l + ' \u00b7 ' +
+      satCount(p) + ' \u25b6</button>').join('') + '</span></div>';
   box.innerHTML = satBtn + (nFlag ? '<div class="gflagnote">\uD83D\uDEA9 ' + nFlag + (nFlag === 1 ? ' lesson' : ' lessons') +
       ' flagged to review' + '<button id="gFlagOnly"' + (gramFlagOnly ? ' class="on"' : '') + '>' +
       (gramFlagOnly ? '\u2190 Show all lessons' : 'Show only flagged') + '</button></div>' : '') +
@@ -5972,8 +5987,7 @@ function paintGramList(){
         moodChip('gram:' + g.id) + gFlag(g.id) +
         '<span class="ch">\u203a</span></button>';
     }).join('')).join('');
-  const gs = document.getElementById('gSat');
-  if (gs) gs.onclick = startSaturdayQuiz;
+  box.querySelectorAll('[data-satper]').forEach(b => b.onclick = () => startSaturdayQuiz(+b.dataset.satper));
   const fo = document.getElementById('gFlagOnly');
   if (fo) fo.onclick = () => { gramFlagOnly = !gramFlagOnly; paintGramList(); window.scrollTo(0, 0); };
   box.querySelectorAll('[data-flag]').forEach(f => f.onclick = e => {
