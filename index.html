@@ -1273,6 +1273,13 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .ebform select{border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-family:var(--ui);font-size:13px;
   color:var(--ink);background:var(--bg)}
 .ebook .n{flex:0 0 30px;font-family:var(--ui);font-size:11px;font-weight:800;color:var(--mut2);text-align:right}
+.ebcov{flex:0 0 72px;width:72px;height:100px;box-sizing:border-box;border-radius:3px 6px 6px 3px;padding:7px 6px 6px 8px;display:flex;flex-direction:column;
+  overflow:hidden;box-shadow:inset 3px 0 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.18);font-family:Georgia,'Times New Roman',serif}
+.ebcov b{font-size:9.5px;font-weight:600;line-height:1.15;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;hyphens:auto;-webkit-hyphens:auto}
+.ebcov i{font-size:7.5px;opacity:.8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ebcov .ln{margin-top:auto;height:1px;background:currentColor;opacity:.35;margin-bottom:3px}
+.ebcov .cl{font-size:7.5px;opacity:.85;min-height:9px}
+.ebook.read .ebcov{opacity:.8}
 .ebook .bd{flex:1;min-width:200px}
 .ebook .bd b{display:block;font-family:var(--disp);font-size:19px;font-weight:600;line-height:1.25;color:var(--ink)}
 .ebook.read .bd b{color:var(--mut)}
@@ -3727,6 +3734,15 @@ let EB = (function(){
   return EB_START.map(b => Object.assign({}, b, st[b.id] || st[b.id.slice(-8)] ? { s: st[b.id] || st[b.id.slice(-8)] } : {}));
 })();
 function ebSave(){ writeJSON('eng-books-list', EB); }
+/* covers: the Line by Line colours for their books, and a steady colour from the same palette for the rest */
+const EB_COVER = {"the-mysterious-stranger":["#3d3376","#f5f0e7"],"alice-in-wonderland":["#c1c0e2","#3d3b41"],"around-the-world-in-80-days":["#006680","#fbf6ec"],"adventures-of-huckleberry-finn":["#933f00","#f6f0e6"],"the-adventures-of-sherlock-holmes":["#004a69","#f4f0e7"],"autobiography-of-benjamin-franklin":["#688eaf","#211e17"],"little-women":["#bf755e","#211e17"],"andersens-fairy-tales":["#2d665d","#fbf6ec"],"peter-pan":["#1f4c09","#f4f0e6"],"meditations":["#a4ccda","#363e3f"],"pride-and-prejudice":["#d6c19c","#423b2f"],"sense-and-sensibility":["#e6b8a9","#463932"],"jekyll-and-hyde":["#002e45","#f4f0e6"],"arsene-lupin-gentleman-burglar":["#12378b","#f4f0e8"],"the-great-gatsby":["#37664e","#fbf6ec"],"dracula":["#520000","#f5efe6"],"tom-sawyer":["#c27736","#211e17"],"the-count-of-monte-cristo":["#12378b","#f4f0e8"],"journey-to-the-center-of-the-earth":["#520000","#f5efe6"],"david-copperfield":["#20666b","#fbf6ec"],"great-expectations":["#002f1b","#f4f0e6"],"robinson-crusoe":["#795300","#f6f0e6"],"wuthering-heights":["#06436c","#f4f0e7"],"henry-david-thoreau-essays":["#2d665d","#fbf6ec"],"walden":["#406733","#fbf6ec"],"the-call-of-the-wild":["#3d3376","#f5f0e7"],"moby-dick":["#006680","#fbf6ec"],"ulysses":["#688eaf","#211e17"],"emma":["#006680","#fbf6ec"],"persuasion":["#933f00","#f6f0e6"],"gullivers-travels":["#34579f","#f5f0e8"],"heart-of-darkness":["#520000","#f5efe6"],"king-arthur-round-table":["#041f5e","#f4efe7"],"frankenstein":["#06436c","#f4f0e7"],"the-scarlet-letter":["#4f0300","#f5efe6"],"the-picture-of-dorian-gray":["#241c4f","#f4efe6"],"kidnapped":["#06436c","#f4f0e7"],"mrs-dalloway":["#c1c0e2","#3d3b41"],"the-jungle-book":["#1f4c09","#f4f0e6"],"to-the-lighthouse":["#8784bb","#211e17"],"white-fang":["#afc5ed","#383c45"],"the-return-of-sherlock-holmes":["#002e45","#f4f0e6"],"twenty-thousand-leagues-under-the-sea":["#041f5e","#f4efe7"],"aesops-fables":["#933f00","#f6f0e6"],"the-war-of-the-worlds":["#002848","#f4f0e6"],"interesting-narrative-of-olaudah-equiano":["#c27736","#211e17"],"the-island-of-doctor-moreau":["#4f0300","#f5efe6"],"the-lost-world":["#37664e","#fbf6ec"],"his-last-bow":["#004a69","#f4f0e7"],"the-time-machine":["#12378b","#f4f0e8"],"bambi":["#729566","#211e17"],"the-secret-garden":["#8c8d58","#211e17"],"the-beasts-of-tarzan":["#0b4c31","#f4f0e6"],"the-return-of-tarzan":["#795300","#f6f0e6"],"narrative-of-the-life-of-frederick-douglass-an-american-slave":["#8f3f26","#f6f0e6"],"the-merry-adventures-of-robin-hood":["#2d665d","#fbf6ec"],"a-short-history-of-the-world":["#688eaf","#211e17"],"tales-of-space-and-time":["#3d3376","#f5f0e7"],"the-velveteen-rabbit":["#e6b8a9","#463932"],"through-the-looking-glass":["#06436c","#f4f0e7"],"little-men":["#a68340","#211e17"],"treasure-island":["#20666b","#fbf6ec"],"jack-and-jill":["#c27736","#211e17"],"anne-of-green-gables":["#406733","#fbf6ec"],"max-havelaar":["#613400","#f5f0e6"],"les-miserables":["#57528d","#f5f0e8"],"the-wonderful-wizard-of-oz":["#5d9498","#211e17"],"heidi":["#afc5ed","#383c45"],"grimms-fairy-tales":["#004c43","#f4f0e6"],"mansfield-park":["#2a2900","#f4f0e6"],"the-phantom-of-the-opera":["#771600","#f6efe6"],"the-three-musketeers":["#34579f","#f5f0e8"]};
+const EB_PAL = [["#002848","#f4f0e6"],["#002e45","#f4f0e6"],["#002f1b","#f4f0e6"],["#004a69","#f4f0e7"],["#004c43","#f4f0e6"],["#006680","#fbf6ec"],["#041f5e","#f4efe7"],["#06436c","#f4f0e7"],["#0b4c31","#f4f0e6"],["#12378b","#f4f0e8"],["#1f4c09","#f4f0e6"],["#20666b","#fbf6ec"],["#241c4f","#f4efe6"],["#2a2900","#f4f0e6"],["#2d665d","#fbf6ec"],["#34579f","#f5f0e8"],["#37664e","#fbf6ec"],["#3d3376","#f5f0e7"],["#406733","#fbf6ec"],["#4f0300","#f5efe6"],["#520000","#f5efe6"],["#57528d","#f5f0e8"],["#5d9498","#211e17"],["#613400","#f5f0e6"],["#688eaf","#211e17"],["#729566","#211e17"],["#771600","#f6efe6"],["#795300","#f6f0e6"],["#8784bb","#211e17"],["#8c8d58","#211e17"],["#8f3f26","#f6f0e6"],["#933f00","#f6f0e6"],["#a4ccda","#363e3f"],["#a68340","#211e17"],["#afc5ed","#383c45"],["#bf755e","#211e17"],["#c1c0e2","#3d3b41"],["#c27736","#211e17"],["#d6c19c","#423b2f"],["#e6b8a9","#463932"]];
+function ebCover(b){
+  let c = EB_COVER[String(b.id).replace(/^lbl-/, '')];
+  if (!c){ let h = 0; for (const ch of b.t + b.a) h = (h * 31 + ch.charCodeAt(0)) >>> 0; c = EB_PAL[h % EB_PAL.length]; }
+  return '<div class="ebcov" lang="en" style="background:' + c[0] + ';color:' + c[1] + '"><b>' + gEsc(b.t) + '</b>' +
+    (b.a ? '<i>' + gEsc(b.a) + '</i>' : '') + '<span class="ln"></span><span class="cl">' + gEsc(b.l || '') + '</span></div>';
+}
 const EB_ST = { read:'Read', reading:'Reading', plan:'Want to read' };
 const EB_TO = { read:'done', reading:'learning', plan:'todo' };
 const EB_GENRE = { dystopia:'🌆 dystopia', fantasy:'🧚 fantasy', romance:'💕 romance', scifi:'🚀 sci-fi',
@@ -3855,7 +3871,7 @@ function paintEB(){
       return '<div class="ebook ' + b.s + '">' +
         '<div class="ebord"><button data-ebup="' + b.id + '" title="move up"' + (i === 0 ? ' disabled' : '') + '>\u25b2</button>' +
           '<input class="ebpos" type="number" min="1" max="' + EB.length + '" value="' + (i + 1) + '" data-ebpos="' + b.id + '" title="place in the list">' +
-          '<button data-ebdn="' + b.id + '" title="move down"' + (i === EB.length - 1 ? ' disabled' : '') + '>\u25bc</button></div>' +
+          '<button data-ebdn="' + b.id + '" title="move down"' + (i === EB.length - 1 ? ' disabled' : '') + '>\u25bc</button></div>' + ebCover(b) +
         '<div class="bd"><b>' + gEsc(b.t) + '</b>' +
         '<div class="m">' + (b.a ? '<span>' + gEsc(b.a) + '</span>' : '') + (b.l ? '<span class="lv ' + gEsc(b.l) + '">' + gEsc(ebLvl(b.l)) + '</span>' : '') +
         '<label class="ebpg" title="pages differ between editions \u2014 change it to yours"><input type="number" min="1" value="' + (b.p || '') +
