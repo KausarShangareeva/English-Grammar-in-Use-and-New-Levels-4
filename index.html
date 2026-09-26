@@ -1220,6 +1220,7 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .ebook .bd b{display:block;font-family:var(--disp);font-size:19px;font-weight:600;line-height:1.25;color:var(--ink)}
 .ebook.read .bd b{color:var(--mut)}
 .ebook .bd .m{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:3px;font-size:12px;color:var(--mut2);font-weight:700}
+.ebook .bd .m > span,.ebook .ebpg{white-space:nowrap}
 .ebook .lv{border-radius:999px;padding:1px 8px;font-size:10px;font-weight:800;background:var(--sea-l);color:var(--sea)}
 .ebook .lv.B1,.ebook .lv.B1\+{background:var(--sage-l);color:var(--sage)}
 .ebook .lv.C1,.ebook .lv.C2{background:#F6E3EA;color:#B0476E}
@@ -3472,9 +3473,12 @@ let EB = (function(){
 function ebSave(){ writeJSON('eng-books-list', EB); }
 const EB_ST = { read:'Read', reading:'Reading', plan:'Want to read' };
 const EB_TO = { read:'done', reading:'learning', plan:'todo' };
-const EB_GENRE = { dystopia:'dystopia', classic:'classic', drama:'drama', romance:'romance', fantasy:'fantasy',
-  thriller:'thriller', scifi:'sci-fi', detective:'detective' };
-const EB_LEVELS = ['A2','B1','B1+','B2','B2+','C1','C2'];
+const EB_GENRE = { dystopia:'🌆 dystopia', fantasy:'🧚 fantasy', romance:'💕 romance', scifi:'🚀 sci-fi',
+  drama:'🎭 drama', thriller:'🔪 thriller', detective:'🕵️ detective', adventure:'⚔️ adventure', classic:'📖 classic' };
+/* the same colour code as the Dream-home platform */
+const EB_LVE = { A1:'⚪', A2:'🟢', B1:'🟩', 'B1+':'🟨', B2:'🟧', 'B2+':'🟥', C1:'🟪', C2:'⬛' };
+const ebLvl = l => (EB_LVE[l] ? EB_LVE[l] + ' ' : '') + l;
+const EB_LEVELS = ['A1','A2','B1','B1+','B2','B2+','C1','C2'];
 let ebFilter = 'all', ebLv = 'all', ebQ = '';
 function ebMsg(html){
   const m = $('#ebMsg'); if (!m) return;
@@ -3506,7 +3510,7 @@ function ebAddForm(){
       '<input id="ebfT" placeholder="Title *">' +
       '<input id="ebfA" placeholder="Author">' +
       '<div class="ebrow"><label>Pages *<input id="ebfP" type="number" min="1" placeholder="300"></label>' +
-      '<label>Level<select id="ebfL"><option value="">\u2014</option>' + EB_LEVELS.map(l => '<option>' + l + '</option>').join('') + '</select></label>' +
+      '<label>Level<select id="ebfL"><option value="">\u2014</option>' + EB_LEVELS.map(l => '<option value="' + l + '">' + ebLvl(l) + '</option>').join('') + '</select></label>' +
       '<label>Genre<select id="ebfG"><option value="">\u2014</option>' + Object.keys(EB_GENRE).map(g => '<option value="' + g + '">' + EB_GENRE[g] + '</option>').join('') + '</select></label>' +
       '<label>Place in the list<input id="ebfN" type="number" min="1" max="' + (EB.length + 1) + '" value="' + (EB.length + 1) + '"></label></div>' +
       '<div class="addrow"><button id="ebfSave">Add the book</button><button id="ebfCancel">Cancel</button></div></div>' : '');
@@ -3543,7 +3547,7 @@ function paintEB(){
     .map(([k, l]) => '<button data-ebf="' + k + '"' + (ebFilter === k ? ' class="on"' : '') + '>' + l + '</button>').join('');
   const lvs = EB_LEVELS.filter(l => EB.some(b => b.l === l));
   $('#ebLv').innerHTML = ['all'].concat(lvs).map(l => '<button data-ebl="' + l + '"' + (ebLv === l ? ' class="on"' : '') + '>' +
-    (l === 'all' ? 'every level' : l) + '</button>').join('');
+    (l === 'all' ? 'every level' : ebLvl(l)) + '</button>').join('');
   const q = ebQ.toLowerCase();
   const list = EB.filter(b => (ebFilter === 'all' || b.s === ebFilter) && (ebLv === 'all' || b.l === ebLv) &&
     (!q || (b.t + ' ' + b.a + ' ' + b.ru).toLowerCase().indexOf(q) >= 0));
@@ -3555,7 +3559,7 @@ function paintEB(){
           '<input class="ebpos" type="number" min="1" max="' + EB.length + '" value="' + (i + 1) + '" data-ebpos="' + b.id + '" title="place in the list">' +
           '<button data-ebdn="' + b.id + '" title="move down"' + (i === EB.length - 1 ? ' disabled' : '') + '>\u25bc</button></div>' +
         '<div class="bd"><b>' + gEsc(b.t) + '</b>' +
-        '<div class="m">' + (b.a ? '<span>' + gEsc(b.a) + '</span>' : '') + (b.l ? '<span class="lv ' + gEsc(b.l) + '">' + gEsc(b.l) + '</span>' : '') +
+        '<div class="m">' + (b.a ? '<span>' + gEsc(b.a) + '</span>' : '') + (b.l ? '<span class="lv ' + gEsc(b.l) + '">' + gEsc(ebLvl(b.l)) + '</span>' : '') +
         '<label class="ebpg" title="pages differ between editions \u2014 change it to yours"><input type="number" min="1" value="' + (b.p || '') +
           '" data-ebpg="' + b.id + '"> pages</label>' +
         (b.g ? '<span>' + gEsc(EB_GENRE[b.g] || b.g) + '</span>' : '') + '</div>' +
