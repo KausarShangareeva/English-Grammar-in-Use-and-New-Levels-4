@@ -5851,7 +5851,8 @@ function adPaintCards(){
       (lv === k ? ' class="on"' : '') + '>' + AD_LV.find(x => x[0] === k)[1] + '</button>').join('') +
       '<button class="liked' + (st.onlyLiked ? ' on' : '') + '" id="adOnlyLiked">\u2665 only liked</button></div>' +
     '<div class="adstack"><div class="adcard">' +
-      '<div class="acs"><span class="lab">\uD83D\uDFEA Original</span><div class="txt">' + gEsc(adNow.lv.o[i]).replace(/\n/g, '<br>') + '</div></div>' +
+      '<div class="acs"><span class="lab">\uD83D\uDFEA Original</span><div class="txt">' + gEsc(adNow.lv.o[i]).replace(/\n/g, '<br>') + '</div>' +
+      (adRu('o', i) ? '<div class="ru">' + gEsc(adRu('o', i)) + '</div>' : '') + '</div>' +
       '<div class="acs r"><span class="lab">' + AD_LV.find(x => x[0] === lv)[1] + '</span><div class="txt">' + gEsc(adNow.lv[lv][i]).replace(/\n/g, '<br>') + '</div>' +
       (ru ? '<div class="ru">' + gEsc(ru) + '</div>' : '') + '</div></div></div>' +
     '<div class="adcardnav"><span class="cnt">Card ' + (i + 1) + (st.onlyLiked ? ' \u00b7 ' + (adCard + 1) + ' of ' + liked.length + ' liked' : ' of ' + adNow.lv.o.length) +
