@@ -5954,18 +5954,63 @@ function adWireLevelBar(key){
   document.querySelectorAll('[data-adlvsel]').forEach(x => x.onclick = () => { const s = adState(); s[key] = x.dataset.adlvsel; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); });
 }
 /* cards: one sentence at a time, the original on the left and a chosen level on the right.
-   The levels are not written sentence for sentence, so inside each numbered part the side with fewer
-   sentences gets one per card and the other side's sentences go to the card they fall beside by length. */
+   Inside each numbered part the sentences are paired by what they say (see adAlign). */
+/* adAlign: pair the original's sentences with a level's sentences inside one numbered part.
+   Each card is a bead: one or more original sentences beside the level sentences that retell them.
+   The match is found by the words the two sides share, in English and in their Russian translations. */
+const AD_STOP = new Set('the a an and or but of to in on at for with by from as is are was were be been being it its this that these those i you he she we they me him her us them my your his our their not no so do did does have has had will would can could shall should may might must which who whom what when where how than then there here all any some very more most such own same into out up down over under again once only also just too'.split(' '));
+function adToks(x){
+  const out = new Set();
+  (x.en || '').toLowerCase().replace(/[’']/g, '').split(/[^a-z]+/).forEach(w => { if (w.length > 2 && !AD_STOP.has(w)) out.add('e:' + w.slice(0, 5)); });
+  (x.ru || '').toLowerCase().split(/[^а-яё]+/).forEach(w => { if (w.length > 3) out.add('r:' + w.slice(0, 5)); });
+  return out;
+}
+function adSim(A, B){
+  if (!A.size || !B.size) return 0;
+  let n = 0; A.forEach(t => { if (B.has(t)) n++; });
+  return n / Math.sqrt(A.size * B.size);
+}
+function adAlign(O, R){
+  const tO = O.map(adToks), tR = R.map(adToks);
+  const lO = O.map(x => x.en.length), lR = R.map(x => x.en.length);
+  const tot = (lR.reduce((a, b) => a + b, 0) || 1) / (lO.reduce((a, b) => a + b, 0) || 1);
+  const U = (T, a, b) => { const s = new Set(); for (let k = a; k < b; k++) T[k].forEach(t => s.add(t)); return s; };
+  const L = (A, a, b) => { let s = 0; for (let k = a; k < b; k++) s += A[k]; return s; };
+  const BEADS = [[1,1,0],[1,2,.06],[2,1,.06],[1,3,.14],[3,1,.14],[2,2,.16],[1,4,.24],[2,3,.22],[3,2,.22],[1,0,.5],[0,1,.5]];
+  const n = O.length, m = R.length, best = [], from = [];
+  for (let i = 0; i <= n; i++){ best.push(new Array(m + 1).fill(-1e9)); from.push(new Array(m + 1).fill(null)); }
+  best[0][0] = 0;
+  for (let i = 0; i <= n; i++) for (let j = 0; j <= m; j++){
+    if (best[i][j] <= -1e8) continue;
+    BEADS.forEach(([a, b, pen]) => {
+      if (i + a > n || j + b > m) return;
+      let sc = -pen;
+      if (a && b){
+        sc += adSim(U(tO, i, i + a), U(tR, j, j + b));
+        const r = L(lR, j, j + b) / (L(lO, i, i + a) * tot);
+        sc -= 0.25 * Math.abs(Math.log(r));
+      }
+      if (best[i][j] + sc > best[i + a][j + b]){ best[i + a][j + b] = best[i][j] + sc; from[i + a][j + b] = [i, j]; }
+    });
+  }
+  const cards = []; let i = n, j = m;
+  while (i || j){ const [pi, pj] = from[i][j]; cards.unshift({ l: O.slice(pi, i), r: R.slice(pj, j) }); i = pi; j = pj; }
+  /* a sentence left without a partner joins the card before it (or after it, at the start) */
+  for (let k = 0; k < cards.length; k++){
+    const c = cards[k];
+    if (c.l.length && c.r.length) continue;
+    const t = cards[k - 1] || cards[k + 1]; if (!t) continue;
+    if (t === cards[k - 1]){ t.l = t.l.concat(c.l); t.r = t.r.concat(c.r); } else { t.l = c.l.concat(t.l); t.r = c.r.concat(t.r); }
+    cards.splice(k, 1); k--;
+  }
+  return cards;
+}
 function adPairs(lv){
   const out = [], sec = (l, i) => (((adNow.s && adNow.s[l]) || [])[i] || []).filter(x => x.en && x.en.trim());
   adNow.lv.o.forEach((_, i) => {
     const O = sec('o', i), R = sec(lv, i);
-    if (!O.length || !R.length){ if (O.length || R.length) out.push({ i: i, k: 0, n: 1, l: O, r: R }); return; }
-    const leftSmall = O.length <= R.length, small = leftSmall ? O : R, big = leftSmall ? R : O;
-    const cum = a => { let t = 0; return a.map(x => { const s = t; t += x.en.length; return [s, t]; }).map(([s, e]) => [s / t, e / t]); };
-    const cs = cum(small), cb = cum(big), groups = small.map(() => []);
-    big.forEach((x, m) => { const f = (cb[m][0] + cb[m][1]) / 2; let k = 0; while (k < cs.length - 1 && cs[k + 1][0] <= f) k++; groups[k].push(x); });
-    small.forEach((x, k) => out.push({ i: i, k: k, n: small.length, l: leftSmall ? [x] : groups[k], r: leftSmall ? groups[k] : [x] }));
+    if (!O.length || !R.length){ if (O.length || R.length) out.push({ i: i, k: 0, l: O, r: R }); return; }
+    adAlign(O, R).forEach((c, k) => out.push({ i: i, k: k, l: c.l, r: c.r }));
   });
   return out.map(c => Object.assign(c, { key: 'c' + lv + ':' + c.i + ':' + c.k }));
 }
