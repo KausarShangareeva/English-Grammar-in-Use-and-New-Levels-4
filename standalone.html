@@ -81,6 +81,24 @@ body{margin:0;background:var(--bg);font-family:var(--ui);color:var(--ink);-webki
 .who .sub{display:block;font-size:10.5px;color:var(--mut2);line-height:1.35}
 
 .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+/* the middle of the menu scrolls on its own, so nothing is cut off on a short screen */
+.sidemid{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;margin:0 -8px;padding:0 8px 4px;scrollbar-width:thin}
+.side{transition:width .25s ease,flex-basis .25s ease,padding .25s ease}
+.sidetog{position:absolute;right:-14px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;
+  border:1px solid var(--line);background:var(--panel);color:var(--mut);font-size:17px;line-height:1;cursor:pointer;z-index:6;
+  display:flex;align-items:center;justify-content:center;padding:0 0 2px;box-shadow:0 3px 10px rgba(39,107,122,.14)}
+.sidetog:hover{color:var(--sea);border-color:var(--sea)}
+/* folded: only the emoji of each menu item */
+html.sidecol .side{width:66px;flex-basis:66px;padding:20px 8px}
+html.sidecol .brand{justify-content:center;padding:0 0 18px}
+html.sidecol .brand .langbtn,html.sidecol .langmenu,html.sidecol .followbox,html.sidecol .who .txt,
+html.sidecol .nav .lb{display:none}
+html.sidecol .nav button{justify-content:center;padding:11px 0;gap:0}
+html.sidecol .nav button .ic{font-size:18px;width:auto;flex:none}
+html.sidecol .who{flex-direction:column;gap:8px;padding:6px 0 2px}
+html.sidecol .who .themebtn{margin-left:0}
+html.sidecol .sidetog{padding:0 0 2px 2px}
+
 .top{display:flex;align-items:flex-start;gap:14px;padding:4px 4px 0}
 .hello{font-family:var(--disp);font-size:26px;font-weight:600;line-height:1.1}
 .hello span{color:var(--sea)}
@@ -1588,8 +1606,11 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
           <span id="langName">Study English</span><span class="carr">&#9662;</span></b></button>
       <div class="langmenu" id="langMenu"></div>
     </div>
-    <nav class="nav" id="nav"></nav>
-    <div class="followbox" id="followBox"></div>
+    <button class="sidetog" id="sideTog" title="hide the menu" aria-label="hide the menu">&#8249;</button>
+    <div class="sidemid">
+      <nav class="nav" id="nav"></nav>
+      <div class="followbox" id="followBox"></div>
+    </div>
     <div class="sidefoot">
       <div class="who"><span class="av">K</span>
         <span class="txt"><span class="nm">Kausar</span><span class="sub">Student</span></span>
@@ -6156,13 +6177,29 @@ function jumpToGuide(which){
     openEssay(id.slice(6), null);
   }
 }
+function sideFold(on){
+  document.documentElement.classList.toggle('sidecol', on);
+  const t = document.getElementById('sideTog'); if (!t) return;
+  t.innerHTML = on ? '&#8250;' : '&#8249;';
+  t.title = on ? 'show the menu' : 'hide the menu';
+  t.setAttribute('aria-label', t.title);
+}
 function paintNav(){
+  const tog = document.getElementById('sideTog');
+  if (tog && !tog.dataset.wired){
+    tog.dataset.wired = 1;
+    let on = false; try { on = localStorage.getItem('side-folded') === '1'; } catch(e){}
+    sideFold(on);
+    tog.onclick = () => { const now = !document.documentElement.classList.contains('sidecol');
+      sideFold(now); try { localStorage.setItem('side-folded', now ? '1' : '0'); } catch(e){} };
+  }
   const nav = $('#nav'), mob = $('#mobbar');
   nav.innerHTML=''; mob.innerHTML='';
   NAV.forEach(n => {
     const a = document.createElement('button');
     a.dataset.id = n.id;
-    a.innerHTML = '<span class="ic">'+n.icon+'</span>'+n.label;
+    a.innerHTML = '<span class="ic">'+n.icon+'</span><span class="lb">'+n.label+'</span>';
+    a.title = n.label;
     a.onclick = () => go(n.id);
     nav.appendChild(a);
     const b = document.createElement('button');
