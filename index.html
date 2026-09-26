@@ -677,6 +677,22 @@ details.qmore summary{cursor:pointer;font-family:var(--ui);font-size:12px;font-w
 .gflagnote button{margin-left:auto;border:1.5px solid #E0434B;background:none;color:#C0353D;border-radius:999px;
   padding:6px 14px;font-family:var(--ui);font-size:12px;font-weight:800;cursor:pointer}
 .gflagnote button.on{background:#E0434B;color:#fff}
+.qcnt{color:var(--sage);font-weight:800}
+.gsat{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:2px solid var(--sea);background:var(--panel);
+  color:var(--ink);border-radius:18px;padding:14px 16px;margin-bottom:12px;cursor:pointer;font-family:var(--ui);
+  box-shadow:0 6px 20px rgba(39,107,122,.1);transition:transform .15s}
+.gsat:hover{transform:translateY(-2px)}
+.gsat.today{background:linear-gradient(135deg,#FFF7E0,#E4EFF1);border-color:#E0A800}
+.gsat .ic{font-size:28px}
+.gsat .tx{flex:1;min-width:0;font-size:12.5px;color:var(--mut);line-height:1.5}
+.gsat .tx b{display:block;font-family:var(--disp);font-size:21px;font-weight:600;color:var(--ink)}
+.gsat .go{background:var(--sea);color:#fff;border-radius:999px;padding:8px 15px;font-size:13px;font-weight:800;white-space:nowrap}
+.qfrom{margin-left:8px;font-weight:700;letter-spacing:.3px;text-transform:none;color:var(--mut2)}
+.satmiss{text-align:left;margin:14px 0 4px;background:var(--rose-l);border-radius:14px;padding:12px 14px}
+.satmiss b{display:block;font-family:var(--ui);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#B0476E;margin-bottom:8px}
+.satmiss button{display:inline-block;margin:0 6px 6px 0;border:1px solid var(--line2);background:var(--panel);color:var(--ink);
+  border-radius:999px;padding:5px 11px;font-family:var(--ui);font-size:12px;font-weight:700;cursor:pointer}
+.satmiss .flagall{display:block;margin-top:6px;border-color:#E0434B;color:#C0353D;font-weight:800}
 .gflagempty{font-family:var(--ui);font-size:13px;color:var(--mut);background:var(--panel);border-radius:14px;
   padding:16px;text-align:center}
 .tenses{background:var(--panel);border-radius:19px;padding:18px 18px 12px;
@@ -3187,7 +3203,7 @@ function paintLangMenu(){
 }
 /* The three languages keep their own study progress \u2014 but the schedule, the
    IT goals and the settings belong to you, not to a language, so those stay shared. */
-const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace',
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace','sat-quiz',
                      'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
 function lkey(k){
@@ -5005,6 +5021,8 @@ function seenAll(){ return readJSON(SEEN_KEY) || {}; }
 function markSeen(id, kind){
   const all = seenAll();
   const r = all[id] || (all[id] = {});
+  /* how many quizzes this lesson has had; one done before the counter existed counts as one */
+  if (kind === 'quiz') r.n = (r.n || (r.q ? 1 : 0)) + 1;
   r[kind === 'quiz' ? 'q' : 'd'] = isoToday();
   writeJSON(SEEN_KEY, all);
 }
@@ -5041,8 +5059,10 @@ function seenLine(id){
   if (id.indexOf('gram:') === 0){
     if (!r.q) return 'quiz not done yet';
     const d = daysSince(r.q);
+    const n = r.n || 1;
     return 'quiz done ' + new Date(r.q + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }) +
-      ' \u00b7 ' + (d === 0 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago');
+      ' \u00b7 ' + (d === 0 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago') +
+      ' \u00b7 <b class="qcnt">\u2714 ' + n + (n === 1 ? ' quiz' : ' quizzes') + '</b>';
   }
   /* whichever happened later: opening it, or actually practising it */
   const last = (r.q && r.d) ? (r.q > r.d ? r.q : r.d) : (r.q || r.d);
@@ -5304,8 +5324,55 @@ function gqButtons(g){
     return n ? '<button class="' + l.toLowerCase() + '" data-gqlv="' + l + '" title="' + n + ' ' + l +
       ' questions in this lesson">' + l + ' only \u00b7 ' + Math.min(20, n) + '</button>' : ''; }).join('');
 }
+/* Saturday quiz: one B2 or C1 question from every grammar lesson, mixed. A right
+   answer counts as that lesson's weekly quiz; the lessons with a wrong answer are
+   listed at the end. */
+let gqMix = false, gqMissed = [];
+const satPool = g => g.items.filter(i => Array.isArray(i.o) && i.o.length && /^(B2|C1)/.test(String(i.l || '')));
+function startSaturdayQuiz(){
+  const pick = [];
+  GR.forEach(g => {
+    if (g.sec === 'Speaking') return;
+    const p = satPool(g); if (!p.length) return;
+    pick.push(Object.assign({}, p[Math.floor(Math.random() * p.length)], { _src: g.id, _lesson: g.t }));
+  });
+  if (!pick.length) return;
+  gqMix = true; gqMissed = []; gqIx = -1;
+  GQ = shuffle(pick); gqi = 0; gqRight = 0;
+  gqBack = 'grammar'; gqTitle = 'Saturday quiz';
+  quizExit = () => go('grammar');
+  $('#dash').classList.add('off');
+  ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
+   '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
+  hideAll('#quizView');
+  $('#quizView').classList.add('on');
+  $('#tagline').textContent = '\uD83D\uDCC5 Saturday quiz \u2014 one B2\u2013C1 question from every lesson';
+  toTop();
+  renderGQ();
+}
+function finishSaturday(){
+  gqMix = false;
+  writeJSON('sat-quiz', { d: isoToday(), r: gqRight, n: GQ.length });
+  $('#qBar').style.width = '100%';
+  const miss = [...new Map(gqMissed.map(m => [m.id, m])).values()];
+  $('#qCard').innerHTML =
+    '<div class="qdone"><div class="big">' + gqRight + '/' + GQ.length + '</div>' +
+    '<div class="lb2">correct \u00b7 Saturday quiz</div>' +
+    '<div class="msg">' + (gqRight ? '\uD83E\uDD29 ' + gqRight + (gqRight === 1 ? ' lesson is' : ' lessons are') + ' happy for another week.' : '') + '</div>' +
+    (miss.length ? '<div class="satmiss"><b>Worth a look \u00b7 ' + miss.length + '</b>' +
+      miss.map(m => '<button data-satgo="' + m.id + '">' + gEsc(m.t.split(' \u2014 ')[0]) + ' \u203a</button>').join('') +
+      '<button class="flagall" id="satFlag">\uD83D\uDEA9 Flag all ' + miss.length + ' to review</button></div>' : '') +
+    '<button class="qnext" id="qBack2">Back to grammar</button></div>';
+  document.getElementById('qBack2').onclick = () => go('grammar');
+  document.querySelectorAll('[data-satgo]').forEach(b => b.onclick = () => openGramTopic(GR.findIndex(g => g.id === b.dataset.satgo)));
+  const fl = document.getElementById('satFlag');
+  if (fl) fl.onclick = () => { const f = gFlags(); miss.forEach(m => { f[m.id] = isoToday(); }); writeJSON('gram-flags', f);
+    fl.textContent = '\u2705 Flagged \u2014 see them with \u201cShow only flagged\u201d'; fl.disabled = true; };
+  paintCards();
+}
 function startGramQuiz(ix, lvl){
   const g = GR[ix]; if (!g || !g.items.length) return;
+  gqMix = false;
   gqIx = ix;
   GQ = shuffle(gqPool(g, lvl)).slice(0, 20);
   gqi = 0; gqRight = 0;
@@ -5329,7 +5396,8 @@ function renderGQ(){
   const opts = shuffle((it.o || []).slice());
   $('#qCard').innerHTML =
     '<div class="qlabel">' + gEsc(it.lb || 'choose the form') +
-      (it.l ? '<span class="qlv ' + gEsc(it.l) + '">' + gEsc(it.l) + '</span>' : '') + '</div>' +
+      (it.l ? '<span class="qlv ' + gEsc(it.l) + '">' + gEsc(it.l) + '</span>' : '') +
+      (it._lesson ? '<span class="qfrom">' + gEsc(it._lesson.split(' \u2014 ')[0]) + '</span>' : '') + '</div>' +
     '<div class="qprompt" style="font-size:24px">' +
       gSafe(String(it.s).replace(/____/g,'<b style="color:var(--rose)">\u2026\u2026</b>')) + '</div>' +
     '<div style="height:14px"></div>' +
@@ -5341,6 +5409,7 @@ function renderGQ(){
     const chosen = opts[Number(b.dataset.i)];
     const ok = String(chosen).trim() === String(it.a).trim();
     if (ok) gqRight++;
+    if (it._src){ if (ok) markSeen('gram:' + it._src, 'quiz'); else gqMissed.push({ id: it._src, t: it._lesson }); }
     const s2 = nlLoad();
     const today = new Date();
     const key = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') +
@@ -5372,6 +5441,7 @@ function renderGQ(){
   });
 }
 function finishGQ(){
+  if (gqMix) return finishSaturday();
   markPassed('gram:' + GR[gqIx].id);
   writeJSON('guide_last_course', GR[gqIx].sec === 'Speaking' ? 'speaking' : 'grammar');
   try { localStorage.removeItem('guide_current'); } catch(e){}
@@ -5872,7 +5942,13 @@ function paintGramList(){
   });
   const nFlag = Object.keys(gFlags()).filter(id => GR.some(g => g.id === id)).length;
   if (!nFlag) gramFlagOnly = false;
-  box.innerHTML = (nFlag ? '<div class="gflagnote">\uD83D\uDEA9 ' + nFlag + (nFlag === 1 ? ' lesson' : ' lessons') +
+  const sat = readJSON('sat-quiz'), isSat = new Date().getDay() === 6;
+  const satN = GR.filter(g => g.sec !== 'Speaking' && satPool(g).length).length;
+  const satBtn = (gramOnly || gramFlagOnly) ? '' :
+    '<button class="gsat' + (isSat ? ' today' : '') + '" id="gSat"><span class="ic">\uD83D\uDCC5</span><span class="tx"><b>Saturday quiz' +
+    (isSat ? ' \u00b7 it\u2019s Saturday!' : '') + '</b>one B2\u2013C1 question from every lesson \u00b7 ' + satN + ' questions \u00b7 ' +
+    (sat ? 'last time ' + fmtDate(sat.d) + ', ' + sat.r + '/' + sat.n : 'not done yet') + '</span><span class="go">Start \u25b6</span></button>';
+  box.innerHTML = satBtn + (nFlag ? '<div class="gflagnote">\uD83D\uDEA9 ' + nFlag + (nFlag === 1 ? ' lesson' : ' lessons') +
       ' flagged to review' + '<button id="gFlagOnly"' + (gramFlagOnly ? ' class="on"' : '') + '>' +
       (gramFlagOnly ? '\u2190 Show all lessons' : 'Show only flagged') + '</button></div>' : '') +
     (gramFlagOnly && !secs.length ? '<div class="gflagempty">No flagged lessons in this section.</div>' : '') +
@@ -5896,6 +5972,8 @@ function paintGramList(){
         moodChip('gram:' + g.id) + gFlag(g.id) +
         '<span class="ch">\u203a</span></button>';
     }).join('')).join('');
+  const gs = document.getElementById('gSat');
+  if (gs) gs.onclick = startSaturdayQuiz;
   const fo = document.getElementById('gFlagOnly');
   if (fo) fo.onclick = () => { gramFlagOnly = !gramFlagOnly; paintGramList(); window.scrollTo(0, 0); };
   box.querySelectorAll('[data-flag]').forEach(f => f.onclick = e => {
