@@ -1548,6 +1548,9 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .adtext .sl .adheart{margin-left:2px;font-size:14px;vertical-align:0}
 .adtext .sl:hover .adspk{opacity:.9}
 .adtext .snt{cursor:default}
+.adcard.one2{min-height:220px}
+.adcard.one2 .txt{font-size:21px;line-height:1.6}
+.adcard.one2 .ru{font-size:16px}
 .adcard.one{grid-template-columns:1fr;min-height:300px;align-items:center;padding:44px 48px}
 .adcard.one .txt{font-size:23px;line-height:1.65}
 .adcard.one .ru{font-size:17px}
@@ -5886,36 +5889,55 @@ function adLevelBar(key, def){
 function adWireLevelBar(key){
   document.querySelectorAll('[data-adlvsel]').forEach(x => x.onclick = () => { const s = adState(); s[key] = x.dataset.adlvsel; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); });
 }
+/* cards: one sentence at a time, the original on the left and a chosen level on the right.
+   The levels are not written sentence for sentence, so inside each numbered part the side with fewer
+   sentences gets one per card and the other side's sentences go to the card they fall beside by length. */
+function adPairs(lv){
+  const out = [], sec = (l, i) => (((adNow.s && adNow.s[l]) || [])[i] || []).filter(x => x.en && x.en.trim());
+  adNow.lv.o.forEach((_, i) => {
+    const O = sec('o', i), R = sec(lv, i);
+    if (!O.length || !R.length){ if (O.length || R.length) out.push({ i: i, k: 0, n: 1, l: O, r: R }); return; }
+    const leftSmall = O.length <= R.length, small = leftSmall ? O : R, big = leftSmall ? R : O;
+    const cum = a => { let t = 0; return a.map(x => { const s = t; t += x.en.length; return [s, t]; }).map(([s, e]) => [s / t, e / t]); };
+    const cs = cum(small), cb = cum(big), groups = small.map(() => []);
+    big.forEach((x, m) => { const f = (cb[m][0] + cb[m][1]) / 2; let k = 0; while (k < cs.length - 1 && cs[k + 1][0] <= f) k++; groups[k].push(x); });
+    small.forEach((x, k) => out.push({ i: i, k: k, n: small.length, l: leftSmall ? [x] : groups[k], r: leftSmall ? groups[k] : [x] }));
+  });
+  return out.map(c => Object.assign(c, { key: 'c' + lv + ':' + c.i + ':' + c.k }));
+}
 function adPaintCards(){
   const st = adState(), lv = ['a2','b1','b2'].includes(st.card) ? st.card : 'b1';
-  const liked = st.onlyLiked ? adNow.lv.o.map((_, i) => i).filter(adLiked) : adNow.lv.o.map((_, i) => i);
+  const all = adPairs(lv), list = st.onlyLiked ? all.filter(c => adLikedS(c.key)) : all;
   $('#adTools').innerHTML = '';
-  if (!liked.length){
-    $('#adGrid').innerHTML = '<div class="adempty">\u2661 No liked cards yet in this part \u2014 press the heart on a card to keep it here.' +
-      '<br><button id="adAllCards">Show every card</button></div>';
-    $('#adAllCards').onclick = () => { const s = adState(); s.onlyLiked = 0; writeJSON('adapt-view', s); paintAdapt(); };
-    return;
-  }
-  adCard = Math.max(0, Math.min(liked.length - 1, adCard));
-  const i = liked[adCard], ru = adRu(lv, i), on = adLiked(i);
-  $('#adGrid').innerHTML =
-    '<div class="adcardbar"><span class="lab">right side</span>' + ['a2','b1','b2'].map(k => '<button data-adcardlv="' + k + '"' +
+  const bar = '<div class="adcardbar"><span class="lab">right side</span>' + ['a2','b1','b2'].map(k => '<button data-adcardlv="' + k + '"' +
       (lv === k ? ' class="on"' : '') + '>' + AD_LV.find(x => x[0] === k)[1] + '</button>').join('') +
-      '<button class="liked' + (st.onlyLiked ? ' on' : '') + '" id="adOnlyLiked">\u2665 only liked</button></div>' +
-    '<div class="adstack"><div class="adcard">' +
-      '<div class="acs"><span class="lab">\uD83D\uDFEA Original<button class="acspk" id="adSpeakL" title="listen (\u2193)">\uD83D\uDD0A</button></span><div class="txt">' + gEsc(adNow.lv.o[i]).replace(/\n/g, '<br>') + '</div>' +
-      (adRu('o', i) ? '<div class="ru">' + gEsc(adRu('o', i)) + '</div>' : '') + '</div>' +
-      '<div class="acs r"><span class="lab">' + AD_LV.find(x => x[0] === lv)[1] + '<button class="acspk" id="adSpeak" title="listen (\u2191)">\uD83D\uDD0A</button></span><div class="txt">' + gEsc(adNow.lv[lv][i]).replace(/\n/g, '<br>') + '</div>' +
-      (ru ? '<div class="ru">' + gEsc(ru) + '</div>' : '') + '</div></div></div>' +
-    '<div class="adcardnav"><span class="cnt">Card ' + (i + 1) + (st.onlyLiked ? ' \u00b7 ' + (adCard + 1) + ' of ' + liked.length + ' liked' : ' of ' + adNow.lv.o.length) +
-      '</span><span class="keys">\u2190 \u2192 turn \u00b7 \u2193 left \u00b7 \u2191 right</span>' +
+      '<button class="liked' + (st.onlyLiked ? ' on' : '') + '" id="adOnlyLiked">\u2665 only liked</button></div>';
+  const wire = () => {
+    document.querySelectorAll('[data-adcardlv]').forEach(x => x.onclick = () => { const s = adState(); s.card = x.dataset.adcardlv; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); });
+    $('#adOnlyLiked').onclick = () => { const s = adState(); s.onlyLiked = s.onlyLiked ? 0 : 1; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); };
+  };
+  if (!list.length){
+    $('#adGrid').innerHTML = bar + '<div class="adempty">\u2661 No liked cards yet at this level \u2014 press the heart on a card to keep it here.</div>';
+    wire(); return;
+  }
+  adCard = Math.max(0, Math.min(list.length - 1, adCard));
+  const c = list[adCard], on = adLikedS(c.key);
+  const en = a => a.map(x => gEsc(x.en)).join(' ').replace(/\n/g, '<br>'), ru = a => a.map(x => x.ru || '').join(' ').trim();
+  const side = (a, cls, lab, id, key) => '<div class="acs' + cls + '"><span class="lab">' + lab +
+      '<button class="acspk" id="' + id + '" title="listen (' + key + ')">\uD83D\uDD0A</button></span><div class="txt">' + en(a) + '</div>' +
+      (ru(a) ? '<div class="ru">' + gEsc(ru(a)) + '</div>' : '') + '</div>';
+  $('#adGrid').innerHTML = bar +
+    '<div class="adstack"><div class="adcard one2">' +
+      side(c.l, '', '\uD83D\uDFEA Original', 'adSpeakL', '\u2193') +
+      side(c.r, ' r', AD_LV.find(x => x[0] === lv)[1], 'adSpeak', '\u2191') + '</div></div>' +
+    '<div class="adcardnav"><span class="cnt">Card ' + (adCard + 1) + ' of ' + list.length + (st.onlyLiked ? ' liked' : '') +
+      ' \u00b7 part ' + (c.i + 1) + '</span><span class="keys">\u2190 \u2192 turn \u00b7 \u2193 left \u00b7 \u2191 right</span>' +
       '<button class="heart' + (on ? ' on' : '') + '" id="adLike" title="keep this card to study again">' + (on ? '\u2665' : '\u2661') + '</button>' +
-      '<button id="adPrev"' + (adCard === 0 ? ' disabled' : '') + '>\u2039</button><button id="adNext"' + (adCard === liked.length - 1 ? ' disabled' : '') + '>\u203a</button></div>';
-  document.querySelectorAll('[data-adcardlv]').forEach(x => x.onclick = () => { const s = adState(); s.card = x.dataset.adcardlv; writeJSON('adapt-view', s); paintAdapt(); });
-  $('#adOnlyLiked').onclick = () => { const s = adState(); s.onlyLiked = s.onlyLiked ? 0 : 1; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); };
-  $('#adLike').onclick = () => { adToggleLike(i); paintAdapt(); };
-  $('#adSpeak').onclick = () => adSay(adPlain(lv, i));
-  $('#adSpeakL').onclick = () => adSay(adPlain('o', i));
+      '<button id="adPrev"' + (adCard === 0 ? ' disabled' : '') + '>\u2039</button><button id="adNext"' + (adCard === list.length - 1 ? ' disabled' : '') + '>\u203a</button></div>';
+  wire();
+  $('#adLike').onclick = () => { adToggleS(c.key); paintAdapt(); };
+  $('#adSpeak').onclick = () => adSay(c.r.map(x => x.en).join(' '));
+  $('#adSpeakL').onclick = () => adSay(c.l.map(x => x.en).join(' '));
   $('#adPrev').onclick = () => { adCard--; paintAdapt(); };
   $('#adNext').onclick = () => { adCard++; paintAdapt(); };
 }
