@@ -1254,6 +1254,9 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
   font-family:var(--ui);font-size:11.5px;font-weight:800}
 .suapply .go{flex:0 0 auto;background:#2A2104;color:#fff;border-radius:999px;padding:9px 16px;font-family:var(--ui);
   font-size:13px;font-weight:800}
+.suyh{background:linear-gradient(135deg,#EAF4EE,#E4EFF1);border-color:var(--sage);box-shadow:0 8px 24px rgba(79,138,107,.16)}
+.suyh:hover{box-shadow:0 12px 28px rgba(79,138,107,.26)}
+.suyh .go{background:#1F4A37}
 @media (max-width:640px){.suapply{flex-wrap:wrap}.suapply .go{width:100%;text-align:center}}
 .sufind a .ic{font-size:20px}
 .sufind a b{display:block;color:var(--sea);font-size:14px}
@@ -3441,6 +3444,12 @@ function suFind(k, head){
     (l.logo ? '<img class="sulogo" alt="" src="' + l.logo + '">' : '<span class="ic">\u2197</span>') +
     '<span><b>' + gEsc(l.t) + ' \u2197</b>' + gEsc(l.d) + '</span></a>').join('') + '</div>';
 }
+/* the second door: vocational higher education, applied for school by school */
+function suYH(){
+  return '<a class="suapply suyh" href="https://www.yrkeshogskolan.se/" target="_blank" rel="noopener"><img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFVUlEQVR42u2abWxTVRjHf/e2vb19Wbcy16l7EwaK4AQ+aJQPRAQC04VEBGMUEiTGOIwSphEJJEDEEEGJ8EEwEBIFxBh8IwRCFBLNhARUwoYa4z6MFzErbnNr1/betrd+6IDetZR2rmOEc5KTNPfce865v+c5z/M/51ZKXCLBbVxkbvMiAAgAAoAAIAAIAAKAACAACAACgABwWxZrVjTZ8MQGgfp6/RlZzGGktA8bABkiYWg+5SIUTp+VzRqnfkYo94nJcO68jTO/qxmbJ4zT8BTF+bnFTjRmMbVNuj9CTXW0YBCs2RoPH7OzebsT1W0+M4kEJY4fTPDow+HcPMEOqzYWs3e/auorokFttcFXOzQudyksbvLi7wLVfm2cQ3vj1NxTOADy9VxSdcA7K7oYM9rA44Iy77XqLU2wfosbf4flxlHECgcOFLF3v0pVVcLUD1GJt5b2UfeADkCR26DCl9J+U4OgAWoJrG0KEB1gZbcTfmpRONrsAHv23v0dFj7+3IGv3OxFmg61tXEWzusdwVlAgwUNAebXawRDA+MAPNdYgv+i5foLyQ57vizi0Pc27EoKWwPczgS7t/yL6hrJabB/Kby6pJfuTsn8oAyqO8GHnxQT6cvQkxX8Fy2s3+qitNjc1NkDcx7TmDIxXNAIPzQ6wIC6KTobVoXSvKC0GHZ95qD5lMvckwyRPli3uYSwloSVan2PC9Y09VvfGMSMrSlVHg4hFIX5TwaZMC6Oppu9QNPhvY+cYEvpTYbTvzo48oOS0forlvbhq4znpyWsgCP5s61N4cRJB61nFSLh/uuDhJHbIzEYO1bnzcY+/B3mpWBX4MhROzt3ea71GIPGlR4CQdlk/WAInp6jsXBeALQ8ZmmD1rMKm7eWIN1ZybipPqY2lPLg4z4coyuZPK2cw9868V+25A0h99sNmDs7wOwZ6QHRV57g06/tnDtvAxn2fePmTKs58AF0d0osfiaMryyes+vbbBInfnSwaJmX9VtdVFQkqKoy17/9Vp5/zcvqd703VrD/BwAybFrVQ0W5gWGYveDEaYXtezyca7fxwU53WtoLhmDpC2FmzurL+eW9pQmONqs0rvRw/pIVt9McT1LHd6qwY4/K2k2jrs516DdDBtSN12mYqfOX39xU5oXdX6hs3Oah/aLFZH1Nh+q7Y7y8KADR3IdzO+Hgdwr/dFkJa3DhgnS1Xu7GZARZTnri4WMKbe1K4QAgw5rlndRWG6aAeGUS+w6oaa7v75B4/aVQUvHluYnyd8rYlQRrloU5frCT9pMdtBzzs6IxjLc43RNb/rDw25/2odkLZFOIb78R4JXVxWkv63aSpvgm1UVZ0BDIO+UZRlJwrW0KsGhBwGSuuvFdqMoo1m1xpMnmtnZLgc8DNHhqTjCjQhz4AkVug20begeV80MReGK6loR3ZQt+pVphybM9RILmrOSwwy+t1mRaLhiALApxYM6fPU0ftOILazCmxsgMLwa+yjgVFQnTMrBZobtHGoYToX6F+P66YEYvMIykUhy04uvfDtdU6lnvuXeMnrZZG74jsSjMnRVKU4gA0Vhy7eat+AYUlzO7NRXlZp4JGuApilNeamRc+xPvi+aV9jIKIWv81jwUTRgSiFNhAUAAEAAEAAFAAOCW/DaYj2TVE/g7JNNXH48rfx0QCMr09uX3jK5jGjsSlAhHhhGAxx2nfrrGQ5PNik1VoGxUjkdfRvLe5S+GiaRIak2TqLwrllWKz6vXmPaIeew7vLGcFag04v8sLRf26/DIjwGGCIICgAAgAAgAAoAAIAAIAAKAACAACAACgAAgAAgAQ1r+Awfa5qX8UwDOAAAAAElFTkSuQmCC">' +
+    '<span class="tx"><b>Yrkeshögskolan</b>Vocational programmes (YH): one to two years, free, built with employers \u2014 ' +
+    'you apply to each school directly, not through University Admissions.</span><span class="go">Open \u2197</span></a>';
+}
 function suApply(next){
   const a = SU.find.apply;
   return '<a class="suapply" href="' + gEsc(a.url) + '" target="_blank" rel="noopener"><img alt="" src="' + a.logo + '">' +
@@ -3455,7 +3464,7 @@ function suCourses(st){
   const done = SU.subjects.filter(s => st.c[s.key] === 'done').length;
   const main = SU.subjects.filter(s => s.main), rest = SU.subjects.filter(s => !s.main);
   const later = (SU.rounds || []).filter(r => r !== next && suDays(r.deadline) >= 0);
-  return suApply(next) +
+  return suApply(next) + suYH() +
     '<div class="suround">\ud83d\udcc5 <span>The rounds up to autumn 2028: ' + (SU.rounds || []).filter(r => suDays(r.deadline) >= 0)
       .map(r => '<b>' + gEsc(r.term) + '</b> by ' + suFmt(r.deadline)).join(' \u00b7 ') +
       '. <i>These are the usual dates \u2014 each round is confirmed on University Admissions.</i></span></div>' +
