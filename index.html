@@ -945,6 +945,13 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
   font-family:var(--ui);font-size:12px;font-weight:700;color:var(--mut);text-decoration:none;cursor:pointer}
 .openraw.quiz{background:var(--sea);border-color:var(--sea);color:#fff;padding:9px 17px;font-size:12.5px}
 .openraw.quiz:hover{background:#1F5A67}
+.gqlv{display:inline-flex;gap:6px;margin-right:6px;flex-wrap:wrap}
+.gqlv button{border:1.5px solid var(--sea);background:var(--panel);color:var(--sea);border-radius:999px;
+  padding:7px 12px;font-family:var(--ui);font-size:12px;font-weight:800;cursor:pointer}
+.gqlv button.c1{border-color:#B0476E;color:#B0476E}
+.gqlv button:hover{background:var(--sea-l)}
+.gqlv button.c1:hover{background:#F6E3EA}
+.endquiz .gqlv{margin:8px 0 0}
 .endquiz{border-top:1px solid var(--line);margin-top:26px;padding-top:20px;text-align:center}
 .endquiz button{border:none;background:var(--sea);color:#fff;border-radius:14px;padding:14px 26px;
   font-family:var(--ui);font-size:14px;font-weight:800;cursor:pointer}
@@ -1674,6 +1681,7 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
       <div class="viewbar">
         <button class="back" id="backGram">&larr; Back</button>
         <div class="spacer"></div>
+        <span class="gqlv" id="gramLv"></span>
         <button class="openraw" id="gramPractise"></button>
       </div>
       <article class="paper" id="gPaper"></article>
@@ -4662,10 +4670,17 @@ function openWords(mode){
 /* ---- the grammar quiz: the questions written for each topic ---- */
 let GQ = [], gqi = 0, gqRight = 0, gqBack = 'grammar', gqTitle = '';
 let gqIx = 0;
-function startGramQuiz(ix){
+/* lvl = 'B2' or 'C1' for a round of that level only; nothing = every level mixed */
+const gqPool = (g, lvl) => lvl ? g.items.filter(i => String(i.l || '').indexOf(lvl) === 0) : g.items;
+function gqButtons(g){
+  return ['B2','C1'].map(l => { const n = gqPool(g, l).length;
+    return n ? '<button class="' + l.toLowerCase() + '" data-gqlv="' + l + '" title="' + n + ' ' + l +
+      ' questions in this lesson">' + l + ' only \u00b7 ' + Math.min(20, n) + '</button>' : ''; }).join('');
+}
+function startGramQuiz(ix, lvl){
   const g = GR[ix]; if (!g || !g.items.length) return;
   gqIx = ix;
-  GQ = shuffle(g.items).slice(0, 20);
+  GQ = shuffle(gqPool(g, lvl)).slice(0, 20);
   gqi = 0; gqRight = 0;
   gqBack = (g.sec === 'Speaking') ? 'speaking' : 'grammar';
   gqTitle = g.t;
@@ -5391,16 +5406,22 @@ function openGramTopic(ix){
   const pb = $('#gramPractise');
   pb.classList.toggle('hide', !g.items.length);
   pb.className = 'openraw quiz' + (g.items.length ? '' : ' hide');
-  pb.textContent = '\u25b6 Practise \u00b7 ' + Math.min(20, g.items.length) + ' questions';
+  pb.textContent = '\u25b6 Practise \u00b7 ' + Math.min(20, g.items.length) +
+    (g.items.length > 20 ? ' of ' + g.items.length : '') + ' questions';
+  pb.title = 'each round takes 20 random questions from the ' + g.items.length + ' in this lesson';
   pb.onclick = () => startGramQuiz(ix);
+  $('#gramLv').innerHTML = gqButtons(g);
+  $('#gramLv').querySelectorAll('[data-gqlv]').forEach(b => b.onclick = () => startGramQuiz(ix, b.dataset.gqlv));
   { const role = guideRole('gram:' + g.id); if (role) markGuide(pb, role === 'pink'); }
   /* and again at the end, where you actually finish reading */
   if (g.items.length){
     $('#gPaper').insertAdjacentHTML('beforeend',
       '<div class="endquiz"><div class="eh">Read it through? Now see if it stuck.</div>' +
       '<button id="gEndQuiz">\u25b6 Practise \u00b7 ' + Math.min(20, g.items.length) +
-      ' questions</button></div>');
+      (g.items.length > 20 ? ' of ' + g.items.length : '') + ' questions</button>' +
+      '<div class="gqlv" id="gEndLv">' + gqButtons(g) + '</div></div>');
     document.getElementById('gEndQuiz').onclick = () => startGramQuiz(ix);
+    document.querySelectorAll('#gEndLv [data-gqlv]').forEach(b => b.onclick = () => startGramQuiz(ix, b.dataset.gqlv));
   }
   window.scrollTo(0,0);
 }
