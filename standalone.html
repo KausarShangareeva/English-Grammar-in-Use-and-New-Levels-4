@@ -1236,6 +1236,11 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .ebpg input{width:52px;border:1px dashed var(--line2);border-radius:7px;padding:1px 5px;font-family:var(--ui);font-size:12px;
   font-weight:800;color:var(--ink);background:transparent;-moz-appearance:textfield}
 .ebpg input:hover,.ebpg input:focus{border-style:solid;border-color:var(--sea);outline:none}
+.ebnow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:7px;background:var(--sea-l);border-radius:10px;
+  padding:6px 10px;font-size:12px;font-weight:800;color:var(--sea)}
+.ebnow input{width:54px;border:1px solid var(--line2);border-radius:7px;padding:2px 5px;font-family:var(--ui);font-size:12px;
+  font-weight:800;color:var(--ink);background:var(--panel)}
+.ebnow span{color:var(--mut2);font-weight:700}
 .ebdone{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:800;color:var(--sage)}
 .ebdone input{border:1px solid var(--line2);border-radius:8px;padding:2px 6px;font-family:var(--ui);font-size:12px;color:var(--ink);background:var(--bg)}
 .ebadd{margin-bottom:12px}
@@ -2864,6 +2869,7 @@ function recomputeQueues(){
       if (Number(st[slot.id]) !== 2 && pointer < q.length - 1) pointer++;
     });
   });
+  try { ebBookPlan(st); } catch(e){}
 }
 const taskText = r => OVERRIDE[r.i] || r.t;
 
@@ -2948,8 +2954,6 @@ function paintFinish(){
       cls:'open2', big:'page ' + pg[1] });
   }
 
-  bookFinishes().forEach(b =>
-    add(b.title, '\uD83D\uDCD6', b.iso, 'fifty pages a day'));
 
   COURSE_DATES.forEach(c => {
     if (c.d) add(c.k, c.e, c.d, c.n);
@@ -3180,7 +3184,7 @@ function paintLangMenu(){
 }
 /* The three languages keep their own study progress \u2014 but the schedule, the
    IT goals and the settings belong to you, not to a language, so those stay shared. */
-const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list',
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace',
                      'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
 function lkey(k){
@@ -3521,8 +3525,50 @@ function ebMsg(html){
 function ebSet(id, s){
   const b = EB.find(x => x.id === id); if (!b || b.s === s) return;
   b.s = s; b.d = s === 'read' ? isoToday() : '';
+  if (s === 'reading'){ b.cp = 0; writeJSON('book-anchor', { id: b.id, cp: 0, date: isoToday() }); }
   ebSave(); paintEB();
   ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 ' + (s === 'read' ? 'read on ' + ebDay(b.d) : EB_ST[s].toLowerCase()) + '.');
+}
+/* The reading rows of the schedule are built from this list, so reordering books
+   or changing pages here is all it takes. From the day the current book was set
+   (the anchor), each day takes the next pages at the daily pace; a day marked
+   with a cross does not move it on, like every other stream. */
+function ebPace(){ const p = parseInt(readJSON('book-pace'), 10); return p > 0 ? p : 50; }
+function ebTarget(){ return EB.find(b => b.s === 'reading') || EB.find(b => b.s === 'plan') || null; }
+function ebAnchor(){
+  const t = ebTarget(); if (!t) return null;
+  let a = readJSON('book-anchor');
+  if (!a || a.id !== t.id){ a = { id: t.id, cp: t.cp || 0, date: isoToday() }; writeJSON('book-anchor', a); }
+  return a;
+}
+function ebBookPlan(st){
+  const q = STREAMS_Q['BOOK']; if (!q) return;
+  const a = ebAnchor(); const pace = ebPace();
+  const chunks = [];
+  if (a){
+    const start = EB.findIndex(b => b.id === a.id);
+    const books = [EB[start]].concat(EB.slice(start + 1).filter(b => b.s === 'plan'));
+    books.forEach((b, k) => {
+      let from = k === 0 ? Math.min(b.p, (a.cp || 0)) + 1 : 1;
+      while (from <= b.p){
+        const to = Math.min(b.p, from + pace - 1);
+        chunks.push('\uD83D\uDCD6 Book reading \u2014 \u00ab' + b.t + '\u00bb, pages ' + from + '\u2013' + to + ' of ' + b.p);
+        from = to + 1;
+      }
+    });
+  }
+  let ptr = 0;
+  q.forEach(slot => {
+    if (!a || slot.id.slice(0, 10) < a.date) return;      /* days before stay as they were */
+    OVERRIDE[slot.id] = chunks[ptr] || '\uD83D\uDCD6 Book reading \u2014 choose the next book';
+    if (Number(st[slot.id]) !== 2 && ptr < chunks.length) ptr++;
+  });
+}
+function ebSetPage(id, v){
+  const b = EB.find(x => x.id === id); if (!b) return;
+  b.cp = Math.max(0, Math.min(b.p, v)); ebSave();
+  writeJSON('book-anchor', { id: b.id, cp: b.cp, date: isoToday() });
+  paintEB(); ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 on page ' + b.cp + ' of ' + b.p + '. The schedule starts from here.');
 }
 function ebDay(iso){
   return iso ? new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }) : '';
@@ -3597,6 +3643,9 @@ function paintEB(){
           '" data-ebpg="' + b.id + '"> pages</label>' +
         (b.g ? '<span>' + gEsc(EB_GENRE[b.g] || b.g) + '</span>' : '') + '</div>' +
         (b.s === 'read' ? '<label class="ebdone">\u2705 read on <input type="date" value="' + gEsc(b.d || '') + '" data-ebdt="' + b.id + '"></label>' : '') +
+        (b.s === 'reading' ? '<div class="ebnow"><label>\uD83D\uDCD6 I\u2019m on page <input type="number" min="0" max="' + b.p + '" value="' + (b.cp || 0) +
+          '" data-ebcp="' + b.id + '"> of ' + b.p + '</label><label><input type="number" min="1" value="' + ebPace() +
+          '" data-ebpace="1"> pages a day</label><span>the Schedule follows this</span></div>' : '') +
         '</div>' +
         '<div class="ebst">' + ['read','reading','plan'].map(k => '<button class="' + k + (b.s === k ? ' on' : '') + '" data-ebs="' + k +
           '" data-eb="' + b.id + '">' + EB_ST[k] + '</button>').join('') + '</div></div>'; }).join('');
@@ -3615,6 +3664,11 @@ function paintEB(){
   document.querySelectorAll('#ebList [data-ebdt]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebdt); if (!x.value) { x.value = b.d; return; }
     b.d = x.value; ebSave(); ebMsg('✅ <b>' + gEsc(b.t) + '</b> — read on ' + ebDay(b.d) + '.');
+  });
+  document.querySelectorAll('#ebList [data-ebcp]').forEach(x => x.onchange = () => ebSetPage(x.dataset.ebcp, parseInt(x.value, 10) || 0));
+  document.querySelectorAll('#ebList [data-ebpace]').forEach(x => x.onchange = () => {
+    const v = parseInt(x.value, 10); if (!(v > 0)) { x.value = ebPace(); return; }
+    writeJSON('book-pace', v); ebMsg('\u2705 ' + v + ' pages a day \u2014 the Schedule is worked out again.');
   });
   const inp = $('#ebSearch');
   if (!inp.dataset.wired){ inp.dataset.wired = 1; inp.oninput = e => { ebQ = e.target.value; paintEB(); }; }
