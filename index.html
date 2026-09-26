@@ -2876,8 +2876,8 @@ const taskText = r => OVERRIDE[r.i] || r.t;
 /* When each thing runs out, worked out from the plan itself \u2014 so a \u2715 moves
    the date honestly instead of pretending. */
 const COURSE_DATES = [
-  { k:'Engelska nivå 1', e:'\uD83C\uDFF4', d:'2026-11-15', n:'Kursdatum: 12 oktober 2026 \u2013 15 november 2026' },
-  { k:'Engelska nivå 2', e:'\uD83C\uDFF4', d:'2026-12-20', n:'Kursdatum: 16 november 2026 \u2013 20 december 2026' },
+  { k:'Engelska nivå 1', e:'\uD83C\uDFF4', s:'2026-10-12', d:'2026-11-15', n:'Kursdatum' },
+  { k:'Engelska nivå 2', e:'\uD83C\uDFF4', s:'2026-11-16', d:'2026-12-20', n:'Kursdatum' },
   { k:'Engelska nivå 3', e:'\uD83C\uDFF4', d:null, n:'not booked yet' },
   { k:'Svenska SVA 3',   e:'\uD83C\uDDF8\uD83C\uDDEA', d:null, n:'not booked yet' },
   { k:'Matematik 3c',    e:'\uD83D\uDCD0', d:null, n:'not booked yet' },
@@ -2952,7 +2952,13 @@ function paintFinish(){
 
 
   COURSE_DATES.forEach(c => {
-    if (c.d) add(c.k, c.e, c.d, c.n);
+    /* a course with a start shows its whole span, big: 12 okt – 15 nov 2026 */
+    if (c.d && c.s){
+      const mo = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+      const f = iso => +iso.slice(8, 10) + ' ' + mo[+iso.slice(5, 7) - 1];
+      items.push({ label:c.k, emoji:c.e, iso:c.d, big: f(c.s) + ' \u2013 ' + f(c.d) + ' ' + c.d.slice(0, 4), kurs:1 });
+    }
+    else if (c.d) add(c.k, c.e, c.d, c.n);
     else items.push({ label:c.k, emoji:c.e, iso:null, note:c.n, cls:'open2', big:'\u2014' });
   });
 
@@ -2979,7 +2985,8 @@ function paintFinish(){
       const cls = i.cls || (d !== null && d < 30 ? 'soon2' : '');
       return '<div class="fitem ' + cls + '"><div class="fl">' + i.emoji + ' ' + gEsc(i.label) + '</div>' +
         '<div class="fd">' + (i.big || fmtDate(i.iso)) + '</div>' +
-        '<div class="fn">' + (i.iso ? (d + ' days \u00b7 ' + i.note) : i.note) + '</div></div>';
+        '<div class="fn">' + (i.kurs ? 'Kursdatum \u00b7 ' + (d < 0 ? 'finished' : d + ' days left')
+                             : i.iso ? (d + ' days \u00b7 ' + i.note) : i.note) + '</div></div>';
     }).join('') + '</div>';
 }
 
