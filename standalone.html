@@ -5013,8 +5013,19 @@ function daysSince(iso){
   const a = new Date(iso + 'T00:00:00'), b = new Date(isoToday() + 'T00:00:00');
   return Math.round((b - a) / 86400000);
 }
+/* Grammar and speaking lessons run on a weekly quiz, and only the quiz counts:
+   opening a lesson by accident changes nothing. Happy for five days after a quiz,
+   a plain face for the last two, sad once the week is up. */
+function gramState(r){
+  const d = daysSince(r.q);
+  if (d === null) return { cls:'wait', d:null, m:['\uD83D\uDE42', 'no quiz yet', ''] };
+  if (d <= 4) return { cls:'done', d:d, m:['\uD83E\uDD29', d === 0 ? 'quiz done today' : d === 1 ? 'quiz done yesterday' : 'quiz done ' + d + ' days ago', 'done'] };
+  if (d <= 6) return { cls:'wait', d:d, m:['\uD83D\uDE42', d === 6 ? 'quiz due tomorrow' : 'quiz due in ' + (7 - d) + ' days', 'open'] };
+  return { cls:'hot', d:d, m:['\uD83D\uDE22', 'no quiz for ' + d + ' days', 'hot'] };
+}
 function mood(id){
   const r = seenAll()[id] || {};
+  if (id.indexOf('gram:') === 0) return gramState(r).m;
   const t = isoToday();
   if (r.q === t) return ['\uD83E\uDD29', 'great work today', 'done'];
   if (r.d === t) return ['\uD83D\uDC40', 'opened today \u00b7 quiz waiting', 'open'];
@@ -5027,6 +5038,12 @@ function mood(id){
 }
 function seenLine(id){
   const r = seenAll()[id] || {};
+  if (id.indexOf('gram:') === 0){
+    if (!r.q) return 'quiz not done yet';
+    const d = daysSince(r.q);
+    return 'quiz done ' + new Date(r.q + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }) +
+      ' \u00b7 ' + (d === 0 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago');
+  }
   /* whichever happened later: opening it, or actually practising it */
   const last = (r.q && r.d) ? (r.q > r.d ? r.q : r.d) : (r.q || r.d);
   if (!last) return 'never opened';
@@ -5053,6 +5070,13 @@ function moodCounts(courseId){
     if (COURSE_OF[i.where] !== courseId) return;
     c.total++;
     const r = seen[i.id] || {};
+    if (i.id.indexOf('gram:') === 0){
+      const g = gramState(r);
+      if (g.cls === 'done') c.done++;
+      else if (g.cls === 'wait') c.wait++;
+      else { c.hot++; if (g.d > c.worstDays){ c.worstDays = g.d; c.worst = i.t; } }
+      return;
+    }
     const days = daysSince((r.q && r.d) ? (r.q > r.d ? r.q : r.d) : (r.q || r.d));
     if (r.q === t) c.done++;
     else if (r.d === t) c.open++;
