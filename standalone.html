@@ -1422,7 +1422,9 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .abook.mine .cv .in{border:1.5px solid #D4AF37;box-shadow:inset 0 0 0 4px rgba(212,175,55,.35)}
 .abook.mine .cv .bt{color:#F4DC8C;outline:none;border-radius:3px}
 .abook.mine .cv .bt[contenteditable=true]{background:rgba(255,255,255,.12)}
-.abook.mine .cv .orn{color:#D4AF37;width:100%;height:auto;margin:auto 0;align-self:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.abook.mine .cv .orn{display:flex;gap:6px;justify-content:center;margin:auto 0;align-self:center;font-size:46px;line-height:1}
+.abook.mine .cv .orn .fx{filter:grayscale(1) sepia(1) saturate(3.4) hue-rotate(-4deg) brightness(.95) contrast(1.2) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+.abook.mine .cv .orn .ct{filter:grayscale(1) sepia(1) saturate(3) hue-rotate(-14deg) brightness(.34) contrast(1.8) drop-shadow(0 0 1px #D4AF37) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
 .abook.mine .cv .bl{color:#F4DC8C}
 .abook.mine .cv .ar{border-color:#D4AF37;color:#F4DC8C;background:none;cursor:pointer;font-size:13px;font-family:inherit}
 .abook.story .cv .art{position:absolute;left:0;right:0;bottom:66px;width:100%;height:40%}
@@ -6209,7 +6211,7 @@ function myBooks(){ const s = readJSON('my-books'); return Array.isArray(s) && s
 function myShelf(){
   return '<div class="adshelfhead"><h3>\u2728 My books</h3><p class="ps">The books I write myself. Click the \u270E on a cover to rename it.</p></div>' +
     '<div class="adshelf">' + myBooks().map((b, i) => '<div class="abook mine"><div class="cv" style="background:linear-gradient(140deg,' + MB_COL[i][0] + ' 0%,' + MB_COL[i][1] + ' 100%)">' +
-      '<div class="in"><span class="bt" data-mbt="' + i + '">' + gEsc(b.t) + '</span><svg class="orn" viewBox="0 0 158 72" fill="currentColor" aria-hidden="true"><path d="M16 66 C7 63 7 52 11 45 C14 39 18 34 21 31 C20 26 19 21 20 17 L18 4 L25 12 C27 11 29 11 31 12 L36 3 L37 15 C40 18 45 21 51 23 C51 24.5 50 25.5 48 25.8 C43 26.5 39 27 37 29 C36 33 36 37 37 42 L38 66 L35 66 L34 47 L32 66 Z"/><path d="M17 66 C4 66 0 57 4 49 C6 58 15 61 25 61.5 C35 62 43 64 48 68 C37 70 24 69 17 66Z"/><g transform="translate(104 67) scale(1.35) translate(-92 -67)"><path d="M60 45 C60 43 61.5 41 64 40.3 C65 38.6 66.3 38.1 67.2 39.1 C68 38.3 69.3 38.6 69.6 40.1 C72.5 41 76 40.8 80 39.5 C89 37 100 36.3 108 37.6 C113 38.5 116 40.5 117 44 C118 47 117.5 50 116 52 L118.5 67 L116 67 L112.5 54.5 L111 67 L108.5 67 L108 52.5 C100 51 92 50.5 86 51 L85 67 L82.5 67 L81.5 51.5 L79 67 L76.5 67 L77.5 48.5 C74 47.5 70 47.3 66.5 47.6 C63.5 47.8 61 47 60 45Z"/><path d="M116.5 41 C123 42 125 50 124 57 C123.6 61 125 63.5 127.5 63 L127.3 65 C123.5 65.5 121.5 62 122 57 C122.6 51 121.5 45.5 116 44.5Z"/></g></svg>' +
+      '<div class="in"><span class="bt" data-mbt="' + i + '">' + gEsc(b.t) + '</span><span class="orn"><span class="fx">\uD83E\uDD8A</span><span class="ct">\uD83D\uDE3A</span></span>' +
       '<span class="bf"><span class="bl"><b>Kausar</b>written by me</span><button class="ar" data-mbe="' + i + '" title="rename">\u270E</button></span></div></div></div>').join('') + '</div>';
 }
 function wireMyShelf(box){
