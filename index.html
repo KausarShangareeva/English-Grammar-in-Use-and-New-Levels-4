@@ -1250,9 +1250,10 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .ebook.read .bd b{color:var(--mut)}
 .ebook .bd .m{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:3px;font-size:12px;color:var(--mut2);font-weight:700}
 .ebook .bd .m > span,.ebook .ebpg{white-space:nowrap}
-.ebook .lv{border-radius:999px;padding:1px 8px;font-size:10px;font-weight:800;background:var(--sea-l);color:var(--sea)}
-.ebook .lv.B1,.ebook .lv.B1\+{background:var(--sage-l);color:var(--sage)}
-.ebook .lv.C1,.ebook .lv.C2{background:#F6E3EA;color:#B0476E}
+.ebook .lv{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:58px;box-sizing:border-box;
+  border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;line-height:1.4;white-space:nowrap;
+  background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.ebook .ebpg{margin-left:2px}
 .ebst{display:flex;gap:5px}
 .ebst button{border:1.5px solid var(--line2);background:var(--bg);color:var(--mut);border-radius:999px;padding:6px 11px;
   font-family:var(--ui);font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap}
