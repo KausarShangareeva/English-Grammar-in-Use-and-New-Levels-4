@@ -1459,6 +1459,77 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
   font-size:13px;font-weight:800;cursor:pointer}
 .adnav .adreadbtn{background:var(--sea);border-color:var(--sea);color:#fff}
 .adnav .adreadbtn.on{background:var(--sage);border-color:var(--sage)}
+
+.admodes{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:14px}
+.admodes button{border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 13px;font-family:var(--ui);
+  font-size:12.5px;font-weight:800;cursor:pointer}
+.admodes button.on{background:var(--sea);border-color:var(--sea);color:#fff}
+.admodes button.dict{border-color:#E0A800;background:#FFF7E0;color:#6B5410}
+.admodes button.dict.on{background:#E0A800;color:#2E2003}
+.admodes .dlab{margin-left:8px;font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--mut2)}
+.nocol{display:flex;flex-direction:column;align-items:center;gap:6px}
+.adheart{border:none;background:none;font-size:17px;color:var(--line2);cursor:pointer;padding:0;line-height:1}
+.adheart.on,.adheart:hover{color:#E0434B}
+.adtext{position:relative}
+.adspk{float:right;margin:2px 0 4px 8px;border:none;background:none;font-size:14px;cursor:pointer;opacity:.45;padding:2px}
+.adspk:hover{opacity:1}
+.adcardbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:16px}
+.adcardbar .lab{font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--mut2);margin-right:4px}
+.adcardbar button{border:1px solid var(--line2);background:var(--bg);color:var(--mut);border-radius:999px;padding:5px 12px;font-family:var(--ui);
+  font-size:12px;font-weight:800;cursor:pointer}
+.adcardbar button.on{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.adcardbar .liked{margin-left:auto}
+.adcardbar .liked.on{background:#E0434B;border-color:#E0434B;color:#fff}
+.adstack{position:relative;margin:6px 8px 24px}
+.adstack:before,.adstack:after{content:'';position:absolute;inset:0;border-radius:18px;background:var(--bg);border:1px solid var(--line)}
+.adstack:before{transform:rotate(1.4deg) translate(6px,8px)}
+.adstack:after{transform:rotate(-.8deg) translate(-4px,4px)}
+.adcard{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:28px;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;padding:30px 30px 34px;min-height:260px;box-shadow:0 14px 34px rgba(0,0,0,.08)}
+.adcard .acs .lab{display:block;font-family:var(--ui);font-size:10.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut2);margin-bottom:10px}
+.adcard .txt{font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.75;color:var(--ink)}
+.adcard .acs.r{border-left:1px solid var(--line);padding-left:26px}
+.adcard .ru{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.7;color:var(--mut2)}
+.adcardnav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.adcardnav .cnt{font-family:Georgia,serif;font-size:13px;color:var(--mut2)}
+.adcardnav .keys{font-family:var(--ui);font-size:11px;color:var(--mut2);margin-right:auto;margin-left:10px}
+.adcardnav button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line2);background:var(--panel);color:var(--sea);font-size:18px;cursor:pointer}
+.adcardnav button[disabled]{opacity:.35;cursor:default}
+.adcardnav .heart{color:var(--line2);font-size:20px}
+.adcardnav .heart.on{color:#E0434B;border-color:#E0434B}
+.adempty{text-align:center;padding:40px 10px;color:var(--mut);font-family:var(--ui);line-height:1.8}
+.adempty button{margin-top:10px;border:1px solid var(--line2);background:var(--bg);border-radius:999px;padding:7px 14px;font-weight:800;cursor:pointer}
+.addict{max-width:760px;margin:0 auto}
+.addict .top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--ui);font-size:12.5px;font-weight:800;color:var(--mut)}
+.addict .keys{color:var(--mut2);font-weight:700}
+.addict .bar{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin:8px 0 16px}
+.addict .bar i{display:block;height:100%;background:#E0A800}
+.addict .play{display:flex;gap:8px;margin-bottom:12px}
+.addict .play button{border:1.5px solid var(--sea);background:var(--sea-l);color:var(--sea);border-radius:999px;padding:9px 16px;font-family:var(--ui);
+  font-size:13.5px;font-weight:800;cursor:pointer}
+.addict textarea{width:100%;box-sizing:border-box;border:1.5px solid var(--line2);border-radius:14px;padding:13px 15px;font-family:Georgia,serif;
+  font-size:17px;line-height:1.6;color:var(--ink);background:var(--bg);resize:vertical}
+.addict textarea:focus{outline:none;border-color:var(--sea)}
+.addict .act{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.addict .act button{border:1px solid var(--line2);background:var(--panel);color:var(--mut);border-radius:13px;padding:11px 18px;font-family:var(--ui);
+  font-size:14px;font-weight:800;cursor:pointer}
+.addict .act .go{background:var(--sea);border-color:var(--sea);color:#fff;min-width:140px}
+.addict .res{margin-top:14px}
+.addict .score{font-family:var(--ui);font-size:14px;font-weight:800;margin-bottom:8px}
+.addict .score.ok{color:var(--sage)} .addict .score.mid{color:#B8901F} .addict .score.no{color:#C0353D}
+.addict .want{font-family:Georgia,serif;font-size:17px;line-height:2}
+.addict .w{border-radius:5px;padding:1px 4px}
+.addict .w.ok{background:var(--sage-l);color:var(--sage)}
+.addict .w.miss{background:#F6E3EA;color:#C0353D;font-weight:700}
+.addict .extra{margin-top:6px;font-family:var(--ui);font-size:12.5px;color:var(--mut2)}
+.addict .full{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--bg);font-family:Georgia,serif;font-size:15px;line-height:1.7;color:var(--ink)}
+.addict .full .ru{display:block;margin-top:6px;color:var(--mut2);font-size:14px}
+.addone{text-align:center;padding:26px 10px}
+.addone .big{font-family:var(--disp);font-size:56px;color:var(--sea);line-height:1}
+.addone .lb2{font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut2);margin-top:4px}
+.addone p{color:var(--mut)}
+.addone button{border:1px solid var(--line2);background:var(--bg);border-radius:999px;padding:9px 16px;font-family:var(--ui);font-weight:800;cursor:pointer;margin:4px}
+@media (max-width:700px){.adcard{grid-template-columns:1fr;padding:22px}.adcard .acs.r{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:16px}}
 .adhero{background:var(--panel);border-radius:20px;padding:20px 22px;margin-bottom:12px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
 .adhero h2{font-family:var(--disp);font-size:30px;font-weight:600;margin:0}
 .adhero p{margin:4px 0 0;color:var(--mut);font-size:13px}
@@ -3308,7 +3379,7 @@ function paintLangMenu(){
 }
 /* The three languages keep their own study progress \u2014 but the schedule, the
    IT goals and the settings belong to you, not to a language, so those stay shared. */
-const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace','sat-quiz','sat-per','adapt-view','adapt-read',
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace','sat-quiz','sat-per','adapt-view','adapt-read','adapt-likes','adapt-dict',
                      'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
 function lkey(k){
@@ -5688,6 +5759,7 @@ function openAdaptBook(){
 function openAdapt(id){
   const bk = document.getElementById('adBack'); if (bk){ bk.onclick = openAdaptBook; bk.innerHTML = '&larr; Contents'; }
   adNow = ADAPT.find(b => b.id === id); if (!adNow) return;
+  adMode = 'read'; adDict = null; adCard = 0;
   markSeen('adapt:' + id, 'open');
   $('#readList').classList.remove('on');
   hideAll('#adaptView');
@@ -5723,9 +5795,172 @@ function adSection(lv, i){
   });
   return html + '</p>';
 }
+/* ---- adapted reading: sound, likes, cards and dictation ---- */
+let adMode = 'read', adCard = 0, adDict = null;
+const AD_NAME = { a2:'A2', b1:'B1', b2:'B2', o:'Original' };
+function adLikes(){ return readJSON('adapt-likes') || {}; }
+function adLiked(i){ return !!(adLikes()[adNow.id] || {})[i]; }
+function adToggleLike(i){
+  const all = adLikes(), p = all[adNow.id] || (all[adNow.id] = {});
+  if (p[i]) delete p[i]; else p[i] = isoToday();
+  writeJSON('adapt-likes', all);
+}
+function adPlain(lv, i){ return adNow.lv[lv][i].replace(/\s*\n+\s*/g, ' '); }
+function adRu(lv, i){ return ((adNow.s && adNow.s[lv] && adNow.s[lv][i]) || []).map(x => x.ru).join(' '); }
+/* British voice; a little slower for dictation */
+function adSay(text, rate){
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(clean(text));
+    u.lang = 'en-GB'; if (VOICES && VOICES.en) u.voice = VOICES.en;
+    u.rate = rate || 0.92; u.pitch = 1;
+    window.speechSynthesis.speak(u);
+  } catch(e){}
+}
+function adModes(){
+  const best = readJSON('adapt-dict') || {};
+  const sc = lv => { const v = best[adNow.id + ':' + lv]; return v === undefined ? '' : ' \u00b7 ' + v + '%'; };
+  return '<div class="admodes">' +
+    '<button data-admode="read"' + (adMode === 'read' ? ' class="on"' : '') + '>\uD83D\uDCD6 Side by side</button>' +
+    '<button data-admode="cards"' + (adMode === 'cards' ? ' class="on"' : '') + '>\uD83C\uDCCF Cards</button>' +
+    '<span class="dlab">\u270D\uFE0F Dictation</span>' +
+    ['a2','b1','b2','o'].map(lv => '<button class="dict' + (adMode === 'dict' && adDict && adDict.lv === lv ? ' on' : '') + '" data-addict="' + lv + '">' +
+      AD_NAME[lv] + sc(lv) + '</button>').join('') + '</div>';
+}
+function adWireModes(){
+  document.querySelectorAll('#adHero [data-admode]').forEach(x => x.onclick = () => { adMode = x.dataset.admode; adDict = null; paintAdapt(); });
+  document.querySelectorAll('#adHero [data-addict]').forEach(x => x.onclick = () => adStartDict(x.dataset.addict));
+}
+
+/* cards: one numbered section at a time, the original on the left and a chosen level on the right */
+function adPaintCards(){
+  const st = adState(), lv = st.card || 'b1';
+  const liked = st.onlyLiked ? adNow.lv.o.map((_, i) => i).filter(adLiked) : adNow.lv.o.map((_, i) => i);
+  $('#adTools').innerHTML = '';
+  if (!liked.length){
+    $('#adGrid').innerHTML = '<div class="adempty">\u2661 No liked cards yet in this part \u2014 press the heart on a card to keep it here.' +
+      '<br><button id="adAllCards">Show every card</button></div>';
+    $('#adAllCards').onclick = () => { const s = adState(); s.onlyLiked = 0; writeJSON('adapt-view', s); paintAdapt(); };
+    return;
+  }
+  adCard = Math.max(0, Math.min(liked.length - 1, adCard));
+  const i = liked[adCard], ru = adRu(lv, i), on = adLiked(i);
+  $('#adGrid').innerHTML =
+    '<div class="adcardbar"><span class="lab">right side</span>' + ['a2','b1','b2'].map(k => '<button data-adcardlv="' + k + '"' +
+      (lv === k ? ' class="on"' : '') + '>' + AD_LV.find(x => x[0] === k)[1] + '</button>').join('') +
+      '<button class="liked' + (st.onlyLiked ? ' on' : '') + '" id="adOnlyLiked">\u2665 only liked</button></div>' +
+    '<div class="adstack"><div class="adcard">' +
+      '<div class="acs"><span class="lab">\uD83D\uDFEA Original</span><div class="txt">' + gEsc(adNow.lv.o[i]).replace(/\n/g, '<br>') + '</div></div>' +
+      '<div class="acs r"><span class="lab">' + AD_LV.find(x => x[0] === lv)[1] + '</span><div class="txt">' + gEsc(adNow.lv[lv][i]).replace(/\n/g, '<br>') + '</div>' +
+      (ru ? '<div class="ru">' + gEsc(ru) + '</div>' : '') + '</div></div></div>' +
+    '<div class="adcardnav"><span class="cnt">Card ' + (i + 1) + (st.onlyLiked ? ' \u00b7 ' + (adCard + 1) + ' of ' + liked.length + ' liked' : ' of ' + adNow.lv.o.length) +
+      '</span><span class="keys">\u2190 \u2192 turn \u00b7 \u2191 listen</span>' +
+      '<button class="heart' + (on ? ' on' : '') + '" id="adLike" title="keep this card to study again">' + (on ? '\u2665' : '\u2661') + '</button>' +
+      '<button id="adSpeak" title="listen (\u2191)">\uD83D\uDD0A</button>' +
+      '<button id="adPrev"' + (adCard === 0 ? ' disabled' : '') + '>\u2039</button><button id="adNext"' + (adCard === liked.length - 1 ? ' disabled' : '') + '>\u203a</button></div>';
+  document.querySelectorAll('[data-adcardlv]').forEach(x => x.onclick = () => { const s = adState(); s.card = x.dataset.adcardlv; writeJSON('adapt-view', s); paintAdapt(); });
+  $('#adOnlyLiked').onclick = () => { const s = adState(); s.onlyLiked = s.onlyLiked ? 0 : 1; writeJSON('adapt-view', s); adCard = 0; paintAdapt(); };
+  $('#adLike').onclick = () => { adToggleLike(i); paintAdapt(); };
+  $('#adSpeak').onclick = () => adSay(adPlain(lv, i));
+  $('#adPrev').onclick = () => { adCard--; paintAdapt(); };
+  $('#adNext').onclick = () => { adCard++; paintAdapt(); };
+}
+
+/* dictation: hear a sentence, type it, see word by word what was right */
+const adWordsOf = t => String(t).toLowerCase().replace(/[\u2019\u2018]/g, "'").replace(/[\u2014\u2013]/g, ' ')
+  .replace(/[^a-z0-9'\- ]+/g, ' ').replace(/(^|\s)'|'(\s|$)/g, ' ').split(/\s+/).filter(Boolean);
+function adCompare(typed, target){
+  const a = adWordsOf(typed), b = adWordsOf(target);
+  const L = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let x = a.length - 1; x >= 0; x--) for (let y = b.length - 1; y >= 0; y--)
+    L[x][y] = a[x] === b[y] ? L[x + 1][y + 1] + 1 : Math.max(L[x + 1][y], L[x][y + 1]);
+  const okB = new Array(b.length).fill(false), okA = new Array(a.length).fill(false);
+  let x = 0, y = 0;
+  while (x < a.length && y < b.length){
+    if (a[x] === b[y]){ okA[x] = okB[y] = true; x++; y++; } else if (L[x + 1][y] >= L[x][y + 1]) x++; else y++;
+  }
+  const hit = okB.filter(Boolean).length;
+  return { b: b, okB: okB, extra: a.filter((w, k) => !okA[k]), pct: b.length ? Math.round(hit / b.length * 100) : 100,
+           exact: hit === b.length && a.length === b.length };
+}
+function adStartDict(lv){
+  const items = [];
+  ((adNow.s && adNow.s[lv]) || adNow.lv[lv].map(t => [{ en: t, ru: '' }])).forEach(sec => sec.forEach(x => {
+    if (adWordsOf(x.en).length >= 4) items.push(x);   /* no address, date or signature lines */
+  }));
+  adMode = 'dict'; adDict = { lv: lv, items: items, i: 0, res: [], checked: false };
+  paintAdapt();
+}
+function adPaintDict(){
+  const d = adDict; $('#adTools').innerHTML = '';
+  if (d.i >= d.items.length){
+    const pct = Math.round(d.res.reduce((s, r) => s + r.pct, 0) / Math.max(1, d.res.length));
+    const exact = d.res.filter(r => r.exact).length;
+    const best = readJSON('adapt-dict') || {}, key = adNow.id + ':' + d.lv;
+    if (best[key] === undefined || pct > best[key]){ best[key] = pct; writeJSON('adapt-dict', best); }
+    markSeen('adapt:' + adNow.id, 'quiz');
+    $('#adGrid').innerHTML = '<div class="addone"><div class="big">' + pct + '%</div><div class="lb2">dictation \u00b7 ' + AD_NAME[d.lv] + '</div>' +
+      '<p>' + exact + ' of ' + d.res.length + ' sentences word-perfect \u00b7 best so far ' + best[key] + '%</p>' +
+      '<button id="adAgain">Try again</button> <button id="adBackRead">Back to the text</button></div>';
+    $('#adAgain').onclick = () => adStartDict(d.lv);
+    $('#adBackRead').onclick = () => { adMode = 'read'; adDict = null; paintAdapt(); };
+    adHero();
+    return;
+  }
+  const it = d.items[d.i];
+  $('#adGrid').innerHTML = '<div class="addict">' +
+    '<div class="top"><span>Sentence ' + (d.i + 1) + ' of ' + d.items.length + ' \u00b7 ' + AD_NAME[d.lv] + '</span>' +
+      '<span class="keys">\u2191 listen again \u00b7 Enter check / next</span></div>' +
+    '<div class="bar"><i style="width:' + Math.round(d.i / d.items.length * 100) + '%"></i></div>' +
+    '<div class="play"><button id="adPlay">\uD83D\uDD0A Listen</button><button id="adSlow">\uD83D\uDC22 Slowly</button></div>' +
+    '<textarea id="adType" rows="3" placeholder="Type what you hear\u2026" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>' +
+    '<div class="res" id="adRes"></div>' +
+    '<div class="act"><button id="adSkip">Show me</button><button class="go" id="adCheck">Check</button></div></div>';
+  const say = r => adSay(it.en, r);
+  $('#adPlay').onclick = () => { say(); $('#adType').focus(); };
+  $('#adSlow').onclick = () => { say(0.7); $('#adType').focus(); };
+  const check = give => {
+    if (d.checked){ d.i++; d.checked = false; paintAdapt(); return; }
+    const c = adCompare(give ? '' : $('#adType').value, it.en);
+    d.res.push(c); d.checked = true;
+    $('#adRes').innerHTML = '<div class="score ' + (c.exact ? 'ok' : c.pct >= 70 ? 'mid' : 'no') + '">' +
+      (c.exact ? '\u2705 Word-perfect' : c.pct + '% of the words') + '</div>' +
+      '<div class="want">' + c.b.map((w, k) => '<span class="' + (c.okB[k] ? 'w ok' : 'w miss') + '">' + gEsc(w) + '</span>').join(' ') + '</div>' +
+      (c.extra.length ? '<div class="extra">not in the sentence: ' + c.extra.map(w => '<s>' + gEsc(w) + '</s>').join(' ') + '</div>' : '') +
+      '<div class="full">' + gEsc(it.en) + (it.ru ? '<span class="ru">' + gEsc(it.ru) + '</span>' : '') + '</div>';
+    $('#adCheck').textContent = d.i + 1 >= d.items.length ? 'See the result' : 'Next \u2192';
+    $('#adSkip').style.visibility = 'hidden';
+  };
+  $('#adCheck').onclick = () => check(false);
+  $('#adSkip').onclick = () => check(true);
+  $('#adType').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); check(false); } };
+  setTimeout(() => { say(); const t = document.getElementById('adType'); if (t) t.focus(); }, 250);
+  adHero();
+}
+function adHero(){
+  const b = adNow;
+  $('#adHero').innerHTML = '<h2>' + gEsc(b.t) + ' \u00b7 ' + gEsc(b.part) + (adRead()[b.id] ? ' \u2705' : '') + '</h2><p>' + gEsc(b.a) + ', ' + b.y +
+    ' \u2014 ' + gEsc(b.sub) + '</p>' + adModes();
+  adWireModes();
+}
+/* the keyboard: arrows turn the cards, up plays the sound */
+document.addEventListener('keydown', e => {
+  const v = document.getElementById('adaptView');
+  if (!v || !v.classList.contains('on') || !adNow) return;
+  if (adMode === 'cards' && !(e.target.closest && e.target.closest('input,textarea,select'))){
+    if (e.key === 'ArrowRight'){ const n = document.getElementById('adNext'); if (n && !n.disabled){ e.preventDefault(); n.click(); } }
+    else if (e.key === 'ArrowLeft'){ const p = document.getElementById('adPrev'); if (p && !p.disabled){ e.preventDefault(); p.click(); } }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); const s = document.getElementById('adSpeak'); if (s) s.click(); }
+  } else if (adMode === 'dict' && e.key === 'ArrowUp'){
+    const p = document.getElementById('adPlay'); if (p){ e.preventDefault(); p.click(); }
+  }
+});
 function paintAdapt(){
   const st = adState(), b = adNow;
-  $('#adHero').innerHTML = '<h2>' + gEsc(b.t) + ' \u00b7 ' + gEsc(b.part) + (adRead()[b.id] ? ' \u2705' : '') + '</h2><p>' + gEsc(b.a) + ', ' + b.y + ' \u2014 ' + gEsc(b.sub) + '</p>';
+  adHero();
+  if (adMode === 'cards') return adPaintCards();
+  if (adMode === 'dict' && adDict) return adPaintDict();
   const col = side => '<div class="adcol"><span class="lab">' + (side === 'l' ? 'left' : 'right') + ' \u00b7 ' + adWords(st[side]) + ' words</span>' +
     AD_LV.map(([k, t]) => '<button data-adside="' + side + '" data-adlv="' + k + '"' + (st[side] === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
   const hasRu = !!b.s;
@@ -5734,8 +5969,12 @@ function paintAdapt(){
     '<span>' + (st.hl ? '<mark style="background:#FBE38A">word</mark> \u00b7 <mark style="background:#CFE7F5">structure</mark> \u00b7 <mark style="background:#F6D6E1">style</mark> \u2014 what makes it advanced \u00b7 ' : '') +
     (hasRu ? 'point at a sentence for its Russian' : '') + '</span></div>';
   $('#adGrid').classList.toggle('nohl', !st.hl);
-  $('#adGrid').innerHTML = b.lv.o.map((_, i) => '<div class="adrow"><span class="no">' + (i + 1) + '</span>' +
-    '<div class="adtext">' + adSection(st.l, i) + '</div><div class="adtext">' + adSection(st.r, i) + '</div></div>').join('');
+  const spkB = (lv, i) => '<button class="adspk" data-adsay="' + lv + ':' + i + '" title="listen (British English)">\uD83D\uDD0A</button>';
+  $('#adGrid').innerHTML = b.lv.o.map((_, i) => '<div class="adrow"><span class="nocol"><span class="no">' + (i + 1) + '</span>' +
+    '<button class="adheart' + (adLiked(i) ? ' on' : '') + '" data-adlike="' + i + '" title="keep this one to study again">' + (adLiked(i) ? '\u2665' : '\u2661') + '</button></span>' +
+    '<div class="adtext">' + spkB(st.l, i) + adSection(st.l, i) + '</div><div class="adtext">' + spkB(st.r, i) + adSection(st.r, i) + '</div></div>').join('');
+  $('#adGrid').querySelectorAll('[data-adsay]').forEach(x => x.onclick = e => { e.stopPropagation(); const [lv, i] = x.dataset.adsay.split(':'); adSay(adPlain(lv, +i)); });
+  $('#adGrid').querySelectorAll('[data-adlike]').forEach(x => x.onclick = e => { e.stopPropagation(); adToggleLike(+x.dataset.adlike); paintAdapt(); });
   $('#adTools').querySelectorAll('[data-adlv]').forEach(x => x.onclick = () => {
     const s = adState(); s[x.dataset.adside] = x.dataset.adlv; writeJSON('adapt-view', s); paintAdapt();
   });
