@@ -1306,6 +1306,18 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .suclock{text-align:center;background:rgba(255,255,255,.14);border-radius:16px;padding:12px 18px}
 .suclock b{display:block;font-family:var(--disp);font-size:34px;font-weight:600;line-height:1}
 .suclock span{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.85}
+.geotabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.geotabs button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1.5px solid var(--line);background:var(--panel);border-radius:16px;padding:12px 14px;cursor:pointer;font-family:var(--ui);color:var(--ink)}
+.geotabs .i{font-size:24px}.geotabs .t{font-size:15px;font-weight:800}.geotabs .s{font-size:11.5px;color:var(--mut2);font-weight:700}
+.geotabs button.on{border-color:var(--sea);background:var(--sea);color:#fff}.geotabs button.on .s{color:rgba(255,255,255,.85)}
+.geosub{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.geosub button{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:999px;padding:7px 14px;font-family:var(--ui);font-size:13px;font-weight:700;cursor:pointer}
+.geosub button.on{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.geocard{background:var(--panel);border-radius:19px;padding:22px 22px 20px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
+.geocard .gh{font-family:var(--disp);font-size:24px;font-weight:600;margin-bottom:6px;color:var(--ink)}
+.geocard p{color:var(--mut);margin:0 0 12px;line-height:1.6}
+.geocard .soon{display:inline-block;font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#8A6D1F;background:#FBF1D0;border-radius:999px;padding:4px 10px}
+.geoold{margin-top:18px;border:none;background:none;color:var(--mut2);font-family:var(--ui);font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
 .sutabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .sutabs button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1.5px solid var(--line);
   background:var(--panel);color:var(--ink);border-radius:16px;padding:14px 16px;cursor:pointer;font-family:var(--ui)}
@@ -1964,6 +1976,17 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
       <div id="suBody"></div>
     </section>
 
+    <section id="geoView" class="view">
+      <div class="phead">
+        <h2>🌍 National Geography</h2>
+        <p class="psub">Countries one by one — their culture, faith, history and the writers every educated person there knows. Plus the capitals of the world.</p>
+      </div>
+      <div class="geotabs" id="geoTabs"></div>
+      <div class="geosub" id="geoSub"></div>
+      <div id="geoBody"></div>
+      <button class="geoold" id="geoOld">💬 The old Speaking topics</button>
+    </section>
+
     <section id="sitesView" class="view">
       <div class="phead">
         <h2>Sites</h2>
@@ -2277,14 +2300,14 @@ const COURSES = [
     desc:'Tenses, articles, linkers and the quick rules \u2014 everything for writing.',
     go:"document.querySelectorAll('#hub .hubrow')[1].click();" },
   { id:'reading', app:'native', emoji:'\uD83D\uDCD6',
-    title:'Reading', sub:'two series \u00b7 twelve episodes',
+    title:'Literature', sub:'Frankenstein \u00b7 four levels \u00b7 stories',
     grad:'linear-gradient(140deg,#7A3B2B 0%,#B4623F 55%,#D9A566 100%)',
-    desc:'Stories written around the words of each unit; tap any word to see it.',
+    desc:'Great books at four levels side by side, with the new words, cards and dictation.',
     go:"document.querySelectorAll('#hub .hubrow')[2].click();" },
-  { id:'speaking', app:'native', emoji:'\uD83D\uDCAC',
-    title:'Speaking', sub:'4 topics \u00b7 what to ask people',
+  { id:'speaking', app:'native', emoji:'\uD83C\uDF0D',
+    title:'National Geography', sub:'six countries \u00b7 world capitals',
     grad:'linear-gradient(140deg,#2F5D50 0%,#4F8A6B 55%,#B7C99E 100%)',
-    desc:'University, jobs, where somebody is from, and how to follow a pitch you do not understand.',
+    desc:'Culture, religion, history and the great writers of each country \u2014 and every capital of the world.',
     go:null },
   { id:'essay', app:'native', emoji:'\u270D\uFE0F',
     title:'Essay writing', sub:'Oshima & Hogue \u00b7 36 essays',
@@ -3436,7 +3459,7 @@ function paintLangMenu(){
 }
 /* The three languages keep their own study progress \u2014 but the schedule, the
    IT goals and the settings belong to you, not to a language, so those stay shared. */
-const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace','sat-quiz','sat-per','adapt-view','my-books','adapt-read','adapt-likes','adapt-dict',
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','book-anchor','book-pace','sat-quiz','sat-per','adapt-view','my-books','geo-tab','adapt-read','adapt-likes','adapt-dict',
                      'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
 function lkey(k){
@@ -4745,7 +4768,7 @@ function barColour(pct){
 let guideOn = true;
 try { guideOn = (readJSON('guide_on') !== false); } catch(e){}
 const COURSE_LABEL = { units:'Words from units', books:'Words from books',
-  grammar:'Grammar', speaking:'Speaking', reading:'Reading', essay:'Essay writing' };
+  grammar:'Grammar', speaking:'National Geography', reading:'Literature', essay:'Essay writing' };
 function keyAge(k){
   const p = passes()[k];
   /* opening something is not doing it: never-passed always outranks the rest,
@@ -5354,7 +5377,7 @@ function moodChip(id){
 /* every trackable thing in one list, so the dashboard can count them */
 const COURSE_OF = { 'Grammar':'grammar', 'Speaking':'speaking',
   'Words from units':'units', 'Words from books':'books',
-  'Reading':'reading', 'Essay writing':'essay' };
+  'Reading':'reading', 'Literature':'reading', 'Essay writing':'essay' };
 function moodCounts(courseId){
   const seen = seenAll(), t = isoToday();
   const c = { total:0, done:0, open:0, wait:0, sad:0, hot:0, worst:null, worstDays:0 };
@@ -5390,7 +5413,7 @@ function allTrackables(){
     const bk = BOOKS.find(x => x.u === u);
     out.push({ id:'set:' + u, t: bk ? bk.t : u, where:'Words from books' });
   });
-  ST.forEach(e => out.push({ id:'story:' + e.sr + e.n, t:e.t, where:'Reading' }));
+  ST.forEach(e => out.push({ id:'story:' + e.sr + e.n, t:e.t, where:'Literature' }));
   const titles = [];
   ESSAYS.forEach(e => { if (titles.indexOf(e.title) < 0) titles.push(e.title); });
   titles.forEach(t => out.push({ id:'essay:' + t, t:t, where:'Essay writing' }));
@@ -7122,7 +7145,7 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
 function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 /* one place that knows every screen, so none can be left open by accident */
 const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
-  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView','#textbooks','#typeQuiz','#poemsView','#poemRead','#deadView','#sitesView','#suView','#ebView','#adaptView','#adjView','#adjQuiz'];
+  '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView','#textbooks','#typeQuiz','#poemsView','#poemRead','#deadView','#sitesView','#geoView','#suView','#ebView','#adaptView','#adjView','#adjQuiz'];
 function hideAll(except){
   try { clearGuideMarks(); refreshGuide(); paintFollow(); } catch(e){}
   SCREENS.forEach(x => { const el = $(x); if (el && x !== except) el.classList.remove('on'); });
@@ -7132,6 +7155,36 @@ function hideAll(except){
   try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e){}
 }
 
+/* ---- National Geography: the structure first, the content comes later ---- */
+const GEO = [
+  { id:'india', t:'India', i:'\uD83E\uDEB7', cap:'New Delhi' },
+  { id:'bangladesh', t:'Bangladesh', i:'\uD83D\uDC05', cap:'Dhaka' },
+  { id:'pakistan', t:'Pakistan', i:'\uD83C\uDFD4\uFE0F', cap:'Islamabad' },
+  { id:'china', t:'China', i:'\uD83D\uDC09', cap:'Beijing' },
+  { id:'japan', t:'Japan', i:'\uD83C\uDF38', cap:'Tokyo' },
+  { id:'korea', t:'Korea', i:'\uD83C\uDFEF', cap:'Seoul' },
+  { id:'capitals', t:'World capitals', i:'\uD83C\uDFD9\uFE0F', cap:'' }
+];
+const GEO_PARTS = [['culture','\uD83C\uDFAD Culture','food, festivals, art, customs, what people are proud of'],
+  ['religion','\uD83D\uDD4C Religion','the faiths, their holy places and holidays'],
+  ['history','\uD83D\uDCDC History','the key periods and dates, in a short timeline'],
+  ['writers','\u270D\uFE0F Writers & poets','the top five writers and poets, and the one book to know by each']];
+const GEO_REGIONS = [['europe','\uD83C\uDDEA\uD83C\uDDFA Europe'],['asia','\uD83C\uDF0F Asia'],['africa','\uD83C\uDF0D Africa'],['americas','\uD83C\uDF0E The Americas'],['oceania','\uD83C\uDFDD\uFE0F Oceania']];
+function geoState(){ return Object.assign({ c:'india', p:'culture', r:'europe' }, readJSON('geo-tab') || {}); }
+function paintGeo(){
+  const st = geoState(), c = GEO.find(x => x.id === st.c) || GEO[0];
+  $('#geoTabs').innerHTML = GEO.map(x => '<button data-geo="' + x.id + '"' + (x.id === c.id ? ' class="on"' : '') + '><span class="i">' + x.i +
+    '</span><span class="t">' + x.t + '</span><span class="s">' + (x.cap ? 'capital: ' + x.cap : 'Europe, Asia and more') + '</span></button>').join('');
+  const parts = c.id === 'capitals' ? GEO_REGIONS : GEO_PARTS, key = c.id === 'capitals' ? 'r' : 'p';
+  const cur = parts.find(p => p[0] === st[key]) || parts[0];
+  $('#geoSub').innerHTML = parts.map(p => '<button data-geop="' + p[0] + '"' + (p[0] === cur[0] ? ' class="on"' : '') + '>' + p[1] + '</button>').join('');
+  $('#geoBody').innerHTML = '<div class="geocard"><div class="gh">' + c.i + ' ' + gEsc(c.t) + ' \u00b7 ' + cur[1] + '</div>' +
+    '<p>' + (c.id === 'capitals' ? 'Every country of ' + cur[1].replace(/^\S+\s/, '') + ' with its capital \u2014 a list to learn and a quiz to test it.' : 'Here: ' + cur[2] + '.') + '</p>' +
+    '<span class="soon">in development</span></div>';
+  document.querySelectorAll('#geoTabs [data-geo]').forEach(b => b.onclick = () => { const s = geoState(); s.c = b.dataset.geo; writeJSON('geo-tab', s); paintGeo(); });
+  document.querySelectorAll('#geoSub [data-geop]').forEach(b => b.onclick = () => { const s = geoState(); s[key] = b.dataset.geop; writeJSON('geo-tab', s); paintGeo(); });
+  $('#geoOld').onclick = () => go('speakold');
+}
 function go(id){
   if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people','textbooks','poems','deadlines','sites','su','enbooks','adjectives'].indexOf(id) >= 0)
     saveWhere({ v: id, u: (id === 'units' || id === 'books') ? wUnit : undefined,
@@ -7189,8 +7242,21 @@ function go(id){
   $('#readList').classList.remove('on');
   $('#storyView').classList.remove('on');
   /* grammar is part of the platform too */
-  if (id === 'grammar' || id === 'speaking'){
-    gramOnly = (id === 'speaking') ? 'Speaking' : null;
+  if (id === 'speaking'){
+    $('#dash').classList.add('off');
+    $('#view').classList.remove('on');
+    hideAll('#geoView');
+    $('#geoView').classList.add('on');
+    $('#tagline').textContent = 'Countries, cultures, writers and capitals.';
+    document.querySelectorAll('#nav button, #mobbar button')
+      .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'dash'));
+    paintGeo();
+    try { localStorage.setItem('studyhub_last', id); } catch(e){}
+    try { if (location.hash.slice(1) !== id) history.replaceState(null,'','#'+id); } catch(e){}
+    return;
+  }
+  if (id === 'grammar' || id === 'speakold'){
+    gramOnly = (id === 'speakold') ? 'Speaking' : null;
     $('#dash').classList.add('off');
     $('#view').classList.remove('on');
     $('#awards').classList.remove('on');
