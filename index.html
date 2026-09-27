@@ -1509,7 +1509,7 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .admodes button.dict.on{background:#E0A800;color:#2E2003}
 .admodes .dlab{margin-left:8px;font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--mut2)}
 .nocol{display:flex;flex-direction:column;align-items:center;gap:6px}
-.adheart{border:none;background:none;font-size:17px;color:var(--line2);cursor:pointer;padding:0;line-height:1}
+.adheart{border:none;background:none;font-size:26px;color:var(--line2);cursor:pointer;padding:4px 6px;line-height:1;min-width:36px;min-height:36px}
 .adheart.on,.adheart:hover{color:#E0434B}
 .adtext{position:relative}
 .adspk{float:right;margin:2px 0 4px 8px;border:none;background:none;font-size:14px;cursor:pointer;opacity:.45;padding:2px}
@@ -1538,7 +1538,7 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .adcardnav .keys{font-family:var(--ui);font-size:11px;color:var(--mut2);margin-right:auto;margin-left:10px}
 .adcardnav button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line2);background:var(--panel);color:var(--sea);font-size:18px;cursor:pointer}
 .adcardnav button[disabled]{opacity:.35;cursor:default}
-.adcardnav .heart{color:var(--line2);font-size:20px}
+.adcardnav .heart{color:var(--line2);font-size:26px;width:52px;height:52px}
 .adcardnav .heart.on{color:#E0434B;border-color:#E0434B}
 .adempty{text-align:center;padding:40px 10px;color:var(--mut);font-family:var(--ui);line-height:1.8}
 .adempty button{margin-top:10px;border:1px solid var(--line2);background:var(--bg);border-radius:999px;padding:7px 14px;font-weight:800;cursor:pointer}
@@ -1615,6 +1615,12 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .adgrid{background:var(--panel);border-radius:20px;padding:10px 18px 18px;box-shadow:0 6px 20px rgba(39,107,122,.06)}
 .adrow{display:grid;grid-template-columns:36px 1fr 1fr;gap:12px 22px;padding:14px 0;border-top:1px solid var(--line)}
 .adrow:first-child{border-top:none}
+.adrow{padding:10px 0}
+.adrow.adsecf{border-top:2px solid var(--line2);margin-top:6px;padding-top:14px}
+.adtext .ru{font-size:13.5px;line-height:1.55;color:var(--mut2);margin-top:2px}
+.adtext .adspk{float:none;margin:0 0 0 4px;vertical-align:1px;opacity:.35}
+.adrow:hover .adspk{opacity:.9}
+.adnone{color:var(--line2)}
 .adrow .no{width:26px;height:26px;border-radius:50%;background:var(--bg);color:var(--mut2);font-family:var(--ui);font-size:11px;
   font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:3px}
 .adtext{font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:var(--ink)}
@@ -6002,13 +6008,14 @@ function adSim(A, B){
   let n = 0; A.forEach(t => { if (B.has(t)) n++; });
   return n / Math.sqrt(A.size * B.size);
 }
-function adAlign(O, R){
+function adAlign(O, R, oneLeft){
   const tO = O.map(adToks), tR = R.map(adToks);
   const lO = O.map(x => x.en.length), lR = R.map(x => x.en.length);
   const tot = (lR.reduce((a, b) => a + b, 0) || 1) / (lO.reduce((a, b) => a + b, 0) || 1);
   const U = (T, a, b) => { const s = new Set(); for (let k = a; k < b; k++) T[k].forEach(t => s.add(t)); return s; };
   const L = (A, a, b) => { let s = 0; for (let k = a; k < b; k++) s += A[k]; return s; };
-  const BEADS = [[1,1,0],[1,2,.06],[2,1,.06],[1,3,.14],[3,1,.14],[2,2,.16],[1,4,.24],[2,3,.22],[3,2,.22],[1,0,.5],[0,1,.5]];
+  const BEADS = oneLeft ? [[1,1,0],[1,2,.06],[1,3,.14],[1,4,.24],[1,5,.34],[1,0,.35],[0,1,.5]]
+    : [[1,1,0],[1,2,.06],[2,1,.06],[1,3,.14],[3,1,.14],[2,2,.16],[1,4,.24],[2,3,.22],[3,2,.22],[1,0,.5],[0,1,.5]];
   const n = O.length, m = R.length, best = [], from = [];
   for (let i = 0; i <= n; i++){ best.push(new Array(m + 1).fill(-1e9)); from.push(new Array(m + 1).fill(null)); }
   best[0][0] = 0;
@@ -6031,20 +6038,35 @@ function adAlign(O, R){
   for (let k = 0; k < cards.length; k++){
     const c = cards[k];
     if (c.l.length && c.r.length) continue;
+    if (oneLeft && c.l.length) continue;   /* an original sentence may stand alone */
     const t = cards[k - 1] || cards[k + 1]; if (!t) continue;
     if (t === cards[k - 1]){ t.l = t.l.concat(c.l); t.r = t.r.concat(c.r); } else { t.l = c.l.concat(t.l); t.r = c.r.concat(t.r); }
     cards.splice(k, 1); k--;
   }
   return cards;
 }
+/* every original sentence with the sentences of another level that retell it */
+const adGroupCache = {};
+function adSecS(l, i){ return (((adNow.s && adNow.s[l]) || [])[i] || []).filter(x => x.en && x.en.trim()); }
+function adGroups(lv, i){
+  const O = adSecS('o', i);
+  if (lv === 'o') return O.map(x => [x]);
+  const key = adNow.id + ':' + lv + ':' + i;
+  if (!adGroupCache[key]){
+    const R = adSecS(lv, i);
+    adGroupCache[key] = !O.length ? [] : !R.length ? O.map(() => []) : adAlign(O, R, true).map(c => c.r);
+  }
+  return adGroupCache[key];
+}
+/* one heart per original sentence: the same thought at every level */
+function adRowKey(i, j){ return 'o:' + i + ':' + j; }
 function adPairs(lv){
-  const out = [], sec = (l, i) => (((adNow.s && adNow.s[l]) || [])[i] || []).filter(x => x.en && x.en.trim());
+  const out = []; let n = 0;
   adNow.lv.o.forEach((_, i) => {
-    const O = sec('o', i), R = sec(lv, i);
-    if (!O.length || !R.length){ if (O.length || R.length) out.push({ i: i, k: 0, l: O, r: R }); return; }
-    adAlign(O, R).forEach((c, k) => out.push({ i: i, k: k, l: c.l, r: c.r }));
+    const O = adSecS('o', i), G = adGroups(lv, i);
+    O.forEach((x, j) => out.push({ i: i, k: j, no: ++n, l: [x], r: G[j] || [], key: adRowKey(i, j) }));
   });
-  return out.map(c => Object.assign(c, { key: 'c' + lv + ':' + c.i + ':' + c.k }));
+  return out;
 }
 function adPaintCards(){
   const st = adState(), lv = ['a2','b1','b2'].includes(st.card) ? st.card : 'b1';
@@ -6073,7 +6095,7 @@ function adPaintCards(){
       side(c.l, '', '\uD83D\uDFEA Original', 'adSpeakL', '\u2193', 'o') +
       side(c.r, ' r', AD_LV.find(x => x[0] === lv)[1], 'adSpeak', '\u2191', lv) + '</div></div>' +
     '<div class="adcardnav"><span class="cnt">Card ' + (adCard + 1) + ' of ' + list.length + (st.onlyLiked ? ' liked' : '') +
-      ' \u00b7 part ' + (c.i + 1) + '</span><span class="keys">\u2190 \u2192 turn \u00b7 \u2193 left \u00b7 \u2191 right</span>' +
+      ' \u00b7 sentence ' + c.no + '</span><span class="keys">\u2190 \u2192 turn \u00b7 \u2193 left \u00b7 \u2191 right</span>' +
       '<button class="heart' + (on ? ' on' : '') + '" id="adLike" title="keep this card to study again">' + (on ? '\u2665' : '\u2661') + '</button>' +
       '<button id="adPrev"' + (adCard === 0 ? ' disabled' : '') + '>\u2039</button><button id="adNext"' + (adCard === list.length - 1 ? ' disabled' : '') + '>\u203a</button></div>';
   wire();
@@ -6187,12 +6209,24 @@ function paintAdapt(){
     '<span>' + (st.hl ? '<mark style="background:#E4D6FA">new word</mark> \u00b7 <mark style="background:#CFE7F5">structure</mark> \u00b7 <mark style="background:#F6D6E1">style</mark> \u2014 point at one to see what it means \u00b7 ' : '') +
     '' + '</span></div>';
   $('#adGrid').classList.toggle('nohl', !st.hl);
-  const spkB = (lv, i) => '<button class="adspk" data-adsay="' + lv + ':' + i + '" title="listen (British English)">\uD83D\uDD0A</button>';
-  $('#adGrid').innerHTML = b.lv.o.map((_, i) => '<div class="adrow"><span class="nocol"><span class="no">' + (i + 1) + '</span></span>' +
-    '<div class="adtext">' + adSection(st.l, i) + '</div><div class="adtext">' + adSection(st.r, i) + '</div></div>').join('');
-  const sentOf = k => { const [lv, i, j] = k.split(':'); return ((b.s[lv] || [])[+i] || [])[+j]; };
-  $('#adGrid').querySelectorAll('[data-adsay2]').forEach(x => x.onclick = e => { e.stopPropagation(); const s = sentOf(x.dataset.adsay2); if (s) adSay(s.en); });
-  $('#adGrid').querySelectorAll('[data-adlk2]').forEach(x => x.onclick = e => { e.stopPropagation(); adToggleS(x.dataset.adlk2); paintAdapt(); });
+  let n = 0;
+  const cell = (lv, i, j, g) => {
+    if (!g.length) return '<div class="adtext"><span class="adnone">\u2014</span></div>';
+    const mk = adMarker(lv, i), ru = g.map(x => x.ru || '').join(' ').trim();
+    return '<div class="adtext"><div class="en">' + g.map(x => '<span class="snt">' + mk(x.en).replace(/\n/g, '<br>') + '</span>').join(' ') +
+      '<button class="adspk" data-adsay3="' + lv + ':' + i + ':' + j + '" title="listen">\uD83D\uDD0A</button></div>' +
+      (ru ? '<div class="ru">' + gEsc(ru) + '</div>' : '') + '</div>';
+  };
+  $('#adGrid').innerHTML = b.lv.o.map((_, i) => {
+    const O = adSecS('o', i), GL = adGroups(st.l, i), GR2 = adGroups(st.r, i);
+    return O.map((x, j) => { const k = adRowKey(i, j), on = adLikedS(k); n++;
+      return '<div class="adrow' + (j === 0 && i > 0 ? ' adsecf' : '') + '"><span class="nocol"><span class="no">' + n + '</span>' +
+        '<button class="adheart' + (on ? ' on' : '') + '" data-adlk3="' + k + '" title="keep this sentence">' + (on ? '\u2665' : '\u2661') + '</button></span>' +
+        cell(st.l, i, j, GL[j] || []) + cell(st.r, i, j, GR2[j] || []) + '</div>'; }).join('');
+  }).join('');
+  $('#adGrid').querySelectorAll('[data-adsay3]').forEach(x => x.onclick = e => { e.stopPropagation();
+    const [lv, i, j] = x.dataset.adsay3.split(':'); adSay((adGroups(lv, +i)[+j] || []).map(s => s.en).join(' ')); });
+  $('#adGrid').querySelectorAll('[data-adlk3]').forEach(x => x.onclick = e => { e.stopPropagation(); adToggleS(x.dataset.adlk3); paintAdapt(); });
   $('#adTools').querySelectorAll('[data-adlv]').forEach(x => x.onclick = () => {
     const s = adState(); s[x.dataset.adside] = x.dataset.adlv; writeJSON('adapt-view', s); paintAdapt();
   });
