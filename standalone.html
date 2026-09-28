@@ -1322,16 +1322,26 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .geometa{font-family:var(--ui);font-size:13px;font-weight:700;color:var(--mut);margin:0 0 4px}
 .geolead{font-family:Georgia,'Times New Roman',serif;font-size:17px;color:var(--ink);margin:0;max-width:640px;line-height:1.5}
 .geopile{display:flex;flex-wrap:wrap;justify-content:center;padding:26px 10px 34px;margin:0 0 6px}
-.gcard{--r:0deg;--y:0px;position:relative;width:170px;margin:0 -10px 12px;background:#fff;border:none;border-radius:6px;padding:8px 8px 10px;cursor:pointer;box-shadow:0 10px 24px rgba(30,40,50,.22),0 1px 3px rgba(0,0,0,.15);transform:translateY(var(--y)) rotate(var(--r));transition:transform .25s ease,box-shadow .25s ease;text-align:left;font-family:var(--ui)}
-.gcard img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:3px}
+.gcard{--r:0deg;--y:0px;position:relative;width:170px;margin:0 -10px 12px;background:#fff;border:none;border-radius:20px;padding:9px 9px 12px;cursor:pointer;box-shadow:0 10px 24px rgba(30,40,50,.22),0 1px 3px rgba(0,0,0,.15);transform:translateY(var(--y)) rotate(var(--r));transition:transform .25s ease,box-shadow .25s ease;text-align:left;font-family:var(--ui)}
+.gcard img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px}
+.gcard .gt,.gcard .gs{padding:0 4px}
 .gcard .gt{display:block;font-family:var(--disp);font-size:19px;font-weight:600;color:#23282D;margin-top:7px;line-height:1.1}
 .gcard .gs{display:block;font-size:11.5px;font-weight:700;color:#7A8288}
 .gcard:hover{transform:translateY(calc(var(--y) - 8px)) rotate(0deg) scale(1.04);z-index:3;box-shadow:0 18px 34px rgba(30,40,50,.28)}
-.gcard.on{transform:translateY(calc(var(--y) - 12px)) rotate(0deg) scale(1.08);z-index:4;box-shadow:0 0 0 3px #E0434B,0 20px 36px rgba(30,40,50,.3)}
+.gcard.on{transform:translateY(calc(var(--y) - 14px)) rotate(0deg) scale(1.1);z-index:4;box-shadow:0 26px 44px rgba(30,40,50,.34),0 2px 6px rgba(0,0,0,.12)}
+.gcard.on .gt{color:var(--sea)}
+.gcard.on:after{content:'';position:absolute;left:50%;bottom:-14px;width:28px;height:4px;margin-left:-14px;border-radius:4px;background:var(--sea);opacity:.7}
 @media (max-width:640px){.gcard{width:130px;margin:0 -8px 10px}.gcard .gt{font-size:16px}}
-.geosub{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;justify-content:center}
-.geosub button{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:999px;padding:8px 15px;font-family:var(--ui);font-size:13px;font-weight:700;cursor:pointer}
-.geosub button.on{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.geotopics{margin:4px 0 6px}
+.geotopics .gth{font-family:var(--disp);font-size:24px;font-weight:600;color:var(--ink);margin:0 4px 10px}
+.gtgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.gtgrid button{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;cursor:pointer;background:var(--panel);border:1.5px solid transparent;border-radius:20px;padding:16px 16px 14px;box-shadow:0 6px 18px rgba(39,107,122,.08);font-family:var(--ui);color:var(--ink);transition:transform .2s,box-shadow .2s,border-color .2s}
+.gtgrid button:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(39,107,122,.14)}
+.gtgrid .gi{font-size:28px;line-height:1;margin-bottom:6px}
+.gtgrid .gtt{font-family:var(--disp);font-size:20px;font-weight:600;line-height:1.1}
+.gtgrid .gtd{font-size:12.5px;color:var(--mut2);font-weight:600;line-height:1.45}
+.gtgrid .gsoon{position:absolute;top:12px;right:12px;font-size:9.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#8A6D1F;background:#FBF1D0;border-radius:999px;padding:3px 8px}
+.gtgrid button.on{border-color:var(--sea);background:linear-gradient(180deg,var(--panel),var(--sea-l))}
 .geocard{background:var(--panel);border-radius:22px;overflow:hidden;box-shadow:0 8px 26px rgba(39,107,122,.1)}
 .geocard .gban{height:190px;background-size:cover;background-position:center;display:flex;align-items:flex-end}
 .geocard .gbt{padding:16px 22px;color:#fff}.geocard .gbt span{font-family:var(--ui);font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.9}
@@ -2038,6 +2048,7 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
         <p class="geolead">Culture, faith, history and the writers every educated person there knows — and the capitals of the world.</p>
       </div>
       <div class="geopile" id="geoTabs"></div>
+      <div class="geotopics" id="geoSub"></div>
       <div class="geomapcard"><div class="gmh"><b>On the map</b><span>every country we have opened so far — tap a pin</span></div><div id="geoMap"></div></div>
       <p class="geocred">Photos: Wikimedia Commons — Taj Mahal, Ahsan Manzil, Badshahi Mosque, the Great Wall at Jinshanling, Mount Fuji from Ōwakudani, Gwanghwamun at Gyeongbokgung, and NASA’s Blue Marble. Map tiles © Esri.</p>
       <button class="geoold" id="geoOld">💬 The old Speaking topics</button>
@@ -7426,13 +7437,11 @@ function paintGeo(){
     '<img src="' + GEO_IMG[x.id] + '" alt="' + gEsc(x.ph) + '" loading="lazy"><span class="gt">' + x.t + '</span>' +
     '<span class="gs">' + (x.cap ? x.cap : 'Europe, Asia, Africa\u2026') + '</span></button>').join('');
   const parts = c.id === 'capitals' ? GEO_REGIONS : GEO_PARTS, key = c.id === 'capitals' ? 'r' : 'p';
-  if (!document.getElementById('geoSub')) { $('#geoOld').onclick = () => go('speakold'); geoMap(c.id); return; }
   const cur = parts.find(p => p[0] === st[key]) || parts[0];
-  $('#geoSub').innerHTML = parts.map(p => '<button data-geop="' + p[0] + '"' + (p[0] === cur[0] ? ' class="on"' : '') + '>' + p[1] + '</button>').join('');
-  $('#geoBody').innerHTML = '<div class="geocard"><div class="gban" style="background-image:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.62)),url(' + GEO_IMG[c.id] + ')">' +
-    '<div class="gbt"><span>' + (c.cap ? 'capital \u00b7 ' + c.cap : 'the capitals of the world') + '</span><h3>' + gEsc(c.t) + ' \u00b7 ' + cur[1].replace(/^\S+\s/, '') + '</h3></div></div>' +
-    '<div class="gcb"><p>' + (c.id === 'capitals' ? 'Every country of ' + cur[1].replace(/^\S+\s/, '') + ' with its capital \u2014 a list to learn and a quiz to test it.' : 'Here: ' + cur[2] + '.') + '</p>' +
-    '<span class="soon">in development</span><span class="phc">\uD83D\uDCF7 ' + gEsc(c.ph) + '</span></div></div>';
+  $('#geoSub').innerHTML = '<div class="gth">' + (c.id === 'capitals' ? 'The capitals, continent by continent' : 'What to learn about ' + gEsc(c.t)) + '</div>' +
+    '<div class="gtgrid">' + parts.map(p => '<button data-geop="' + p[0] + '"' + (p[0] === cur[0] ? ' class="on"' : '') + '>' +
+      '<span class="gi">' + p[1].split(' ')[0] + '</span><span class="gtt">' + p[1].replace(/^\S+\s/, '') + '</span>' +
+      '<span class="gtd">' + (p[2] || 'every country and its capital') + '</span><span class="gsoon">soon</span></button>').join('') + '</div>';
   document.querySelectorAll('#geoTabs [data-geo]').forEach(b => b.onclick = () => geoPick(b.dataset.geo));
   document.querySelectorAll('#geoSub [data-geop]').forEach(b => b.onclick = () => { const s = geoState(); s[key] = b.dataset.geop; writeJSON('geo-tab', s); paintGeo(); });
   $('#geoOld').onclick = () => go('speakold');
@@ -7454,7 +7463,7 @@ function geoMap(sel){
       geoLeaflet.fitBounds(L.latLngBounds(GEO.filter(x => x.ll).map(x => x.ll)).pad(0.25));
     }
     setTimeout(() => geoLeaflet.invalidateSize(), 60);
-    Object.keys(geoMarkers).forEach(id => geoMarkers[id].setStyle(id === sel ? { radius: 12, fillColor: '#E0434B' } : { radius: 9, fillColor: '#7B8CF7' }));
+    Object.keys(geoMarkers).forEach(id => geoMarkers[id].setStyle(id === sel ? { radius: 12, fillColor: '#1E6E7A' } : { radius: 9, fillColor: '#7B8CF7' }));
   };
   if (window.L) return draw();
   if (!document.getElementById('leafletCss')){
