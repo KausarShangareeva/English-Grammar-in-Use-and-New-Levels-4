@@ -1321,15 +1321,15 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .geohero h2 i{font-style:italic}
 .geometa{font-family:var(--ui);font-size:13px;font-weight:700;color:var(--mut);margin:0 0 4px}
 .geolead{font-family:Georgia,'Times New Roman',serif;font-size:17px;color:var(--ink);margin:0;max-width:640px;line-height:1.5}
-.geotable{position:relative;margin:0 0 6px;padding-bottom:64px}
+.geotable{position:relative;margin:0 0 6px}
 .geotable .geopile{position:relative;z-index:2}
 /* diary stickers around the photos: they never catch a click */
 .gstk{position:absolute;z-index:5;pointer-events:none;user-select:none;height:auto;filter:drop-shadow(0 4px 6px rgba(40,30,20,.22))}
-.gcard .gstk.fox1{width:118px;left:-62px;top:-58px;transform:rotate(-10deg)}
-.gcard .gstk.fox2{width:96px;right:22px;bottom:-58px;transform:rotate(9deg)}
-.gcard.hasstk{z-index:2}
-.gstk.dog1{width:100px;left:0;bottom:0;transform:rotate(7deg)}
-.gstk.dog2{width:92px;right:0;bottom:-4px;transform:rotate(-8deg)}
+.gstk.fox1{width:124px;left:13%;top:54%;transform:rotate(-12deg)}
+.gstk.fox2{width:112px;right:14%;top:52%;transform:rotate(11deg)}
+.gstk.dog1{width:104px;left:0;bottom:-6px;transform:rotate(7deg)}
+.gstk.dog2{width:96px;right:0;bottom:-10px;transform:rotate(-8deg)}
+@media (max-width:900px){.gstk.fox1,.gstk.fox2{display:none}}
 @media (max-width:640px){.gstk{width:64px!important}}
 .geopile{display:flex;flex-wrap:wrap;justify-content:center;padding:26px 10px 34px;margin:0 0 6px}
 .gcard{--r:0deg;--y:0px;position:relative;width:170px;margin:0 -10px 12px;background:#fff;border:none;border-radius:20px;padding:9px 9px 12px;cursor:pointer;box-shadow:0 10px 24px rgba(30,40,50,.22),0 1px 3px rgba(0,0,0,.15);transform:translateY(var(--y)) rotate(var(--r));transition:transform .6s cubic-bezier(.22,1,.36,1),box-shadow .6s cubic-bezier(.22,1,.36,1);will-change:transform;text-align:left;font-family:var(--ui)}
@@ -7460,9 +7460,6 @@ function paintGeo(){
   else pile.innerHTML = GEO.map((x, k) => '<button class="gcard' + (x.id === c.id ? ' on' : '') + '" data-geo="' + x.id + '" style="--r:' + GEO_TILT[k % GEO_TILT.length] + 'deg;--y:' + (k % 2 ? 14 : 0) + 'px">' +
     '<img src="' + GEO_IMG[x.id] + '" alt="' + gEsc(x.ph) + '" loading="lazy"><span class="gt">' + x.t + '</span>' +
     '<span class="gs">' + (x.cap ? x.cap : 'Europe, Asia, Africa\u2026') + '</span></button>').join('');
-  /* the two foxes are stuck onto their cards, so they sit in the same place on any screen */
-  [['pakistan','fox1'],['japan','fox2']].forEach(([id, k]) => { const card = pile.querySelector('[data-geo="' + id + '"]'), st = document.querySelector('.gstk.' + k);
-    if (card && st && st.parentNode !== card){ card.appendChild(st);  } });
   const parts = c.id === 'capitals' ? GEO_REGIONS : GEO_PARTS, key = c.id === 'capitals' ? 'r' : 'p';
   const cur = parts.find(p => p[0] === st[key]) || parts[0];
   $('#geoSub').innerHTML = '<div class="gth">' + (c.id === 'capitals' ? 'The capitals, continent by continent' : 'What to learn about ' + gEsc(c.t)) + '</div>' +
