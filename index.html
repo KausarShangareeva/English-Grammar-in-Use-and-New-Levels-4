@@ -7453,7 +7453,7 @@ function geoMap(sel){
   const box = document.getElementById('geoMap'); if (!box) return;
   const draw = () => {
     if (!geoLeaflet){
-      geoLeaflet = L.map(box, { scrollWheelZoom: false, attributionControl: true, zoomControl: true });
+      geoLeaflet = L.map(box, { scrollWheelZoom: true, wheelPxPerZoomLevel: 90, attributionControl: true, zoomControl: true });
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
         { attribution: 'Tiles &copy; Esri', maxZoom: 18, detectRetina: true }).addTo(geoLeaflet);
       GEO.filter(x => x.ll).forEach(x => {
