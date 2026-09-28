@@ -1322,7 +1322,11 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .geometa{font-family:var(--ui);font-size:13px;font-weight:700;color:var(--mut);margin:0 0 4px}
 .geolead{font-family:Georgia,'Times New Roman',serif;font-size:17px;color:var(--ink);margin:0;max-width:640px;line-height:1.5}
 .geopile{display:flex;flex-wrap:wrap;justify-content:center;padding:26px 10px 34px;margin:0 0 6px}
-.gcard{--r:0deg;--y:0px;position:relative;width:170px;margin:0 -10px 12px;background:#fff;border:none;border-radius:20px;padding:9px 9px 12px;cursor:pointer;box-shadow:0 10px 24px rgba(30,40,50,.22),0 1px 3px rgba(0,0,0,.15);transform:translateY(var(--y)) rotate(var(--r));transition:transform .25s ease,box-shadow .25s ease;text-align:left;font-family:var(--ui)}
+.gcard{--r:0deg;--y:0px;position:relative;width:170px;margin:0 -10px 12px;background:#fff;border:none;border-radius:20px;padding:9px 9px 12px;cursor:pointer;box-shadow:0 10px 24px rgba(30,40,50,.22),0 1px 3px rgba(0,0,0,.15);transform:translateY(var(--y)) rotate(var(--r));transition:transform .6s cubic-bezier(.22,1,.36,1),box-shadow .6s cubic-bezier(.22,1,.36,1);will-change:transform;text-align:left;font-family:var(--ui)}
+.gcard .gt{transition:color .4s ease}
+.gcard:after{transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+.gtgrid{animation:gfade .45s ease both}
+@keyframes gfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .gcard img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px}
 .gcard .gt,.gcard .gs{padding:0 4px}
 .gcard .gt{display:block;font-family:var(--disp);font-size:19px;font-weight:600;color:#23282D;margin-top:7px;line-height:1.1}
@@ -1330,7 +1334,8 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .gcard:hover{transform:translateY(calc(var(--y) - 8px)) rotate(0deg) scale(1.04);z-index:3;box-shadow:0 18px 34px rgba(30,40,50,.28)}
 .gcard.on{transform:translateY(calc(var(--y) - 14px)) rotate(0deg) scale(1.1);z-index:4;box-shadow:0 26px 44px rgba(30,40,50,.34),0 2px 6px rgba(0,0,0,.12)}
 .gcard.on .gt{color:var(--sea)}
-.gcard.on:after{content:'';position:absolute;left:50%;bottom:-14px;width:28px;height:4px;margin-left:-14px;border-radius:4px;background:var(--sea);opacity:.7}
+.gcard:after{content:'';position:absolute;left:50%;bottom:-14px;width:28px;height:4px;margin-left:-14px;border-radius:4px;background:var(--sea);opacity:0;transform:scaleX(.2)}
+.gcard.on:after{opacity:.7;transform:scaleX(1)}
 @media (max-width:640px){.gcard{width:130px;margin:0 -8px 10px}.gcard .gt{font-size:16px}}
 .geotopics{margin:4px 0 6px}
 .geotopics .gth{font-family:var(--disp);font-size:24px;font-weight:600;color:var(--ink);margin:0 4px 10px}
@@ -7433,7 +7438,10 @@ function paintGeo(){
   const st = geoState(), c = GEO.find(x => x.id === st.c) || GEO[0];
   const n = GEO.filter(x => x.ll).length;
   $('#geoMeta').textContent = '2026 \u2014 ' + n + ' countries \u2014 ' + (n * GEO_PARTS.length) + ' topics \u2014 5 continents of capitals';
-  $('#geoTabs').innerHTML = GEO.map((x, k) => '<button class="gcard' + (x.id === c.id ? ' on' : '') + '" data-geo="' + x.id + '" style="--r:' + GEO_TILT[k % GEO_TILT.length] + 'deg;--y:' + (k % 2 ? 14 : 0) + 'px">' +
+  const pile = $('#geoTabs'), built = pile.children.length === GEO.length;
+  /* the cards are drawn once; choosing one only moves classes, so the lift can glide */
+  if (built) Array.from(pile.children).forEach(b => b.classList.toggle('on', b.dataset.geo === c.id));
+  else pile.innerHTML = GEO.map((x, k) => '<button class="gcard' + (x.id === c.id ? ' on' : '') + '" data-geo="' + x.id + '" style="--r:' + GEO_TILT[k % GEO_TILT.length] + 'deg;--y:' + (k % 2 ? 14 : 0) + 'px">' +
     '<img src="' + GEO_IMG[x.id] + '" alt="' + gEsc(x.ph) + '" loading="lazy"><span class="gt">' + x.t + '</span>' +
     '<span class="gs">' + (x.cap ? x.cap : 'Europe, Asia, Africa\u2026') + '</span></button>').join('');
   const parts = c.id === 'capitals' ? GEO_REGIONS : GEO_PARTS, key = c.id === 'capitals' ? 'r' : 'p';
