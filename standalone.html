@@ -1342,7 +1342,10 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .geomapcard{background:var(--panel);border-radius:22px;padding:14px;margin-top:16px;box-shadow:0 8px 26px rgba(39,107,122,.1)}
 .geomapcard .gmh{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;padding:2px 6px 10px}.geomapcard .gmh b{font-family:var(--disp);font-size:22px}
 .geomapcard .gmh span{font-family:var(--ui);font-size:12.5px;color:var(--mut2);font-weight:700}
-#geoMap{height:340px;border-radius:14px;overflow:hidden;background:#DDE8EC;z-index:0}
+#geoMap img{max-width:none!important;max-height:none!important;border:0!important;padding:0!important;margin:0;box-shadow:none!important}
+#geoMap .leaflet-tile{image-rendering:auto;filter:none!important}
+@media (min-width:1000px){#geoMap{zoom:.8;height:475px!important}}   /* undo the page zoom so the map tiles stay sharp */
+#geoMap{height:380px;border-radius:14px;overflow:hidden;background:#DDE8EC;z-index:0}
 .gmoff{padding:40px 20px;text-align:center;color:var(--mut2);font-family:var(--ui)}
 .geocred{font-family:var(--ui);font-size:11px;color:var(--mut2);margin:10px 4px 0;line-height:1.5}
 .geoold{margin-top:10px;border:none;background:none;color:var(--mut2);font-family:var(--ui);font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
@@ -2035,8 +2038,6 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
         <p class="geolead">Culture, faith, history and the writers every educated person there knows — and the capitals of the world.</p>
       </div>
       <div class="geopile" id="geoTabs"></div>
-      <div class="geosub" id="geoSub"></div>
-      <div id="geoBody"></div>
       <div class="geomapcard"><div class="gmh"><b>On the map</b><span>every country we have opened so far — tap a pin</span></div><div id="geoMap"></div></div>
       <p class="geocred">Photos: Wikimedia Commons — Taj Mahal, Ahsan Manzil, Badshahi Mosque, the Great Wall at Jinshanling, Mount Fuji from Ōwakudani, Gwanghwamun at Gyeongbokgung, and NASA’s Blue Marble. Map tiles © Esri.</p>
       <button class="geoold" id="geoOld">💬 The old Speaking topics</button>
@@ -7425,6 +7426,7 @@ function paintGeo(){
     '<img src="' + GEO_IMG[x.id] + '" alt="' + gEsc(x.ph) + '" loading="lazy"><span class="gt">' + x.t + '</span>' +
     '<span class="gs">' + (x.cap ? x.cap : 'Europe, Asia, Africa\u2026') + '</span></button>').join('');
   const parts = c.id === 'capitals' ? GEO_REGIONS : GEO_PARTS, key = c.id === 'capitals' ? 'r' : 'p';
+  if (!document.getElementById('geoSub')) { $('#geoOld').onclick = () => go('speakold'); geoMap(c.id); return; }
   const cur = parts.find(p => p[0] === st[key]) || parts[0];
   $('#geoSub').innerHTML = parts.map(p => '<button data-geop="' + p[0] + '"' + (p[0] === cur[0] ? ' class="on"' : '') + '>' + p[1] + '</button>').join('');
   $('#geoBody').innerHTML = '<div class="geocard"><div class="gban" style="background-image:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.62)),url(' + GEO_IMG[c.id] + ')">' +
@@ -7444,7 +7446,7 @@ function geoMap(sel){
     if (!geoLeaflet){
       geoLeaflet = L.map(box, { scrollWheelZoom: false, attributionControl: true, zoomControl: true });
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        { attribution: 'Tiles &copy; Esri', maxZoom: 18 }).addTo(geoLeaflet);
+        { attribution: 'Tiles &copy; Esri', maxZoom: 18, detectRetina: true }).addTo(geoLeaflet);
       GEO.filter(x => x.ll).forEach(x => {
         geoMarkers[x.id] = L.circleMarker(x.ll, { radius: 9, color: '#fff', weight: 3, fillColor: '#7B8CF7', fillOpacity: 1 })
           .addTo(geoLeaflet).bindTooltip(x.t + ' \u00b7 ' + x.cap, { direction: 'top', offset: [0, -8] }).on('click', () => geoPick(x.id));
