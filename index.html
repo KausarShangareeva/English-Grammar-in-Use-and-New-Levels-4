@@ -2165,6 +2165,12 @@ html[data-lang="sv"] .langstripe,html[data-lang="ar"] .langstripe{display:block;
 .wrow.sv .opp2 b{font-family:var(--disp);font-size:16px;font-weight:600}
 .wrow.sv .opp2 .oppr{font-size:12.5px;color:var(--mut);font-weight:700}
 
+
+.svday .dbtn.done{background:var(--sage-l);color:var(--sage);box-shadow:inset 0 0 0 1.5px var(--sage)}
+.svday .dbtn.dnew.done,.svday .dbtn.drep.done,.svday .dbtn.dall.done{opacity:1}
+.svday .dpick button.passed{background:var(--sage-l);border-color:var(--sage);color:var(--sage)}
+.svday .dpick button.passed.on{background:var(--sage);color:#fff}
+
 </style>
 </head>
 <body>
@@ -6145,6 +6151,21 @@ function svWordsOfDay(n){
   const sch = svSchedule();
   return (sch[n - 1] || { words: [] }).words;
 }
+/* a round you have finished stays marked, per day and per kind */
+function svDoneKey(kind){ return 'd' + svDay + ':' + kind; }
+function svDoneMap(){
+  try { return JSON.parse(MEM['studyhub_sv_done'] || '{}'); } catch(e){ return {}; }
+}
+function svMarkDone(kind, right, total){
+  const m = svDoneMap();
+  m[svDoneKey(kind)] = { r: right, t: total, on: new Date().toISOString().slice(0, 10) };
+  MEM['studyhub_sv_done'] = JSON.stringify(m);
+}
+function svDoneClass(kind){ return svDoneMap()[svDoneKey(kind)] ? ' done' : ''; }
+function svDoneTail(kind){
+  const d = svDoneMap()[svDoneKey(kind)];
+  return d ? ' \u00b7 \u2713 ' + d.r + '/' + d.t : '';
+}
 function svDayCard(){
   if (LANG !== 'sv') return '';
   const sch = svSchedule();
@@ -6153,14 +6174,19 @@ function svDayCard(){
   const cur = sch[svDay - 1] || sch[0];
   const today = cur.words;
   const back = svDay > 1 ? svWordsOfDay(svDay - 1) : [];
+  /* everything learned so far this week, today included */
+  const weekSoFar = sch.slice(0, svDay).filter(d => d.week === cur.week)
+                       .reduce((a, d) => a.concat(d.words), []);
   let pick = '', week = 0;
   sch.forEach((d, ix) => {
     if (d.week !== week){
       week = d.week;
       pick += '<span class="wk">Vecka ' + week + ' \u00b7 ' + d.set.replace('SFI-','SFI ') + '</span>';
     }
-    pick += '<button data-d="' + (ix + 1) + '"' +
-      ((ix + 1) === svDay ? ' class="on"' : '') + ' title="' + d.theme + '">' +
+    const doneHere = svDoneMap()['d' + (ix + 1) + ':new'];
+    pick += '<button data-d="' + (ix + 1) + '" class="' +
+      ((ix + 1) === svDay ? 'on ' : '') + (doneHere ? 'passed' : '') + '"' +
+      ' title="' + d.theme + (doneHere ? ' \u00b7 klar' : '') + '">' +
       svNiceDate(d.iso).replace(/\.$/,'') + '</button>';
   });
   return '<div class="svday" id="svDayCard">' +
@@ -6170,13 +6196,17 @@ function svDayCard(){
     ' \u2014 femtio nya ord. I morgon kommer de tillbaka med n\u00e4sta femtio. ' +
     'S\u00f6ndag \u00e4r ledig.</div>' +
     '<div class="dgrid">' +
-      '<button class="dbtn dnew" data-q="new"><b>\u00d6va dagens ord</b>' +
-        '<span>' + today.length + ' nya \u00b7 skriv ordet sj\u00e4lv</span></button>' +
+      '<button class="dbtn dnew' + svDoneClass('new') + '" data-q="new">' +
+        '<b>\u00d6va dagens ord</b><span>' + today.length +
+        ' nya \u00b7 skriv ordet sj\u00e4lv' + svDoneTail('new') + '</span></button>' +
       (back.length
-        ? '<button class="dbtn drep" data-q="rep"><b>Repetera i g\u00e5r</b>' +
-          '<span>' + back.length + ' ord</span></button>' : '') +
-      '<button class="dbtn dall" data-q="both"><b>B\u00e5da tillsammans</b>' +
-        '<span>' + (today.length + back.length) + ' ord i en runda</span></button>' +
+        ? '<button class="dbtn drep' + svDoneClass('rep') + '" data-q="rep">' +
+          '<b>Repetera i g\u00e5r</b><span>' + back.length + ' ord' + svDoneTail('rep') +
+          '</span></button>' : '') +
+      '<button class="dbtn dall' + svDoneClass('both') + '" data-q="both">' +
+        '<b>Allt hittills i veckan</b>' +
+        '<span>' + weekSoFar.length + ' ord \u00b7 dag 1\u2013' + cur.inWeek +
+        ' i ' + cur.set.replace('SFI-','SFI ') + svDoneTail('both') + '</span></button>' +
     '</div>' +
     '<div class="dpick">' + pick + '</div>' +
     '</div>';
@@ -6191,7 +6221,10 @@ function wireSvDay(){
   box.querySelectorAll('.dbtn').forEach(b => b.onclick = () => {
     const kind = b.dataset.q;
     const today = svWordsOfDay(svDay), back = svDay > 1 ? svWordsOfDay(svDay - 1) : [];
-    const pool = kind === 'new' ? today : kind === 'rep' ? back : today.concat(back);
+    const sch = svSchedule(), cur = sch[svDay - 1] || sch[0];
+    const weekSoFar = sch.slice(0, svDay).filter(x => x.week === cur.week)
+                         .reduce((a, x) => a.concat(x.words), []);
+    const pool = kind === 'new' ? today : kind === 'rep' ? back : weekSoFar;
     startSvQuiz(pool, kind);
   });
 }
@@ -6200,7 +6233,7 @@ let SVQ = { list: [], i: 0, right: 0, hint: 0 };
 function startSvQuiz(pool, kind){
   if (!pool || !pool.length) return;
   SVQ = { list: pool.slice().sort(() => Math.random() - 0.5), i: 0, right: 0, hint: 0,
-          total: pool.length, kind: kind, missed: [] };
+          total: pool.length, kind: kind, missed: [], day: svDay };
   let box = document.getElementById('svQuiz');
   if (!box){
     box = document.createElement('div');
@@ -6229,6 +6262,7 @@ function paintSvQ(){
   const it = SVQ.list[SVQ.i];
   if (!it){
     const miss = (SVQ.missed || []).filter(x => !x.again);
+    if (SVQ.kind) svMarkDone(SVQ.kind, SVQ.right, SVQ.total || SVQ.list.length);
     box.innerHTML = '<div class="inner"><div class="top">' +
       '<button id="svqClose">\u2190 Tillbaka</button><div class="score">klart</div></div>' +
       '<div class="card"><div class="prompt">' + SVQ.right + ' av ' + SVQ.list.length +
@@ -6237,7 +6271,7 @@ function paintSvQ(){
       '<div class="row">' +
         (miss.length ? '<button id="svqRedo">G\u00f6r om missarna \u00b7 ' + miss.length + '</button>' : '') +
         '<button class="ghost" id="svqDone">Klar</button></div></div></div>';
-    const cl = () => { box.classList.remove('on'); };
+    const cl = () => { box.classList.remove('on'); paintWordList(); };
     document.getElementById('svqClose').onclick = cl;
     document.getElementById('svqDone').onclick = cl;
     if (miss.length)
