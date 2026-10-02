@@ -2171,6 +2171,38 @@ html[data-lang="sv"] .langstripe,html[data-lang="ar"] .langstripe{display:block;
 .svday .dpick button.passed{background:var(--sage-l);border-color:var(--sage);color:var(--sage)}
 .svday .dpick button.passed.on{background:var(--sage);color:#fff}
 
+
+.svfc{position:fixed;inset:0;background:var(--bg);z-index:85;display:none;padding:18px}
+.svfc.on{display:flex;align-items:flex-start;justify-content:center}
+.svfc .inner{max-width:560px;width:100%}
+.svfc .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.svfc .top button{border:1px solid var(--line);background:var(--panel);border-radius:999px;
+  padding:7px 14px;font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut);cursor:pointer}
+.svfc .count{margin-left:auto;font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut2)}
+.svfc .bar{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:14px}
+.svfc .bar i{display:block;height:100%;background:var(--sea);transition:width .2s}
+.svfc .stack{position:relative;min-height:330px}
+.svfc .card{background:var(--panel);border-radius:22px;padding:28px 22px;min-height:330px;
+  box-shadow:0 10px 30px rgba(39,107,122,.1);cursor:pointer;display:flex;flex-direction:column;
+  justify-content:center;text-align:center;user-select:none;transition:transform .16s,opacity .16s}
+.svfc .card.left{transform:translateX(-26px);opacity:.2}
+.svfc .card.right{transform:translateX(26px);opacity:.2}
+.svfc .fw{font-family:var(--disp);font-size:42px;font-weight:600;color:var(--ink);line-height:1.15}
+.svfc .fp{font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:1px;
+  text-transform:uppercase;color:var(--mut2);margin-top:8px}
+.svfc .fen{font-size:20px;font-weight:800;color:var(--sea);margin-top:4px}
+.svfc .fex{font-family:var(--disp);font-size:19px;color:var(--ink);margin-top:16px;line-height:1.6}
+.svfc .fopp{margin-top:14px;font-size:14px;color:var(--mut)}
+.svfc .fopp b{font-family:var(--disp);font-size:17px;color:var(--rose);font-weight:600}
+.svfc .hint{font-family:var(--ui);font-size:11px;font-weight:700;color:var(--mut2);margin-top:18px}
+.svfc .nav{display:flex;gap:9px;margin-top:14px}
+.svfc .nav button{flex:1;border:none;border-radius:14px;padding:14px;font-family:var(--ui);
+  font-size:15px;font-weight:800;cursor:pointer;background:var(--panel);color:var(--mut);
+  border:1px solid var(--line)}
+.svfc .nav button.pri{background:var(--sea);color:#fff;border-color:var(--sea)}
+.svday .dbtn.dcards{background:var(--sand-l,#F6EFDC);color:var(--sand)}
+html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)}
+
 </style>
 </head>
 <body>
@@ -6196,6 +6228,8 @@ function svDayCard(){
     ' \u2014 femtio nya ord. I morgon kommer de tillbaka med n\u00e4sta femtio. ' +
     'S\u00f6ndag \u00e4r ledig.</div>' +
     '<div class="dgrid">' +
+      '<button class="dbtn dcards" data-q="cards"><b>\uD83C\uDCCF Bl\u00e4ddra korten</b>' +
+        '<span>' + today.length + ' ord \u00b7 v\u00e4nd och svep</span></button>' +
       '<button class="dbtn dnew' + svDoneClass('new') + '" data-q="new">' +
         '<b>\u00d6va dagens ord</b><span>' + today.length +
         ' nya \u00b7 skriv ordet sj\u00e4lv' + svDoneTail('new') + '</span></button>' +
@@ -6224,12 +6258,95 @@ function wireSvDay(){
     const sch = svSchedule(), cur = sch[svDay - 1] || sch[0];
     const weekSoFar = sch.slice(0, svDay).filter(x => x.week === cur.week)
                          .reduce((a, x) => a.concat(x.words), []);
+    if (kind === 'cards'){ startSvCards(today); return; }
     const pool = kind === 'new' ? today : kind === 'rep' ? back : weekSoFar;
     startSvQuiz(pool, kind);
   });
 }
 /* ---- the typed quiz: English in, Swedish out ---- */
 let SVQ = { list: [], i: 0, right: 0, hint: 0 };
+
+/* ---- the stack: flip with a tap, move with a swipe ---- */
+let SVFC = { list: [], i: 0, back: false };
+function startSvCards(pool){
+  if (!pool || !pool.length) return;
+  SVFC = { list: pool.slice(), i: 0, back: false };
+  let box = document.getElementById('svCards');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'svCards';
+    box.className = 'svfc';
+    document.body.appendChild(box);
+  }
+  box.classList.add('on');
+  paintSvCard();
+}
+function svCardMove(step){
+  const n = SVFC.i + step;
+  if (n < 0 || n >= SVFC.list.length) return;
+  SVFC.i = n;
+  SVFC.back = false;
+  const c = document.querySelector('.svfc .card');
+  if (c){
+    c.classList.add(step > 0 ? 'left' : 'right');
+    setTimeout(paintSvCard, 110);
+  } else paintSvCard();
+}
+function paintSvCard(){
+  const box = document.getElementById('svCards');
+  const w = SVFC.list[SVFC.i];
+  if (!w) return;
+  const ex = (w.e && w.e.length) ? String(w.e[0][0]) : '';
+  const front =
+    '<div class="fw">' + gEsc(w.w) + '</div>' +
+    (w.p ? '<div class="fp">' + gEsc(w.p) + '</div>' : '') +
+    '<div class="hint">tryck f\u00f6r att v\u00e4nda</div>';
+  const back =
+    '<div class="fen">' + gEsc(w.r || w.m || '') + '</div>' +
+    (ex ? '<div class="fex">' + gEsc(ex) + '</div>' : '') +
+    (w.o ? '<div class="fopp">motsats: <b>' + gEsc(w.o) + '</b> ' +
+      (w.or ? gEsc(w.or) : '') + '</div>' : '') +
+    '<div class="hint">' + gEsc(w.w) + '</div>';
+  box.innerHTML = '<div class="inner">' +
+    '<div class="top"><button id="fcClose">\u2190 Tillbaka</button>' +
+      '<button id="fcSay">\uD83D\uDD0A</button>' +
+      '<div class="count">' + (SVFC.i + 1) + ' / ' + SVFC.list.length + '</div></div>' +
+    '<div class="bar"><i style="width:' +
+      Math.round((SVFC.i + 1) / SVFC.list.length * 100) + '%"></i></div>' +
+    '<div class="stack"><div class="card" id="fcCard">' +
+      (SVFC.back ? back : front) + '</div></div>' +
+    '<div class="nav">' +
+      '<button id="fcPrev">\u2190</button>' +
+      '<button class="pri" id="fcFlip">V\u00e4nd</button>' +
+      '<button id="fcNext">\u2192</button>' +
+    '</div></div>';
+  const card = document.getElementById('fcCard');
+  const flip = () => { SVFC.back = !SVFC.back; paintSvCard(); };
+  card.onclick = flip;
+  document.getElementById('fcFlip').onclick = flip;
+  document.getElementById('fcPrev').onclick = () => svCardMove(-1);
+  document.getElementById('fcNext').onclick = () => svCardMove(1);
+  document.getElementById('fcClose').onclick = () => box.classList.remove('on');
+  document.getElementById('fcSay').onclick = () => speak(SVFC.back && ex ? ex : w.w, 'sv');
+  /* swipe */
+  let x0 = null;
+  card.ontouchstart = e => { x0 = e.touches[0].clientX; };
+  card.ontouchend = e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) > 45){ svCardMove(dx < 0 ? 1 : -1); }
+  };
+}
+document.addEventListener('keydown', e => {
+  const box = document.getElementById('svCards');
+  if (!box || !box.classList.contains('on')) return;
+  if (e.key === 'ArrowRight') svCardMove(1);
+  if (e.key === 'ArrowLeft') svCardMove(-1);
+  if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); SVFC.back = !SVFC.back; paintSvCard(); }
+  if (e.key === 'Escape') box.classList.remove('on');
+});
+
 function startSvQuiz(pool, kind){
   if (!pool || !pool.length) return;
   SVQ = { list: pool.slice().sort(() => Math.random() - 0.5), i: 0, right: 0, hint: 0,
