@@ -5515,8 +5515,11 @@ function wireDrag(root){
       el.classList.remove('over', 'overlast');
       const iso = el.dataset.day;
       /* the order of every task of that day, as it stands on screen */
+      /* the same day can be on screen twice, so take each task once */
+      const seen = {};
       const ids = [...document.querySelectorAll('.twrap[data-day="' + iso + '"]')]
-                    .map(x => x.dataset.id);
+        .map(x => x.dataset.id)
+        .filter(id => (seen[id] ? false : (seen[id] = 1)));
       const from = ids.indexOf(DRAG.id);
       if (from < 0) return;
       ids.splice(from, 1);
