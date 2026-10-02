@@ -2050,6 +2050,12 @@ html[data-theme="dark"] .ev-eng{background:#1D2E26;color:#79C79C}
 .seflag{display:inline-block;width:15px;height:10px;border-radius:2px;vertical-align:-1px;
   margin-right:4px;box-shadow:0 0 0 .5px rgba(0,0,0,.18)}
 .svcal h3 .seflag{width:26px;height:17px;vertical-align:-2px;margin-right:7px}
+
+.twrap.fixed .trow{border-bottom:1.5px solid var(--rose);border-radius:0;padding-bottom:7px}
+.twrap.fixed .trow span:not(.box){font-weight:800}
+.twrap.fixed .trow.on{border-bottom-color:var(--sage)}
+.twrap.fixed .trow.on span:not(.box){font-weight:600}
+
 </style>
 </head>
 <body>
@@ -4944,7 +4950,9 @@ function streamBlocks(rows, st, dayIso){
       g.rows.map(r => {
         const v = Number(st[r.i]) || 0;
         const away = dayIso && homeDay(r.i) !== dayIso;
-        return '<div class="twrap">' +
+        /* a lesson with a room and a time is not a task you can quietly skip */
+        const fixed = r.i.indexOf('--sv-lesson') > 0;
+        return '<div class="twrap' + (fixed ? ' fixed' : '') + '">' +
           '<button class="trow' + (v === 1 ? ' on' : v === 2 ? ' missed' : '') +
           '" data-task="' + r.i + '" title="tap again for \u2715 could not">' +
           '<span class="box"></span><span>' + gEsc(taskText(r)) +
