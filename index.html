@@ -2150,6 +2150,18 @@ html[data-lang="sv"] .langstripe,html[data-lang="ar"] .langstripe{display:block;
 .svwq .ldiff i.miss{color:#fff;background:var(--sage);border-radius:4px;padding:0 3px;margin:0 1px}
 .svwq .again{font-family:var(--ui);font-size:11.5px;font-weight:700;color:var(--sand);margin-top:8px}
 
+
+.wrow.sv{padding:15px 16px}
+.wrow.sv .w1{font-size:23px}
+.wrow.sv .ru1{color:var(--sea);font-size:14.5px;margin-top:4px}
+.wrow.sv .ex1{font-family:var(--disp);font-size:17px;color:var(--ink);margin-top:9px;
+  border-left:3px solid var(--line2);padding-left:11px;line-height:1.55}
+.wrow.sv .opp2{margin-top:9px;font-size:13.5px;color:var(--ink)}
+.wrow.sv .opp2 .oppl{font-family:var(--ui);font-size:9.5px;font-weight:800;letter-spacing:1px;
+  text-transform:uppercase;color:var(--rose);margin-right:8px}
+.wrow.sv .opp2 b{font-family:var(--disp);font-size:16px;font-weight:600}
+.wrow.sv .opp2 .oppr{font-size:12.5px;color:var(--mut);font-weight:700}
+
 </style>
 </head>
 <body>
@@ -4074,7 +4086,9 @@ const ADJ = {"cats":[{"k":"people","t":"🧑 People · character","d":"describin
 let adjCat = 'all', adjQ = '';
 /* the adjectives are English whatever course is open, so they always get the British voice */
 const aSpk = t => '<button class="aspk" data-asay="' + gEsc(clean(t)).replace(/"/g,'&quot;') +
-  '" title="listen (British English)">\uD83D\uDD0A</button>';
+  '" title="' + (typeof LANG !== 'undefined' && LANG === 'sv' ? 'lyssna (svenska)'
+    : typeof LANG !== 'undefined' && LANG === 'ar' ? 'listen (Arabic)'
+    : 'listen (British English)') + '">\uD83D\uDD0A</button>';
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('.aspk');
   if (b){ e.preventDefault(); e.stopPropagation(); speak(b.dataset.asay, 'en'); }
@@ -6331,6 +6345,20 @@ function paintWordList(){
   box.innerHTML = dayCard + slice.map(w => {
     const ex = (w.e && w.e.length)
       ? gEsc(String(w.e[0][0])).replace('____', '<b>' + gEsc(w.e[0][1]) + '</b>') : '';
+    const exPlain = (w.e && w.e.length) ? String(w.e[0][0]).replace('____', w.e[0][1]) : '';
+    /* on the Swedish platform a card is three lines: the word, what it means,
+       and one sentence — everything else was noise */
+    if (LANG === 'sv'){
+      return '<div class="wrow sv">' +
+        '<div><span class="w1">' + gEsc(w.w) + '</span>' + spk(w.w) +
+        (w.p ? '<span class="pos2">' + gEsc(w.p) + '</span>' : '') + '</div>' +
+        '<div class="ru1">' + gEsc(w.r || w.m || '') + '</div>' +
+        (ex ? '<div class="ex1">' + ex + spk(exPlain) + '</div>' : '') +
+        (w.o ? '<div class="opp2"><span class="oppl">motsats</span>' +
+          '<b>' + gEsc(w.o) + '</b>' + spk(w.o) +
+          (w.or ? ' <span class="oppr">' + gEsc(w.or) + '</span>' : '') + '</div>' : '') +
+        '</div>';
+    }
     const fq = w.fq ? '<div class="co1">appears <b>' + w.fq + '</b> times in the book</div>' : '';
     return '<div class="wrow">' +
       '<div><span class="w1">' + gEsc(w.w) + '</span>' + spk(w.w) +
@@ -6341,7 +6369,7 @@ function paintWordList(){
       (w.m ? '<div class="mn1">' + gEsc(w.m) + '</div>' : '') +
       (w.c ? '<div class="co1">' + gSafe(w.c) + '</div>' : '') + fq +
       (ex ? '<div class="ex1">' + ex + '</div>' : '') +
-      (w.o ? '<div class="opp1"><span class="oppl">motsats</span>' +
+      (w.o ? '<div class="opp1"><span class="oppl">opposite</span>' +
         '<b>' + gEsc(w.o) + '</b>' + spk(w.o) +
         (w.or ? ' <span class="oppr">' + gEsc(w.or) + '</span>' : '') +
         (w.oe ? '<div class="oppe">' + gEsc(w.oe) + '</div>' : '') + '</div>' : '') +
