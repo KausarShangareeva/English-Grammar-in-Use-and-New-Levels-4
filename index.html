@@ -5705,6 +5705,7 @@ function paintWeek(){
         Math.round(dn / Math.max(1, rows.length) * 100) + '%"></i></div>' +
       '<div class="tlist">' + streamBlocks(rows, st, d.iso) + '</div></div>';
   }).join('');
+  wireDrag($('#wkDays'));
   $('#wkDays').querySelectorAll('.dayh').forEach(h => h.onclick = () => {
     const iso2 = h.dataset.day;
     const card = h.parentElement;
