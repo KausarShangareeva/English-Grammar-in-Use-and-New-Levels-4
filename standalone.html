@@ -2056,6 +2056,37 @@ html[data-theme="dark"] .ev-eng{background:#1D2E26;color:#79C79C}
 .twrap.fixed .trow.on{border-bottom-color:var(--sage)}
 .twrap.fixed .trow.on span:not(.box){font-weight:600}
 
+
+/* ---- a platform you can feel: Swedish is warm, Arabic is green ---- */
+html[data-lang="sv"]{
+  --bg:#FBEFE6; --panel:#FFFBF8;
+  --line:#F2E0D2; --line2:#E7CDB8;
+  --ink:#4A332A; --mut:#8C6B59; --mut2:#B79681;
+  --sea:#C4663A; --sea-l:#FBE7DA;
+  --rose:#C9607A; --rose-l:#FAE6EA;
+  --sand:#C9912C; --sage:#8A7A3E; --sage-l:#F6EFDC;
+}
+html[data-lang="sv"][data-theme="dark"]{
+  --bg:#1E1512; --panel:#2A1E19;
+  --line:#3B2A23; --line2:#4D382E;
+  --ink:#F2E3D8; --mut:#C3A392; --mut2:#96796A;
+  --sea:#E89B6F; --sea-l:#3A2419;
+  --rose:#E899AC; --rose-l:#3A222A;
+  --sand:#DDB45A; --sage:#CBB36A; --sage-l:#332B18;
+}
+html[data-lang="ar"]{
+  --bg:#E8F0EA; --panel:#FDFFFD;
+  --line:#DCE8DE; --line2:#C3D8C8;
+  --ink:#24382C; --mut:#5F7A68; --mut2:#8EA896;
+  --sea:#2F7A52; --sea-l:#E2F0E7;
+  --rose:#B9728F; --rose-l:#F7EAF0;
+  --sand:#B99A2C; --sage:#4F8A6B; --sage-l:#E7F2EB;
+}
+.langstripe{display:none}
+html[data-lang="sv"] .langstripe,html[data-lang="ar"] .langstripe{display:block;height:3px;
+  background:linear-gradient(90deg,var(--sea),var(--sand),var(--rose));border-radius:3px;
+  margin:0 0 10px}
+
 </style>
 </head>
 <body>
@@ -2076,7 +2107,8 @@ html[data-theme="dark"] .ev-eng{background:#1D2E26;color:#79C79C}
     <div class="sidefoot">
       <div class="who"><span class="av">K</span>
         <span class="txt"><span class="nm">Kausar</span><span class="sub">Student</span></span>
-        <button class="themebtn" id="themeBtn" title="light or dark">☾</button></div>
+        <span class="langstripe"></span>
+      <button class="themebtn" id="themeBtn" title="light or dark">☾</button></div>
     </div>
   </aside>
 
@@ -2787,6 +2819,13 @@ function courseSubFor(c){
   const n = (WD || []).length, u = Object.keys(UNAMES || {}).length;
   return n + ' орд · ' + u + (u === 1 ? ' набор' : ' набора');
 }
+function courseDescFor(c){
+  if (c.id !== 'units') return c.desc;
+  if (LANG === 'sv')
+    return '\u0421\u043b\u043e\u0432\u0430 \u043f\u043e \u043d\u0430\u0431\u043e\u0440\u0430\u043c: SFI A, B, C, D \u0438 Svenska delkurs 1\u20134. '
+         + '\u0421 \u043f\u0440\u0438\u043c\u0435\u0440\u043e\u043c, \u0441\u043e\u0447\u0435\u0442\u0430\u043d\u0438\u044f\u043c\u0438 \u0438 \u043f\u043e\u043c\u0435\u0442\u043a\u043e\u0439 \u043e \u043b\u043e\u0432\u0443\u0448\u043a\u0430\u0445.';
+  return c.desc;
+}
 function paintCards(){
   refreshGuide();
   const gb = $('#guideBar');
@@ -2806,7 +2845,8 @@ function paintCards(){
         '<span class="em">' + c.emoji + '</span>' +
         '<span class="ct">' + (LANG === 'en' ? c.title : courseTitleFor(c)) + '</span>' +
       '<span class="cs">' + (LANG === 'en' ? c.sub : courseSubFor(c)) + '</span></div>' +
-      '<div class="cbody"><div class="cd">' + c.desc + '</div>' +
+      '<div class="cbody"><div class="cd">' +
+        (LANG === 'en' ? c.desc : courseDescFor(c)) + '</div>' +
         '<div class="bar"><i style="width:' + Math.max(2, s.pct) + '%;background:' +
         barColour(s.pct) + '"></i></div>' +
         '<div class="cstat"><b>' + s.pct + '%</b> \u00b7 ' + s.line + '</div>' +
@@ -3773,6 +3813,7 @@ function applyLang(l){
   gramOnly = null;
   try { localStorage.setItem('studyhub_lang', l); } catch(e){}
   MEM['studyhub_lang'] = l;
+  document.documentElement.setAttribute('data-lang', l);
   $('#langName').textContent = l === 'en' ? 'Study English' : PACKS[l].label;
   $('#langFlag').innerHTML = flagImg(l, 'fimg big');
   paintLangMenu();
@@ -4864,6 +4905,11 @@ function applyTheme(t){
   const b = $('#themeBtn');
   if (b) b.textContent = (t === 'dark' ? '\u2600' : '\u263e');
   try { localStorage.setItem('studyhub_theme', t); } catch(e){}
+}
+function initLangSkin(){
+  let l = 'en';
+  try { l = localStorage.getItem('studyhub_lang') || 'en'; } catch(e){}
+  document.documentElement.setAttribute('data-lang', l);
 }
 function initTheme(){
   let t = null;
@@ -8103,6 +8149,7 @@ paintNav();
 wirePeople();
 wireSongs();
 initTheme();
+initLangSkin();
 wireDeadlines();
 wireSites();
 wireAdj(); paintCalendar(); paintSchedule(); paintCards();
