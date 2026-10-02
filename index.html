@@ -8227,14 +8227,14 @@ function go(id){
   }
   $('#planView').classList.remove('on');
   const c = COURSES.find(x => x.id === id);
-  if (c && !c.app){ $('#tagline').textContent = c.desc; return; }
+  if (c && !c.app){ $('#tagline').textContent = (LANG === 'en' ? c.desc : courseDescFor(c)); return; }
   if (id === 'units' || id === 'books'){
     $('#dash').classList.add('off');
     ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList','#storyView']
       .forEach(x => $(x).classList.remove('on'));
     hideAll('#wordsView');
     $('#wordsView').classList.add('on');
-    $('#tagline').textContent = c.desc;
+    $('#tagline').textContent = (LANG === 'en' ? c.desc : courseDescFor(c));
     document.querySelectorAll('#nav button, #mobbar button')
       .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'dash'));
     openWords(id === 'books' ? 'books' : 'units');
@@ -8251,7 +8251,7 @@ function go(id){
       .forEach(x => $(x).classList.remove('on'));
     hideAll('#readList');
     $('#readList').classList.add('on');
-    $('#tagline').textContent = c.desc;
+    $('#tagline').textContent = (LANG === 'en' ? c.desc : courseDescFor(c));
     document.querySelectorAll('#nav button, #mobbar button')
       .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'dash'));
     paintReadList();
@@ -8285,7 +8285,7 @@ function go(id){
     $('#gramTopic').classList.remove('on');
     hideAll('#gramList');
     $('#gramList').classList.add('on');
-    $('#tagline').textContent = c.desc;
+    $('#tagline').textContent = (LANG === 'en' ? c.desc : courseDescFor(c));
     document.querySelectorAll('#nav button, #mobbar button')
       .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'dash'));
     paintGramList();
@@ -8304,7 +8304,7 @@ function go(id){
     $('#reader').classList.remove('on');
     hideAll('#essaysView');
     $('#essaysView').classList.add('on');
-    $('#tagline').textContent = c.desc;
+    $('#tagline').textContent = (LANG === 'en' ? c.desc : courseDescFor(c));
     document.querySelectorAll('#nav button, #mobbar button')
       .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'dash'));
     paintEssays();
@@ -8425,8 +8425,8 @@ function go(id){
   } else if (c){
     $('#dash').classList.add('off');
     $('#view').classList.add('on');
-    $('#vtitle').textContent = c.title;
-    $('#tagline').textContent = c.desc;
+    $('#vtitle').textContent = (LANG === 'en' ? c.title : courseTitleFor(c));
+    $('#tagline').textContent = (LANG === 'en' ? c.desc : courseDescFor(c));
     /* the plan for today, right above the schedule */
     const tt = $('#todayTop');
     if (tt){
