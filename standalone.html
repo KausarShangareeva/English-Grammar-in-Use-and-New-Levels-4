@@ -2027,6 +2027,23 @@ html[data-theme="dark"] .ev-eng{background:#1D2E26;color:#79C79C}
 .svhd{font-size:10px;padding:0 0 5px;text-align:center;font-family:var(--ui);font-weight:800;
   letter-spacing:.9px;text-transform:uppercase;color:var(--mut2)}
 
+
+.svmodal{position:fixed;inset:0;background:rgba(20,26,28,.45);display:none;align-items:center;
+  justify-content:center;z-index:90;padding:18px}
+.svmodal.on{display:flex}
+.svsheet{background:var(--panel);border-radius:20px;padding:22px 20px;max-width:430px;width:100%;
+  position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.svx{position:absolute;top:10px;right:13px;border:none;background:none;font-size:26px;
+  line-height:1;color:var(--mut2);cursor:pointer}
+.svt{font-family:var(--disp);font-size:22px;font-weight:600;color:var(--ink);padding-right:24px}
+.sva{font-family:var(--ui);font-size:13px;font-weight:700;color:var(--sea);margin-top:7px}
+.svn{font-size:13px;line-height:1.7;color:var(--mut);margin-top:9px}
+.svlinks{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.svlinks a{font-family:var(--ui);font-size:12px;font-weight:800;text-decoration:none;
+  background:var(--sea);color:#fff;border-radius:999px;padding:9px 15px}
+.svlinks a:last-child{background:var(--bg);color:var(--sea);border:1px solid var(--line2)}
+.svev{cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -3375,7 +3392,8 @@ function bookFinishes(){
 }
 
 /* ---- the Swedish week, drawn like a calendar ---- */
-const SVCAL = [{"k":"now","t":"5–11 Oct","sub":"Language cafés only — the courses have not started yet","from":"2026-10-05","to":"2026-10-11","ev":[[0,990,1080,"Språkcafé","Alviks bibliotek","cafe"],[1,780,870,"Språkcafé","Kista bibliotek","cafe"],[1,990,1080,"Svenskt språkcafé","Kista bibliotek","cafe"],[1,1020,1110,"Språkcafé · alternative","Vällingby bibliotek","alt"],[2,1020,1110,"Språkcafé","Kungsholmens bibliotek","cafe"],[3,540,675,"Grammatik på mellannivå","Medborgarskolan","course"]]},{"k":"main","t":"12 Oct – 5 Nov","sub":"Every course running at once — the heaviest four weeks","from":"2026-10-12","to":"2026-11-05","ev":[[0,540,675,"Svenska B1","Medborgarskolan","course"],[0,780,915,"SVA 1 · högre nivå","Medborgarskolan","course"],[0,990,1080,"Språkcafé","Alviks bibliotek","cafe"],[1,780,915,"Svenska B1/B2","Medborgarskolan","course"],[1,990,1080,"Svenskt språkcafé","Kista bibliotek","cafe"],[1,1020,1110,"Språkcafé · alternative","Vällingby bibliotek","alt"],[2,540,675,"Svenska B1","Medborgarskolan","course"],[2,780,915,"SVA 1","Medborgarskolan","course"],[2,1020,1110,"Språkcafé","Kungsholmens bibliotek","cafe"],[3,540,675,"Grammatik på mellannivå","Medborgarskolan","course"],[3,780,915,"Svenska B1/B2","Medborgarskolan","course"],[4,540,720,"🏴 English, distance · your own hours","NTI-skolan","eng"]]},{"k":"second","t":"9 Nov – Dec","sub":"The second intakes; grammar has finished on 5 Nov","from":"2026-11-09","to":"2026-12-20","ev":[[0,540,675,"Svenska B1 · intake 2","Medborgarskolan","course"],[0,780,915,"SVA 1 · intake 2","Medborgarskolan","course"],[0,990,1080,"Språkcafé","Alviks bibliotek","cafe"],[1,780,915,"Svenska B1/B2 · intake 2","Medborgarskolan","course"],[1,990,1080,"Svenskt språkcafé","Kista bibliotek","cafe"],[2,540,675,"Svenska B1","Medborgarskolan","course"],[2,780,915,"SVA 1","Medborgarskolan","course"],[2,1020,1110,"Språkcafé","Kungsholmens bibliotek","cafe"],[3,780,915,"Svenska B1/B2","Medborgarskolan","course"],[4,540,720,"🏴 English, distance · your own hours","NTI-skolan","eng"]]}];
+const SVPLACE = {"medb":{"t":"Medborgarskolan Stockholmsregionen","a":"Hagagatan 23A, Stockholm","map":"https://maps.google.com/?q=Hagagatan+23A+Stockholm","n":"🏫 All four Swedish courses are taught here, in the same building.","u":"https://www.medborgarskolan.se/","ul":"medborgarskolan.se"},"medb-gram":{"t":"Medborgarskolan · Grammatik på mellannivå","a":"Hagagatan 23A, Stockholm","map":"https://maps.google.com/?q=Hagagatan+23A+Stockholm","n":"🏫 8 Thursdays, 17 Sep – 5 Nov. The course page with the dates:","u":"https://www.medborgarskolan.se/arrangemang-sok/svenska-grammatik-pa-mellanniva-1521036/","ul":"the course page"},"alvik":{"t":"Alviks bibliotek · Svenskt språkcafé","a":"Gustavslundsvägen 168, Alvik","map":"https://maps.google.com/?q=Alviks+bibliotek+Stockholm","n":"☕ Run by Studieförbundet Vuxenskolan. Free, no booking — you just turn up.","u":"https://www.sv.se/kurser-och-evenemang/ovrigt/svenskt-sprakcafe-pa-alviks-bibliotek-373748","ul":"sv.se · the café page"},"kista13":{"t":"Kista bibliotek · Språkcafé på svenska","a":"Kista Galleria, plan 3","map":"https://maps.google.com/?q=Kista+bibliotek","n":"☕ Run by Stockholms stadsbibliotek. Free, drop in.","u":"https://biblioteket.stockholm.se/evenemang/sprakcafe-pa-svenska-1870","ul":"biblioteket.stockholm.se"},"kista1630":{"t":"Kista bibliotek · Svenskt språkcafé","a":"Kista Galleria, plan 3","map":"https://maps.google.com/?q=Kista+bibliotek","n":"☕ A different café in the same library, run by Vuxenskolan. ⚠️ Clashes with Vällingby — choose one and keep it.","u":"https://www.sv.se/kurser-och-evenemang/ovrigt/svenskt-sprakcafe-pa-kista-bibliotek-374228","ul":"sv.se · the café page"},"vallingby":{"t":"Vällingby bibliotek · Språkcafé","a":"Vällingby centrum","map":"https://maps.google.com/?q=V%C3%A4llingby+bibliotek","n":"☕ The alternative to Kista at 16:30. ⚠️ You cannot do both on the same Tuesday.","u":"https://biblioteket.stockholm.se/evenemang/sprakcafe-pa-svenska-1673","ul":"biblioteket.stockholm.se"},"kungsholmen":{"t":"Kungsholmens bibliotek · Svenskt språkcafé","a":"S:t Eriksgatan 33, Kungsholmen","map":"https://maps.google.com/?q=Kungsholmens+bibliotek","n":"☕ Run by Vuxenskolan. Free, drop in.","u":"https://www.sv.se/","ul":"sv.se"}};
+const SVCAL = [{"k":"now","t":"5–11 Oct","sub":"Language cafés only — the courses have not started yet","from":"2026-10-05","to":"2026-10-11","ev":[[0,990,1080,"🇸🇪☕ Språkcafé","Alviks bibliotek","cafe","alvik"],[1,780,870,"🇸🇪☕ Språkcafé","Kista bibliotek","cafe","kista13"],[1,990,1080,"🇸🇪☕ Svenskt språkcafé","Kista bibliotek","cafe","kista1630"],[1,1020,1110,"🇸🇪☕ Språkcafé · alternative","Vällingby bibliotek","alt","vallingby"],[2,1020,1110,"🇸🇪☕ Språkcafé","Kungsholmens bibliotek","cafe","kungsholmen"],[3,540,675,"🇸🇪🏫 Grammatik på mellannivå","Medborgarskolan","course","medb-gram"]]},{"k":"main","t":"12 Oct – 5 Nov","sub":"Every course running at once — the heaviest four weeks","from":"2026-10-12","to":"2026-11-05","ev":[[0,540,675,"🇸🇪🏫 Svenska B1","Medborgarskolan","course","medb"],[0,780,915,"🇸🇪🏫 SVA 1 · högre nivå","Medborgarskolan","course","medb"],[0,990,1080,"🇸🇪☕ Språkcafé","Alviks bibliotek","cafe","alvik"],[1,780,915,"🇸🇪🏫 Svenska B1/B2","Medborgarskolan","course","medb"],[1,990,1080,"🇸🇪☕ Svenskt språkcafé","Kista bibliotek","cafe","kista1630"],[1,1020,1110,"🇸🇪☕ Språkcafé · alternative","Vällingby bibliotek","alt","vallingby"],[2,540,675,"🇸🇪🏫 Svenska B1","Medborgarskolan","course","medb"],[2,780,915,"🇸🇪🏫 SVA 1","Medborgarskolan","course","medb"],[2,1020,1110,"🇸🇪☕ Språkcafé","Kungsholmens bibliotek","cafe","kungsholmen"],[3,540,675,"🇸🇪🏫 Grammatik på mellannivå","Medborgarskolan","course","medb-gram"],[3,780,915,"🇸🇪🏫 Svenska B1/B2","Medborgarskolan","course","medb"]]},{"k":"second","t":"9 Nov – Dec","sub":"The second intakes; grammar has finished on 5 Nov","from":"2026-11-09","to":"2026-12-20","ev":[[0,540,675,"🇸🇪🏫 Svenska B1 · intake 2","Medborgarskolan","course","medb"],[0,780,915,"🇸🇪🏫 SVA 1 · intake 2","Medborgarskolan","course","medb"],[0,990,1080,"🇸🇪☕ Språkcafé","Alviks bibliotek","cafe","alvik"],[1,780,915,"🇸🇪🏫 Svenska B1/B2 · intake 2","Medborgarskolan","course","medb"],[1,990,1080,"🇸🇪☕ Svenskt språkcafé","Kista bibliotek","cafe","kista1630"],[2,540,675,"🇸🇪🏫 Svenska B1","Medborgarskolan","course","medb"],[2,780,915,"🇸🇪🏫 SVA 1","Medborgarskolan","course","medb"],[2,1020,1110,"🇸🇪☕ Språkcafé","Kungsholmens bibliotek","cafe","kungsholmen"],[3,780,915,"🇸🇪🏫 Svenska B1/B2","Medborgarskolan","course","medb"]]}];
 const SVENDS = [["Grammatik på mellannivå","17 Sep – 5 Nov","8 Thursdays"],["Svenska B1","12 Oct – 4 Nov","8 lessons · intake 2 from 9 Nov"],["SVA 1 · högre nivå","12 Oct – 4 Nov","8 lessons · intake 2 from 9 Nov"],["Svenska B1/B2","13 Oct – 5 Nov","8 lessons · intake 2 from 10 Nov"],["🏴 Engelska nivå 1 · NTI, distance","12 Oct – 15 Nov","no fixed hours"],["🏴 Engelska nivå 2 · NTI, distance","16 Nov – 20 Dec","no fixed hours"]];
 const SV_DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
 let svPhase = -1;
@@ -3404,7 +3422,8 @@ function svCalendar(){
       lines += '<div class="svline" style="top:' + y(m) + 'px"></div>';
     const evs = ph.ev.filter(e => e[0] === d).map(e => {
       const top = y(e[1]), h = Math.max(22, y(e[2]) - y(e[1]) - 2);
-      return '<div class="svev ev-' + e[5] + '" style="top:' + top + 'px;height:' + h + 'px">' +
+      return '<div class="svev ev-' + e[5] + '" data-v="' + (e[6] || '') + '"' +
+        ' style="top:' + top + 'px;height:' + h + 'px">' +
         '<b>' + e[3] + '</b>' +
         '<span class="hh">' + hh(e[1]) + '\u2013' + hh(e[2]) + ' \u00b7 ' + e[4] + '</span></div>';
     }).join('');
@@ -3423,10 +3442,10 @@ function svCalendar(){
         '<div class="svtimes">' + times + '</div></div>' + cols +
     '</div></div>' +
     '<div class="svkey">' +
-      '<span><i style="background:#276B7A"></i>Medborgarskolan, a real course</span>' +
-      '<span><i style="background:#C98A9B"></i>Spr\u00e5kcaf\u00e9, free, just turn up</span>' +
+      '<span><i style="background:#276B7A"></i>\uD83C\uDDF8\uD83C\uDDEA\uD83C\uDFEB Medborgarskolan, a real course</span>' +
+      '<span><i style="background:#C98A9B"></i>\uD83C\uDDF8\uD83C\uDDEA\u2615 Spr\u00e5kcaf\u00e9, free, just turn up</span>' +
       '<span><i style="background:#F0E3E7"></i>alternative \u2014 pick one, not both</span>' +
-      '<span><i style="background:#E9F2EC"></i>English, distance, movable</span>' +
+      '<span><i style="background:var(--panel);border:1px solid var(--line)"></i>tap a lesson for the address</span>' +
     '</div>' +
     '<div class="svends">' + SVENDS.map(e =>
       '<div class="svend"><b>' + e[0] + '</b><span>' + e[1] + '</span><em>' + e[2] + '</em></div>'
@@ -3439,12 +3458,41 @@ function svCalendar(){
     'pick one and keep it, so it becomes a habit rather than a decision.</div>' +
     '</div>';
 }
+
+/* tapping a lesson: where it is, who runs it, and the page it came from */
+function svOpen(key){
+  const v = SVPLACE[key];
+  if (!v) return;
+  let box = document.getElementById('svModal');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'svModal';
+    box.className = 'svmodal';
+    document.body.appendChild(box);
+  }
+  box.innerHTML = '<div class="svsheet"><button class="svx" id="svClose">\u00d7</button>' +
+    '<div class="svt">' + v.t + '</div>' +
+    '<div class="sva">\uD83D\uDCCD ' + v.a + '</div>' +
+    '<div class="svn">' + v.n + '</div>' +
+    '<div class="svlinks">' +
+      '<a href="' + v.u + '" target="_blank" rel="noopener">' + v.ul + ' \u2197</a>' +
+      '<a href="' + v.map + '" target="_blank" rel="noopener">open the map \u2197</a>' +
+    '</div></div>';
+  box.classList.add('on');
+  box.onclick = ev => { if (ev.target === box || ev.target.id === 'svClose') box.classList.remove('on'); };
+}
+
 function wireSvCal(){
   const t = document.getElementById('svTabs');
   if (!t) return;
   t.querySelectorAll('button').forEach(b => b.onclick = () => {
     svPhase = +b.dataset.p;
     paintFinish();
+  });
+  document.querySelectorAll('.svev').forEach(e => {
+    if (!e.dataset.v) return;
+    e.style.cursor = 'pointer';
+    e.onclick = () => svOpen(e.dataset.v);
   });
 }
 
