@@ -6772,7 +6772,7 @@ function paintSvCard(){
       (SVFC.back ? back : front) + '</div></div>' +
     '<div class="nav">' +
       '<button id="fcPrev">\u2190</button>' +
-      '<button class="pri" id="fcFlip">V\u00e4nd</button>' +
+      '<button class="pri" id="fcFlip" title="pil upp eller ner">V\u00e4nd</button>' +
       '<button id="fcNext">\u2192</button>' +
     '</div></div>';
   const card = document.getElementById('fcCard');
@@ -6784,12 +6784,18 @@ function paintSvCard(){
   document.getElementById('fcClose').onclick = () => box.classList.remove('on');
   document.getElementById('fcSay').onclick = () => speak(SVFC.back && ex ? ex : w.w, 'sv');
   /* swipe */
-  let x0 = null;
-  card.ontouchstart = e => { x0 = e.touches[0].clientX; };
+  let x0 = null, y0 = null;
+  card.ontouchstart = e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; };
   card.ontouchend = e => {
     if (x0 === null) return;
     const dx = e.changedTouches[0].clientX - x0;
-    x0 = null;
+    const dy = e.changedTouches[0].clientY - y0;
+    x0 = null; y0 = null;
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 45){
+      SVFC.back = !SVFC.back;
+      paintSvCard();
+      return;
+    }
     if (Math.abs(dx) > 45){ svCardMove(dx < 0 ? 1 : -1); }
   };
 }
@@ -6798,6 +6804,12 @@ document.addEventListener('keydown', e => {
   if (!box || !box.classList.contains('on')) return;
   if (e.key === 'ArrowRight') svCardMove(1);
   if (e.key === 'ArrowLeft') svCardMove(-1);
+  /* up or down turns the card over */
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+    e.preventDefault();
+    SVFC.back = !SVFC.back;
+    paintSvCard();
+  }
   if (e.key === ' '){
     /* space reads the card out loud; Enter turns it */
     e.preventDefault();
