@@ -2219,6 +2219,52 @@ html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)
   padding:7px 13px;font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut);cursor:pointer}
 .svtext .trow button.on{background:var(--sea);color:#fff;border-color:var(--sea)}
 
+
+.sth .flagi{display:inline-block;width:17px;height:11px;border-radius:2px;vertical-align:-1px;
+  margin-right:7px;box-shadow:0 0 0 .5px rgba(0,0,0,.2)}
+.addblk{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--line2);
+  background:none;border-radius:999px;padding:6px 13px;font-family:var(--ui);font-size:12px;
+  font-weight:800;color:var(--mut2);cursor:pointer;margin-top:4px}
+.addblk:hover{border-color:var(--sea);color:var(--sea)}
+.sth .sthx{margin-left:auto;display:flex;gap:4px}
+.sth .sthx button{border:none;background:none;cursor:pointer;font-size:14px;line-height:1;
+  color:var(--sc);opacity:.65;padding:2px 3px}
+.sth .sthx button:hover{opacity:1}
+.sth .stn + .sthx{margin-left:8px}
+.dayplus{border:1px dashed var(--line2);background:none;border-radius:999px;width:26px;height:26px;
+  font-size:15px;line-height:1;color:var(--mut2);cursor:pointer;margin-left:8px}
+.dayplus:hover{border-color:var(--sea);color:var(--sea)}
+.bmodal{position:fixed;inset:0;background:rgba(20,26,28,.45);display:none;align-items:center;
+  justify-content:center;z-index:95;padding:18px}
+.bmodal.on{display:flex}
+.bsheet{background:var(--panel);border-radius:20px;padding:22px 20px;max-width:430px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:86vh;overflow:auto}
+.bsheet h4{font-family:var(--disp);font-size:23px;font-weight:600;color:var(--ink);margin:0 0 14px}
+.bsheet label{display:block;font-family:var(--ui);font-size:10.5px;font-weight:800;letter-spacing:1px;
+  text-transform:uppercase;color:var(--mut2);margin:13px 0 5px}
+.bsheet input[type=text]{width:100%;border:1.5px solid var(--line2);border-radius:12px;
+  padding:11px 13px;font-family:var(--disp);font-size:17px;background:var(--bg);color:var(--ink)}
+.bsheet input:focus{outline:none;border-color:var(--sea)}
+.bemos,.bcols,.bdays{display:flex;gap:7px;flex-wrap:wrap}
+.bemos button{border:1px solid var(--line);background:var(--bg);border-radius:10px;width:38px;
+  height:38px;font-size:18px;cursor:pointer}
+.bemos button.on{border-color:var(--sea);background:var(--sea-l)}
+.bcols button{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.bcols button.on{border-color:var(--ink)}
+.bdays button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 11px;
+  font-family:var(--ui);font-size:12px;font-weight:800;color:var(--mut);cursor:pointer}
+.bdays button.on{background:var(--sea);color:#fff;border-color:var(--sea)}
+.brow{display:flex;gap:8px;margin-top:18px}
+.brow button{flex:1;border:none;border-radius:13px;padding:12px;font-family:var(--ui);font-size:13px;
+  font-weight:800;cursor:pointer;background:var(--sea);color:#fff}
+.brow button.ghost{background:var(--bg);color:var(--mut);border:1px solid var(--line)}
+.brow button.del{background:var(--rose-l);color:var(--rose)}
+.btasks{margin-top:10px}
+.btask{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);
+  font-size:14px;color:var(--ink)}
+.btask span{flex:1}
+.btask button{border:none;background:none;cursor:pointer;color:var(--mut2);font-size:13px}
+
 </style>
 </head>
 <body>
@@ -5189,9 +5235,23 @@ function wirePeople(){
 /* ---- the plan, rendered by the platform itself ---- */
 /* which of the three the task belongs to */
 /* in the order the day actually happens: you get up, then the Quran, then study */
+
+const FLAG_SE = '<svg class="flagi" viewBox="0 0 16 10"><rect width="16" height="10" fill="#006AA7"/>' +
+  '<rect x="5" width="2" height="10" fill="#FECC00"/><rect y="4" width="16" height="2" fill="#FECC00"/></svg>';
+const FLAG_GB = '<svg class="flagi" viewBox="0 0 16 10"><rect width="16" height="10" fill="#012169"/>' +
+  '<path d="M0 0l16 10M16 0L0 10" stroke="#fff" stroke-width="2"/>' +
+  '<path d="M0 0l16 10M16 0L0 10" stroke="#C8102E" stroke-width="1"/>' +
+  '<path d="M8 0v10M0 5h16" stroke="#fff" stroke-width="3"/>' +
+  '<path d="M8 0v10M0 5h16" stroke="#C8102E" stroke-width="1.8"/></svg>';
+function streamIcon(s){
+  if (s.k === 'swedish') return FLAG_SE;
+  if (s.k === 'english') return FLAG_GB;
+  return '<span class="ste">' + s.e + '</span>';
+}
+
 const STREAMS = [
   { k:'other',   t:'The day itself', e:'\uD83C\uDF05', c:'#B08968', bg:'#F6EFE7' },
-  { k:'quran',   t:'Quran',   e:'\uD83D\uDD4B', c:'#4F8A6B', bg:'#E9F2EC' },
+  { k:'quran',   t:'Quran',   e:'\uD83D\uDCD7', c:'#4F8A6B', bg:'#E9F2EC' },
   { k:'english', t:'English', e:'\uD83D\uDCD8', c:'#276B7A', bg:'#E4EFF1' },
   { k:'swedish', t:'Svenska', e:'\uD83C\uDDF8\uD83C\uDDEA', c:'#C9A227', bg:'#F7F0DC' }
 ];
@@ -5213,12 +5273,165 @@ function groupRows(rows){
   rows.forEach(r => { const k = streamOf(r); (by[k] = by[k] || []).push(r); });
   return STREAMS.filter(s => by[s.k] && by[s.k].length).map(s => ({ s:s, rows:by[s.k] }));
 }
+
+/* ---- blocks you make yourself ---- */
+const B_EMOJI = ['\uD83D\uDCDA','\uD83C\uDFA8','\uD83C\uDFBB','\uD83C\uDFC3','\uD83E\uDDD8',
+                 '\uD83D\uDCBB','\uD83C\uDF31','\uD83C\uDF73','\uD83D\uDCB0','\uD83D\uDD2C',
+                 '\uD83D\uDDFA','\u2728'];
+const B_COLOR = [['#B5651D','#F7EBE0'],['#7A5BA6','#EFE8F7'],['#2F7A52','#E4F1E9'],
+                 ['#C9607A','#FAE6EA'],['#276B7A','#E4EFF1'],['#C9A227','#F7F0DC'],
+                 ['#4A6FA5','#E7EDF7'],['#8A7A3E','#F2EFDF']];
+const B_DAYS = [['1','M\u00e5n'],['2','Tis'],['3','Ons'],['4','Tor'],['5','Fre'],['6','L\u00f6r'],['0','S\u00f6n']];
+function myBlocks(){ return readJSON('studyhub_myblocks') || []; }
+function saveBlocks(list){ writeJSON('studyhub_myblocks', list); }
+function blocksForDay(iso){
+  const wd = new Date(iso + 'T00:00:00').getDay();
+  return myBlocks().filter(b => (b.days || []).indexOf(String(wd)) >= 0);
+}
+function blockRows(b, iso){
+  return (b.tasks || []).map(t => ({ i: iso + '--cb-' + b.id + '-' + t.id, t: t.text }));
+}
+/* ---- the sheet ---- */
+function bSheet(html){
+  let box = document.getElementById('bModal');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'bModal';
+    box.className = 'bmodal';
+    document.body.appendChild(box);
+    box.onclick = e => { if (e.target === box) box.classList.remove('on'); };
+  }
+  box.innerHTML = '<div class="bsheet">' + html + '</div>';
+  box.classList.add('on');
+  return box;
+}
+function bClose(){ const b = document.getElementById('bModal'); if (b) b.classList.remove('on'); }
+function bRepaint(){ if (typeof paintWeek === 'function') paintWeek(); if (typeof paintToday === 'function') paintToday(); }
+
+function editBlock(id){
+  const list = myBlocks();
+  const b = id ? list.find(x => x.id === id)
+               : { id: 'b' + Date.now(), title: '', emoji: B_EMOJI[0],
+                   c: B_COLOR[0][0], bg: B_COLOR[0][1], days: ['1','2','3','4','5'], tasks: [] };
+  bSheet('<h4>' + (id ? '\u00c4ndra block' : 'Nytt block') + '</h4>' +
+    '<label>Namn</label><input type="text" id="bTitle" value="' + gEsc(b.title) +
+      '" placeholder="t.ex. Historia">' +
+    '<label>Ikon</label><div class="bemos" id="bEmo">' + B_EMOJI.map(e =>
+      '<button data-e="' + e + '"' + (e === b.emoji ? ' class="on"' : '') + '>' + e + '</button>').join('') + '</div>' +
+    '<label>F\u00e4rg</label><div class="bcols" id="bCol">' + B_COLOR.map(c =>
+      '<button data-c="' + c[0] + '" data-bg="' + c[1] + '" style="background:' + c[0] + '"' +
+      (c[0] === b.c ? ' class="on"' : '') + '></button>').join('') + '</div>' +
+    '<label>Dagar</label><div class="bdays" id="bDays">' + B_DAYS.map(d =>
+      '<button data-d="' + d[0] + '"' + (b.days.indexOf(d[0]) >= 0 ? ' class="on"' : '') + '>' +
+      d[1] + '</button>').join('') + '</div>' +
+    (id ? '<label>Uppgifter</label><div class="btasks" id="bTasks">' + (b.tasks.length
+        ? b.tasks.map(t => '<div class="btask"><span>' + gEsc(t.text) + '</span>' +
+            '<button data-edit="' + t.id + '">\u270e</button>' +
+            '<button data-del="' + t.id + '">\u2715</button></div>').join('')
+        : '<div class="btask"><span style="color:var(--mut2)">inga \u00e4n</span></div>') +
+      '</div>' : '') +
+    '<div class="brow">' +
+      '<button id="bSave">Spara</button>' +
+      (id ? '<button class="del" id="bDel">Ta bort</button>' : '') +
+      '<button class="ghost" id="bCancel">Avbryt</button>' +
+    '</div>');
+  const sel = (wrap, attr, multi) => {
+    document.getElementById(wrap).querySelectorAll('button').forEach(btn => btn.onclick = () => {
+      if (multi) btn.classList.toggle('on');
+      else {
+        document.getElementById(wrap).querySelectorAll('button').forEach(x => x.classList.remove('on'));
+        btn.classList.add('on');
+      }
+    });
+  };
+  sel('bEmo', 'e'); sel('bCol', 'c'); sel('bDays', 'd', true);
+  document.getElementById('bCancel').onclick = bClose;
+  if (id){
+    document.getElementById('bTasks').querySelectorAll('[data-del]').forEach(x => x.onclick = () => {
+      const l = myBlocks(), bb = l.find(y => y.id === id);
+      bb.tasks = bb.tasks.filter(t => t.id !== x.dataset.del);
+      saveBlocks(l); editBlock(id); bRepaint();
+    });
+    document.getElementById('bTasks').querySelectorAll('[data-edit]').forEach(x => x.onclick = () =>
+      editTask(id, x.dataset.edit));
+    document.getElementById('bDel').onclick = () => {
+      saveBlocks(myBlocks().filter(x => x.id !== id));
+      bClose(); bRepaint();
+    };
+  }
+  document.getElementById('bSave').onclick = () => {
+    const title = document.getElementById('bTitle').value.trim();
+    if (!title) return;
+    const emo = document.querySelector('#bEmo button.on');
+    const col = document.querySelector('#bCol button.on');
+    const days = [...document.querySelectorAll('#bDays button.on')].map(x => x.dataset.d);
+    const list = myBlocks();
+    const rec = list.find(x => x.id === b.id) || b;
+    rec.title = title;
+    rec.emoji = emo ? emo.dataset.e : b.emoji;
+    rec.c = col ? col.dataset.c : b.c;
+    rec.bg = col ? col.dataset.bg : b.bg;
+    rec.days = days.length ? days : ['1'];
+    if (!list.find(x => x.id === b.id)) list.push(rec);
+    saveBlocks(list);
+    bClose(); bRepaint();
+  };
+}
+function editTask(blockId, taskId){
+  const list = myBlocks(), b = list.find(x => x.id === blockId);
+  if (!b) return;
+  const t = taskId ? (b.tasks || []).find(x => x.id === taskId) : null;
+  bSheet('<h4>' + (t ? '\u00c4ndra uppgift' : 'Ny uppgift') + ' \u00b7 ' + gEsc(b.title) + '</h4>' +
+    '<label>Text</label><input type="text" id="tText" value="' + (t ? gEsc(t.text) : '') +
+      '" placeholder="t.ex. L\u00e4s artikel 1">' +
+    '<label>Den visas varje</label><div class="bdays">' + B_DAYS.filter(d =>
+      b.days.indexOf(d[0]) >= 0).map(d => '<button class="on">' + d[1] + '</button>').join('') + '</div>' +
+    '<div class="brow"><button id="tSave">Spara</button>' +
+      (t ? '<button class="del" id="tDel">Ta bort</button>' : '') +
+      '<button class="ghost" id="tCancel">Avbryt</button></div>');
+  document.getElementById('tCancel').onclick = () => editBlock(blockId);
+  if (t) document.getElementById('tDel').onclick = () => {
+    b.tasks = b.tasks.filter(x => x.id !== t.id);
+    saveBlocks(list); editBlock(blockId); bRepaint();
+  };
+  document.getElementById('tSave').onclick = () => {
+    const text = document.getElementById('tText').value.trim();
+    if (!text) return;
+    b.tasks = b.tasks || [];
+    if (t) t.text = text;
+    else b.tasks.push({ id: 't' + Date.now(), text: text });
+    saveBlocks(list);
+    bClose(); bRepaint();
+  };
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('[data-blk]');
+  if (a){
+    e.preventDefault(); e.stopPropagation();
+    const v = a.dataset.blk;
+    if (v === 'new') editBlock(null);
+    else if (v.indexOf('task:') === 0) editTask(v.slice(5), null);
+    else editBlock(v);
+  }
+});
+
 function streamBlocks(rows, st, dayIso){
-  return groupRows(rows).map(g => {
+  let groups = groupRows(rows);
+  if (dayIso){
+    blocksForDay(dayIso).forEach(b => {
+      groups.push({ s: { k: 'cb-' + b.id, t: b.title, e: b.emoji, c: b.c, bg: b.bg, mine: 1 },
+                    rows: blockRows(b, dayIso) });
+    });
+  }
+  return groups.map(g => {
     const done = g.rows.filter(r => Number(st[r.i]) === 1).length;
     return '<div class="stream" style="--sc:' + g.s.c + ';--sbg:' + g.s.bg + '">' +
-      '<div class="sth"><span class="ste">' + g.s.e + '</span>' + g.s.t +
-      '<span class="stn">' + done + '/' + g.rows.length + '</span></div>' +
+      '<div class="sth">' + streamIcon(g.s) + g.s.t +
+      '<span class="stn">' + done + '/' + g.rows.length + '</span>' +
+      (g.s.mine ? '<span class="sthx">' +
+        '<button data-blk="task:' + g.s.k.slice(3) + '" title="ny uppgift">+</button>' +
+        '<button data-blk="' + g.s.k.slice(3) + '" title="\u00e4ndra block">\u270e</button>' +
+        '</span>' : '') + '</div>' +
       g.rows.map(r => {
         const v = Number(st[r.i]) || 0;
         const away = dayIso && homeDay(r.i) !== dayIso;
@@ -5236,7 +5449,8 @@ function streamBlocks(rows, st, dayIso){
           '</span>' : '') + '</div>';
       }).join('') +
       '</div>';
-  }).join('');
+  }).join('') +
+  (dayIso ? '<button class="addblk" data-blk="new">+ Nytt block</button>' : '');
 }
 
 const WEEKS = (() => {
@@ -6201,13 +6415,11 @@ function svWordsOfDay(n){
 }
 /* a round you have finished stays marked, per day and per kind */
 function svDoneKey(kind){ return 'd' + svDay + ':' + kind; }
-function svDoneMap(){
-  try { return JSON.parse(MEM['studyhub_sv_done'] || '{}'); } catch(e){ return {}; }
-}
+function svDoneMap(){ return readJSON('studyhub_sv_done') || {}; }
 function svMarkDone(kind, right, total){
   const m = svDoneMap();
   m[svDoneKey(kind)] = { r: right, t: total, on: new Date().toISOString().slice(0, 10) };
-  MEM['studyhub_sv_done'] = JSON.stringify(m);
+  writeJSON('studyhub_sv_done', m);
 }
 function svDoneClass(kind){ return svDoneMap()[svDoneKey(kind)] ? ' done' : ''; }
 function svDoneTail(kind){
