@@ -2274,6 +2274,19 @@ html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)
 .twrap.overlast{box-shadow:0 2px 0 0 var(--sea)}
 .stream.dropzone{outline:2px dashed var(--sc);outline-offset:3px}
 
+
+.twrap{display:flex;align-items:flex-start;gap:2px}
+.twrap .grip{flex:0 0 auto;cursor:grab;color:var(--mut2);opacity:.45;font-size:13px;
+  line-height:1.2;padding:9px 2px 0 0;letter-spacing:-2px;user-select:none}
+.twrap:hover .grip{opacity:.9;color:var(--sea)}
+.twrap .grip:active{cursor:grabbing}
+.twrap .trow{flex:1 1 auto}
+.twrap .xtedit{border:none;background:none;cursor:pointer;color:var(--mut2);font-size:12px;
+  padding:8px 4px 0}
+.twrap .xtedit:hover{color:var(--sea)}
+.trow i.mine{font-style:normal;font-family:var(--ui);font-size:9px;font-weight:800;
+  letter-spacing:.8px;text-transform:uppercase;color:var(--sand);margin-left:6px}
+
 </style>
 </head>
 <body>
@@ -5268,6 +5281,10 @@ const STREAMS = [
 /* the task id already names the stream: sv-* is Swedish, quran-* is Quran */
 function streamOf(row){
   const id = String(row.i || '').split('--')[1] || '';
+  if (row.xt){
+    const rec = extraTasks().find(x => x.id === row.xt);
+    if (rec) return rec.s;
+  }
   const t  = String(row.t || '');
   /* listening-2 is the Swedish listening hour: it appears only on Swedish days */
   if (/^sv-/.test(id) || id === 'listening-2') return 'swedish';
@@ -5450,7 +5467,23 @@ let DRAG = null;
 function wireDrag(root){
   const box = root || document;
   box.querySelectorAll('.twrap[data-day]').forEach(el => {
-    el.setAttribute('draggable', 'true');
+    el.setAttribute('draggable', 'false');
+    const grip = el.querySelector('.grip');
+    if (grip){
+      grip.setAttribute('draggable', 'true');
+      grip.ondragstart = e => {
+        DRAG = { id: el.dataset.id, iso: el.dataset.day, stream: el.closest('.stream') };
+        el.classList.add('dragging');
+        try { e.dataTransfer.setData('text/plain', el.dataset.id); } catch(err){}
+        e.dataTransfer.effectAllowed = 'move';
+      };
+      grip.ondragend = () => {
+        el.classList.remove('dragging');
+        document.querySelectorAll('.over,.overlast').forEach(x =>
+          x.classList.remove('over', 'overlast'));
+        DRAG = null;
+      };
+    }
     el.ondragstart = e => {
       DRAG = { id: el.dataset.id, iso: el.dataset.day, stream: el.closest('.stream') };
       el.classList.add('dragging');
@@ -5498,8 +5531,60 @@ function wireDrag(root){
   });
 }
 
+
+/* ---- tasks you add to a block that already exists ---- */
+function extraTasks(){ return readJSON('studyhub_extra') || []; }
+function saveExtra(list){ writeJSON('studyhub_extra', list); }
+function extraForDay(streamKey, iso){
+  const wd = String(new Date(iso + 'T00:00:00').getDay());
+  return extraTasks().filter(t => t.s === streamKey && (t.days || []).indexOf(wd) >= 0)
+    .map(t => ({ i: iso + '--xt-' + t.id, t: t.text, xt: t.id }));
+}
+function editExtra(streamKey, taskId, iso){
+  const list = extraTasks();
+  const t = taskId ? list.find(x => x.id === taskId) : null;
+  const wd = iso ? String(new Date(iso + 'T00:00:00').getDay()) : '1';
+  const days = t ? t.days : [wd];
+  bSheet('<h4>' + (t ? '\u00c4ndra uppgift' : 'Ny uppgift') + '</h4>' +
+    '<label>Text</label><input type="text" id="xText" value="' + (t ? gEsc(t.text) : '') +
+      '" placeholder="t.ex. L\u00e4s en artikel">' +
+    '<label>Dagar</label><div class="bdays" id="xDays">' + B_DAYS.map(d =>
+      '<button data-d="' + d[0] + '"' + (days.indexOf(d[0]) >= 0 ? ' class="on"' : '') + '>' +
+      d[1] + '</button>').join('') + '</div>' +
+    '<div class="brow"><button id="xSave">Spara</button>' +
+      (t ? '<button class="del" id="xDel">Ta bort</button>' : '') +
+      '<button class="ghost" id="xCancel">Avbryt</button></div>');
+  document.querySelectorAll('#xDays button').forEach(b => b.onclick = () => b.classList.toggle('on'));
+  document.getElementById('xCancel').onclick = bClose;
+  if (t) document.getElementById('xDel').onclick = () => {
+    saveExtra(list.filter(x => x.id !== t.id));
+    bClose(); bRepaint();
+  };
+  document.getElementById('xSave').onclick = () => {
+    const text = document.getElementById('xText').value.trim();
+    if (!text) return;
+    const picked = [...document.querySelectorAll('#xDays button.on')].map(x => x.dataset.d);
+    if (t){ t.text = text; t.days = picked.length ? picked : days; }
+    else list.push({ id: 'x' + Date.now(), s: streamKey, text: text,
+                     days: picked.length ? picked : [wd] });
+    saveExtra(list);
+    bClose(); bRepaint();
+  };
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('[data-xt]');
+  if (!a) return;
+  e.preventDefault(); e.stopPropagation();
+  const v = a.dataset.xt.split('|');
+  editExtra(v[0], v[1] || null, v[2] || null);
+});
+
 function streamBlocks(rows, st, dayIso){
-  let groups = groupRows(rows);
+  let rows2 = rows.slice();
+  if (dayIso){
+    STREAMS.forEach(st0 => { rows2 = rows2.concat(extraForDay(st0.k, dayIso)); });
+  }
+  let groups = groupRows(rows2);
   if (dayIso){
     blocksForDay(dayIso).forEach(b => {
       groups.push({ s: { k: 'cb-' + b.id, t: b.title, e: b.emoji, c: b.c, bg: b.bg, mine: 1 },
@@ -5511,10 +5596,12 @@ function streamBlocks(rows, st, dayIso){
     return '<div class="stream" style="--sc:' + g.s.c + ';--sbg:' + g.s.bg + '">' +
       '<div class="sth">' + streamIcon(g.s) + g.s.t +
       '<span class="stn">' + done + '/' + g.rows.length + '</span>' +
-      (g.s.mine ? '<span class="sthx">' +
-        '<button data-blk="task:' + g.s.k.slice(3) + '" title="ny uppgift">+</button>' +
-        '<button data-blk="' + g.s.k.slice(3) + '" title="\u00e4ndra block">\u270e</button>' +
-        '</span>' : '') + '</div>' +
+      '<span class="sthx">' +
+        (g.s.mine
+          ? '<button data-blk="task:' + g.s.k.slice(3) + '" title="ny uppgift">+</button>' +
+            '<button data-blk="' + g.s.k.slice(3) + '" title="\u00e4ndra block">\u270e</button>'
+          : (dayIso ? '<button data-xt="' + g.s.k + '||' + dayIso + '" title="ny uppgift">+</button>' : '')) +
+      '</span></div>' +
       g.rows.map(r => {
         const v = Number(st[r.i]) || 0;
         const away = dayIso && homeDay(r.i) !== dayIso;
@@ -5522,11 +5609,15 @@ function streamBlocks(rows, st, dayIso){
         const fixed = r.i.indexOf('--sv-lesson') > 0;
         return '<div class="twrap' + (fixed ? ' fixed' : '') + '"' +
           (dayIso ? ' data-day="' + dayIso + '" data-id="' + r.i + '"' : '') + '>' +
+          (dayIso ? '<span class="grip" title="dra f\u00f6r att flytta">\u22ee\u22ee</span>' : '') +
           '<button class="trow' + (v === 1 ? ' on' : v === 2 ? ' missed' : '') +
           '" data-task="' + r.i + '" title="tap again for \u2715 could not">' +
           '<span class="box"></span><span>' + gEsc(taskText(r)) +
+          (r.xt ? ' <i class="mine">min</i>' : '') +
           (away ? ' <i class="mvd">moved from ' + gEsc(niceDay(homeDay(r.i))) + '</i>' : '') +
           '</span></button>' +
+          (r.xt ? '<button class="xtedit" data-xt="' + streamOf(r) + '|' + r.xt + '|' + dayIso +
+            '" title="\u00e4ndra">\u270e</button>' : '') +
           (dayIso ? '<span class="mvbtns">' +
             '<button class="mv" data-mv="-1" data-id="' + r.i + '" title="move a day earlier">\u2191</button>' +
             '<button class="mv" data-mv="1" data-id="' + r.i + '" title="move a day later">\u2193</button>' +
