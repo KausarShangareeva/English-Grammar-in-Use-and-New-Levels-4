@@ -5580,7 +5580,9 @@ const clean = t => String(t)
   .replace(/[\uD83D\uDD0A\u{1F508}-\u{1F50A}\u{1F507}]/gu,'')   /* the speaker icon itself */
   .replace(/\s+/g,' ').trim();
 const spk = t => voiceMissing() ? '' : '<button class="spk" data-say="' + gEsc(clean(t)).replace(/"/g,'&quot;') +
-  '" title="listen (British English)">\uD83D\uDD0A</button>';
+  '" title="' + (typeof LANG !== 'undefined' && LANG === 'sv' ? 'lyssna (svenska)'
+    : typeof LANG !== 'undefined' && LANG === 'ar' ? 'listen (Arabic)'
+    : 'listen (British English)') + '">\uD83D\uDD0A</button>';
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('.spk');
   if (b){ e.preventDefault(); e.stopPropagation(); speak(clean(b.dataset.say)); }
