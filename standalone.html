@@ -2812,19 +2812,21 @@ function moodRow(courseId){
 }
 function courseTitleFor(c){
   if (c.id !== 'units') return c.title;
-  return LANG === 'sv' ? 'Самые употребимые слова' : c.title;
+  return LANG === 'sv' ? 'Vanligaste orden' : c.title;
 }
 function courseSubFor(c){
   if (c.id !== 'units') return c.sub;
   const n = (WD || []).length, u = Object.keys(UNAMES || {}).length;
-  return n + ' орд · ' + u + (u === 1 ? ' набор' : ' набора');
+  return LANG === 'sv'
+    ? n + ' ord \u00b7 ' + u + (u === 1 ? ' upps\u00e4ttning' : ' upps\u00e4ttningar')
+    : c.sub;
 }
 function courseDescFor(c){
   if (c.id !== 'units') return c.desc;
-  if (LANG === 'sv')
-    return '\u0421\u043b\u043e\u0432\u0430 \u043f\u043e \u043d\u0430\u0431\u043e\u0440\u0430\u043c: SFI A, B, C, D \u0438 Svenska delkurs 1\u20134. '
-         + '\u0421 \u043f\u0440\u0438\u043c\u0435\u0440\u043e\u043c, \u0441\u043e\u0447\u0435\u0442\u0430\u043d\u0438\u044f\u043c\u0438 \u0438 \u043f\u043e\u043c\u0435\u0442\u043a\u043e\u0439 \u043e \u043b\u043e\u0432\u0443\u0448\u043a\u0430\u0445.';
-  return c.desc;
+  return LANG === 'sv'
+    ? 'Orden per upps\u00e4ttning: SFI A, B, C, D och Svenska delkurs 1\u20134. '
+      + 'Varje ord har en mening, kollokationer och en varning d\u00e4r ryskan lurar dig.'
+    : c.desc;
 }
 function paintCards(){
   refreshGuide();
@@ -3795,6 +3797,82 @@ function stashEnglish(){
   EN.GR = GR; EN.WD = WD; EN.ST = ST; EN.ESSAYS = ESSAYS;
   EN.UNAMES = UNAMES; EN.BOOKS = BOOKS; EN.SERIES = SERIES;
 }
+
+/* ---- on the Swedish platform the interface speaks Swedish ---- */
+const SVUI = {"Courses":"Kurser","Textbooks":"Läroböcker","Schedule":"Schema","Deadlines":"Sista datum","Sites":"Webbplatser","Stockholm University":"Stockholms universitet","English books":"Engelska böcker","Songs & poems":"Låtar och dikter","People":"Personer","IT goals":"IT-mål","Student":"Student","Your courses":"Dina kurser","Where this is going":"Dit det här leder","Do this one now.":"Gör den här nu.","and this one has been left the longest:":"och den här har legat längst:","Follow the green crystal":"Följ den gröna kristallen","Follow the pink crystal":"Följ den rosa kristallen","never done":"aldrig gjord","never touched":"aldrig rörd","fill the gap":"fyll i luckan","waiting":"väntar","1 topics":"1 område","Words from units":"Ord per nivå","Unit":"Nivå","words":"ord","Practise":"Öva","Start":"Starta","Check":"Kontrollera","Next":"Nästa","Hint":"Ledtråd","Show me":"Visa mig","Done":"Klart","Back":"Tillbaka","Back to the words":"Tillbaka till orden","Finish here":"Avsluta här","search":"sök","type it here":"skriv här","Redo the misses only":"Gör bara om missarna","the ones that went wrong":"de som blev fel","you wrote":"du skrev","it is":"det är","Almost.":"Nästan.","Not this time.":"Inte den här gången.","it comes back twice more in this round":"den kommer tillbaka två gånger till","it comes back later in this round":"den kommer tillbaka senare i rundan","right":"rätt","questions":"frågor","quizzes fresh":"quiz färska","nothing to practise yet":"inget att öva än","Week":"Vecka","today":"i dag","done":"klart","When each thing is finished":"När varje sak är klar","within a month":"inom en månad","further out":"längre fram","no date yet":"inget datum än","days left":"dagar kvar","finished":"avslutad","Between courses":"Mellan kurser","no course running":"ingen kurs pågår","The Swedish week":"Den svenska veckan","Course dates":"Kursdatum","Monday":"Måndag","Tuesday":"Tisdag","Wednesday":"Onsdag","Thursday":"Torsdag","Friday":"Fredag","Saturday":"Lördag","Sunday":"Söndag","MONDAY":"MÅNDAG","TUESDAY":"TISDAG","WEDNESDAY":"ONSDAG","THURSDAY":"TORSDAG","FRIDAY":"FREDAG","SATURDAY":"LÖRDAG","SUNDAY":"SÖNDAG","Mon":"Mån","Tue":"Tis","Wed":"Ons","Thu":"Tor","Fri":"Fre","Sat":"Lör","Sun":"Sön","January":"januari","February":"februari","March":"mars","April":"april","May":"maj","June":"juni","July":"juli","August":"augusti","September":"september","October":"oktober","November":"november","December":"december","All courses":"Alla kurser","of":"av","and":"och","or":"eller","All":"Alla","none":"inga","Everything":"Allt","Search":"Sök","search a word":"sök ett ord","Flagged":"Flaggade","Hard":"Svåra","New":"Nya","Seen":"Sedda","Learned":"Lärda","Show more":"Visa fler","more":"fler","left":"kvar","Today":"I dag","Tomorrow":"I morgon","Yesterday":"I går","This week":"Den här veckan","Next week":"Nästa vecka","day":"dag","days":"dagar","week":"vecka","weeks":"veckor","month":"månad","Quiz":"Quiz","Score":"Poäng","Correct":"Rätt","Wrong":"Fel","Skip":"Hoppa över","Close":"Stäng","Open":"Öppna","Save":"Spara","Add":"Lägg till","Delete":"Ta bort","Edit":"Ändra","Settings":"Inställningar","Progress":"Framsteg","word":"ord","example":"exempel","meaning":"betydelse","note":"anteckning","nothing yet":"inget än","no results":"inga träffar"};
+const SVUI_KEYS = Object.keys(SVUI).sort((a, b) => b.length - a.length);
+let svSweeping = false;
+function svRe(k){
+  /* only whole words, so "words" never turns "Words from units" inside out */
+  const esc = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const a = /^[\w\u00c0-\u024f]/.test(k) ? '(^|[^\\w\u00c0-\u024f])' : '()';
+  const b = /[\w\u00c0-\u024f]$/.test(k) ? '([^\\w\u00c0-\u024f]|$)' : '()';
+  return new RegExp(a + esc + b, 'g');
+}
+function svApply(text, keys, dict){
+  let out = text;
+  for (const k of keys){
+    if (out.indexOf(k) < 0) continue;
+    out = out.replace(svRe(k), (m, p1, p2) => p1 + dict[k] + p2);
+  }
+  return out;
+}
+function svTranslate(text){
+  return svApply(text, SVUI_KEYS, SVUI);
+}
+function svSweep(){
+  if (LANG !== 'sv' || svSweeping) return;
+  svSweeping = true;
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const hits = [];
+  let n;
+  while ((n = walk.nextNode())){
+    const p = n.parentElement;
+    if (!p) continue;
+    /* the words themselves are Swedish already, and a lesson row is data */
+    if (p.closest('.wrow, .adjcard, .svev, .svends, #aqSent, .tqsent')) continue;
+    const t = n.textContent;
+    if (!t || !/[A-Za-z]/.test(t)) continue;
+    const s = svTranslate(t);
+    if (s !== t) hits.push([n, s]);
+  }
+  hits.forEach(([node, s]) => { node.textContent = s; });
+  document.querySelectorAll('input[placeholder]').forEach(i => {
+    const s = svTranslate(i.placeholder);
+    if (s !== i.placeholder) i.placeholder = s;
+  });
+  svSweeping = false;
+}
+const SVUI_BACK = (function(){ const o = {}; for (const k in SVUI) o[SVUI[k]] = k; return o; })();
+const SVUI_BACK_KEYS = Object.keys(SVUI_BACK).sort((a, b) => b.length - a.length);
+function svSweepBack(){
+  if (svSweeping) return;
+  svSweeping = true;
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const hits = [];
+  let n;
+  while ((n = walk.nextNode())){
+    const p = n.parentElement;
+    if (!p) continue;
+    if (p.closest('.wrow, .adjcard, .svev, .svends, #aqSent, .tqsent')) continue;
+    const t = n.textContent;
+    if (!t) continue;
+    const out = svApply(t, SVUI_BACK_KEYS, SVUI_BACK);
+    if (out !== t) hits.push([n, out]);
+  }
+  hits.forEach(([node, v]) => { node.textContent = v; });
+  svSweeping = false;
+}
+function wireSvUI(){
+  if (!window.MutationObserver) return;
+  const obs = new MutationObserver(() => {
+    if (LANG !== 'sv') return;
+    clearTimeout(window.__svT);
+    window.__svT = setTimeout(svSweep, 40);
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+}
+
 function applyLang(l){
   stashEnglish();
   LANG = l;
@@ -3819,6 +3897,9 @@ function applyLang(l){
   paintLangMenu();
   refreshGuide();
   if (!restoring) go('dash');
+  if (l === 'sv') setTimeout(svSweep, 60);
+  else setTimeout(svSweepBack, 60);
+  
 }
 function paintLangMenu(){
   const fl = $('#langFlag');
@@ -8150,6 +8231,8 @@ wirePeople();
 wireSongs();
 initTheme();
 initLangSkin();
+wireSvUI();
+setTimeout(svSweep, 120);
 wireDeadlines();
 wireSites();
 wireAdj(); paintCalendar(); paintSchedule(); paintCards();
