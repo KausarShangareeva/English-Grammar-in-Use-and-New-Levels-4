@@ -6054,6 +6054,15 @@ function paintWordChips(){
 }
 function paintPractise(){
   const box = $('#wActions'); if (!box) return;
+  /* the Swedish platform has its own round: fifty a day, typed */
+  if (LANG === 'sv'){
+    box.innerHTML = '';
+    const head = document.querySelector('.practise .prh');
+    if (head) head.style.display = 'none';
+    return;
+  }
+  const head0 = document.querySelector('.practise .prh');
+  if (head0) head0.style.display = '';
   const ICON = { mix:'\u25b6', ru2en:'\uD83C\uDDF7\uD83C\uDDFA', type:'\u2328\uFE0F',
                  en2ru:'\uD83C\uDDEC\uD83C\uDDE7', def2en:'\uD83D\uDCAC',
                  cloze:'\u2712\uFE0F', reg:'\uD83D\uDEA9' };
