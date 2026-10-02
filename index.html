@@ -2265,6 +2265,14 @@ html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)
 .btask span{flex:1}
 .btask button{border:none;background:none;cursor:pointer;color:var(--mut2);font-size:13px}
 
+
+.twrap{position:relative}
+.twrap[draggable="true"] .trow{cursor:grab}
+.twrap.dragging{opacity:.4}
+.twrap.over{box-shadow:0 -2px 0 0 var(--sea)}
+.twrap.overlast{box-shadow:0 2px 0 0 var(--sea)}
+.stream.dropzone{outline:2px dashed var(--sc);outline-offset:3px}
+
 </style>
 </head>
 <body>
@@ -3081,6 +3089,7 @@ function paintToday(where){
       paintCards();
     });
   });
+  wireDrag(box);
   box.querySelectorAll('.trow').forEach(row => {
     row.onclick = () => {
       const id = row.dataset.task;
@@ -3859,7 +3868,7 @@ function rowsForDay(iso){
     const row = src.rows.find(x => x.i === id);
     if (row) out.push(row);
   });
-  return out;
+  return applyOrder(iso, out);
 }
 /* ---- keeping the marks safe ---- */
 function storageWorks(){
@@ -5415,6 +5424,79 @@ document.addEventListener('click', e => {
   }
 });
 
+
+/* ---- the order you set with the mouse, kept per day ---- */
+function taskOrder(){ return readJSON('studyhub_order') || {}; }
+function saveTaskOrder(iso, ids){
+  const all = taskOrder();
+  all[iso] = ids;
+  writeJSON('studyhub_order', all);
+}
+function applyOrder(iso, rows){
+  const want = (taskOrder() || {})[iso];
+  if (!want || !want.length) return rows;
+  const pos = {};
+  want.forEach((id, n) => { pos[id] = n; });
+  return rows.slice().sort((a, b) => {
+    const pa = pos[a.i], pb = pos[b.i];
+    if (pa === undefined && pb === undefined) return 0;
+    if (pa === undefined) return 1;
+    if (pb === undefined) return -1;
+    return pa - pb;
+  });
+}
+let DRAG = null;
+function wireDrag(root){
+  const box = root || document;
+  box.querySelectorAll('.twrap[data-day]').forEach(el => {
+    el.setAttribute('draggable', 'true');
+    el.ondragstart = e => {
+      DRAG = { id: el.dataset.id, iso: el.dataset.day, stream: el.closest('.stream') };
+      el.classList.add('dragging');
+      try { e.dataTransfer.setData('text/plain', el.dataset.id); } catch(err){}
+      e.dataTransfer.effectAllowed = 'move';
+    };
+    el.ondragend = () => {
+      el.classList.remove('dragging');
+      box.querySelectorAll('.over,.overlast').forEach(x =>
+        x.classList.remove('over', 'overlast'));
+      DRAG = null;
+    };
+    el.ondragover = e => {
+      if (!DRAG || DRAG.iso !== el.dataset.day) return;
+      /* a task stays inside its own block; the blocks keep their order */
+      if (DRAG.stream && el.closest('.stream') !== DRAG.stream) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const below = (e.clientY - r.top) > r.height / 2;
+      el.classList.toggle('over', !below);
+      el.classList.toggle('overlast', below);
+    };
+    el.ondragleave = () => el.classList.remove('over', 'overlast');
+    el.ondrop = e => {
+      if (!DRAG || DRAG.iso !== el.dataset.day) return;
+      if (DRAG.stream && el.closest('.stream') !== DRAG.stream) return;
+      e.preventDefault();
+      const below = el.classList.contains('overlast');
+      el.classList.remove('over', 'overlast');
+      const iso = el.dataset.day;
+      /* the order of every task of that day, as it stands on screen */
+      const ids = [...document.querySelectorAll('.twrap[data-day="' + iso + '"]')]
+                    .map(x => x.dataset.id);
+      const from = ids.indexOf(DRAG.id);
+      if (from < 0) return;
+      ids.splice(from, 1);
+      let to = ids.indexOf(el.dataset.id);
+      if (to < 0) to = ids.length - 1;
+      ids.splice(below ? to + 1 : to, 0, DRAG.id);
+      saveTaskOrder(iso, ids);
+      DRAG = null;
+      if (typeof paintWeek === 'function') paintWeek();
+      if (typeof paintToday === 'function') paintToday();
+    };
+  });
+}
+
 function streamBlocks(rows, st, dayIso){
   let groups = groupRows(rows);
   if (dayIso){
@@ -5437,7 +5519,8 @@ function streamBlocks(rows, st, dayIso){
         const away = dayIso && homeDay(r.i) !== dayIso;
         /* a lesson with a room and a time is not a task you can quietly skip */
         const fixed = r.i.indexOf('--sv-lesson') > 0;
-        return '<div class="twrap' + (fixed ? ' fixed' : '') + '">' +
+        return '<div class="twrap' + (fixed ? ' fixed' : '') + '"' +
+          (dayIso ? ' data-day="' + dayIso + '" data-id="' + r.i + '"' : '') + '>' +
           '<button class="trow' + (v === 1 ? ' on' : v === 2 ? ' missed' : '') +
           '" data-task="' + r.i + '" title="tap again for \u2715 could not">' +
           '<span class="box"></span><span>' + gEsc(taskText(r)) +
