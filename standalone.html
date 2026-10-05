@@ -3890,7 +3890,7 @@ function storageWorks(){
   catch(e){ return false; }
 }
 const BACKUP_KEYS = ['task-status-8weeks','task-moves-8weeks','nl4vocab_v1',
-                     'oshima_essays-read','story-read','awards-done','studyhub_last'];
+                     'oshima_essays-read','story-read','awards-done','studyhub_last','studyhub_sv_done','studyhub_cq_read'];
 function saveBackup(){
   const data = { savedAt:new Date().toISOString(), v:1, store:{} };
   BACKUP_KEYS.forEach(k => { const v = readJSON(k); if (v) data.store[k] = v; });
@@ -6600,7 +6600,7 @@ function svDoneMap(){ return readJSON('studyhub_sv_done') || {}; }
 function svMarkDone(kind, right, total){
   const m = svDoneMap();
   m[svDoneKey(kind)] = { r: right, t: total, on: new Date().toISOString().slice(0, 10) };
-  writeJSON('studyhub_sv_done','studyhub_cq_read', m);
+  writeJSON('studyhub_sv_done', m);
 }
 function svDoneClass(kind){ return svDoneMap()[svDoneKey(kind)] ? ' done' : ''; }
 function svDoneTail(kind){
