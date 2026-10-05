@@ -2276,7 +2276,8 @@ html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)
 
 
 .twrap{display:flex;align-items:flex-start;gap:2px}
-.twrap .grip{flex:0 0 auto;cursor:grab;color:var(--mut2);opacity:.45;font-size:13px;
+.twrap[draggable="true"]{cursor:grab}.twrap[draggable="true"]:active{cursor:grabbing}
+.twrap .grip{flex:0 0 auto;cursor:grab;color:var(--mut2);opacity:.7;font-size:13px;
   line-height:1.2;padding:9px 2px 0 0;letter-spacing:-2px;user-select:none}
 .twrap:hover .grip{opacity:.9;color:var(--sea)}
 .twrap .grip:active{cursor:grabbing}
@@ -5316,7 +5317,8 @@ function blocksForDay(iso){
   return myBlocks().filter(b => (b.days || []).indexOf(String(wd)) >= 0);
 }
 function blockRows(b, iso){
-  return (b.tasks || []).map(t => ({ i: iso + '--cb-' + b.id + '-' + t.id, t: t.text }));
+  return (b.tasks || []).filter(t => !t.date || t.date === iso)
+    .map(t => ({ i: iso + '--cb-' + b.id + '-' + t.id, t: t.text }));
 }
 /* ---- the sheet ---- */
 function bSheet(html){
@@ -5404,18 +5406,21 @@ function editBlock(id){
     bClose(); bRepaint();
   };
 }
-function editTask(blockId, taskId){
+function editTask(blockId, taskId, iso){
   const list = myBlocks(), b = list.find(x => x.id === blockId);
   if (!b) return;
   const t = taskId ? (b.tasks || []).find(x => x.id === taskId) : null;
   bSheet('<h4>' + (t ? '\u00c4ndra uppgift' : 'Ny uppgift') + ' \u00b7 ' + gEsc(b.title) + '</h4>' +
     '<label>Text</label><input type="text" id="tText" value="' + (t ? gEsc(t.text) : '') +
       '" placeholder="t.ex. L\u00e4s artikel 1">' +
-    '<label>Den visas varje</label><div class="bdays">' + B_DAYS.filter(d =>
-      b.days.indexOf(d[0]) >= 0).map(d => '<button class="on">' + d[1] + '</button>').join('') + '</div>' +
+    onceOrWeekly(t ? !!t.date : !!iso, t && t.date ? t.date : iso) +
+    '<div id="tDaysWrap"><label>Den visas varje</label><div class="bdays">' + B_DAYS.filter(d =>
+      b.days.indexOf(d[0]) >= 0).map(d => '<button class="on">' + d[1] + '</button>').join('') + '</div></div>' +
     '<div class="brow"><button id="tSave">Spara</button>' +
       (t ? '<button class="del" id="tDel">Ta bort</button>' : '') +
       '<button class="ghost" id="tCancel">Avbryt</button></div>');
+  const tMode = wireOnceOrWeekly(document.getElementById('tDaysWrap'));
+  const tDay = t && t.date ? t.date : iso;
   document.getElementById('tCancel').onclick = () => editBlock(blockId);
   if (t) document.getElementById('tDel').onclick = () => {
     b.tasks = b.tasks.filter(x => x.id !== t.id);
@@ -5425,8 +5430,10 @@ function editTask(blockId, taskId){
     const text = document.getElementById('tText').value.trim();
     if (!text) return;
     b.tasks = b.tasks || [];
-    if (t) t.text = text;
-    else b.tasks.push({ id: 't' + Date.now(), text: text });
+    const rec = t || { id: 't' + Date.now() };
+    rec.text = text;
+    if (tMode() === 'once' && tDay) rec.date = tDay; else delete rec.date;
+    if (!t) b.tasks.push(rec);
     saveBlocks(list);
     bClose(); bRepaint();
   };
@@ -5437,7 +5444,7 @@ document.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
     const v = a.dataset.blk;
     if (v === 'new') editBlock(null);
-    else if (v.indexOf('task:') === 0) editTask(v.slice(5), null);
+    else if (v.indexOf('task:') === 0){ const p = v.slice(5).split(':'); editTask(p[0], null, p[1] || null); }
     else editBlock(v);
   }
 });
@@ -5467,7 +5474,11 @@ let DRAG = null;
 function wireDrag(root){
   const box = root || document;
   box.querySelectorAll('.twrap[data-day]').forEach(el => {
-    el.setAttribute('draggable', 'false');
+    /* the whole row can be picked up with the mouse, not only the small grip */
+    el.setAttribute('draggable', el.classList.contains('fixed') ? 'false' : 'true');
+    /* a button is not a drag source by default, so the task text needs saying so too */
+    const tb = el.querySelector('.trow');
+    if (tb && !el.classList.contains('fixed')) tb.setAttribute('draggable', 'true');
     const grip = el.querySelector('.grip');
     if (grip){
       grip.setAttribute('draggable', 'true');
@@ -5540,24 +5551,45 @@ function extraTasks(){ return readJSON('studyhub_extra') || []; }
 function saveExtra(list){ writeJSON('studyhub_extra', list); }
 function extraForDay(streamKey, iso){
   const wd = String(new Date(iso + 'T00:00:00').getDay());
-  return extraTasks().filter(t => t.s === streamKey && (t.days || []).indexOf(wd) >= 0)
+  return extraTasks().filter(t => t.s === streamKey &&
+      (t.date ? t.date === iso : (t.days || []).indexOf(wd) >= 0))
     .map(t => ({ i: iso + '--xt-' + t.id, t: t.text, xt: t.id }));
+}
+/* a task is either for one date only or comes back every week on the days you pick */
+function onceOrWeekly(once, iso){
+  return '<label>N\u00e4r</label><div class="bdays" id="xMode">' +
+    (iso ? '<button data-m="once"' + (once ? ' class="on"' : '') + '>Bara ' + gEsc(niceDay(iso)) + '</button>' : '') +
+    '<button data-m="week"' + (once ? '' : ' class="on"') + '>Varje vecka</button></div>';
+}
+function wireOnceOrWeekly(daysBox){
+  const set = m => {
+    document.querySelectorAll('#xMode button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    if (daysBox) daysBox.style.display = m === 'week' ? '' : 'none';
+  };
+  document.querySelectorAll('#xMode button').forEach(b => b.onclick = () => set(b.dataset.m));
+  const on = document.querySelector('#xMode button.on');
+  set(on ? on.dataset.m : 'week');
+  return () => { const x = document.querySelector('#xMode button.on'); return x ? x.dataset.m : 'week'; };
 }
 function editExtra(streamKey, taskId, iso){
   const list = extraTasks();
   const t = taskId ? list.find(x => x.id === taskId) : null;
   const wd = iso ? String(new Date(iso + 'T00:00:00').getDay()) : '1';
-  const days = t ? t.days : [wd];
+  const days = t && t.days ? t.days : [wd];
+  const day = t && t.date ? t.date : iso;
+  const once = t ? !!t.date : !!iso;
   bSheet('<h4>' + (t ? '\u00c4ndra uppgift' : 'Ny uppgift') + '</h4>' +
     '<label>Text</label><input type="text" id="xText" value="' + (t ? gEsc(t.text) : '') +
       '" placeholder="t.ex. L\u00e4s en artikel">' +
-    '<label>Dagar</label><div class="bdays" id="xDays">' + B_DAYS.map(d =>
+    onceOrWeekly(once, day) +
+    '<div id="xDaysWrap"><label>Dagar</label><div class="bdays" id="xDays">' + B_DAYS.map(d =>
       '<button data-d="' + d[0] + '"' + (days.indexOf(d[0]) >= 0 ? ' class="on"' : '') + '>' +
-      d[1] + '</button>').join('') + '</div>' +
+      d[1] + '</button>').join('') + '</div></div>' +
     '<div class="brow"><button id="xSave">Spara</button>' +
       (t ? '<button class="del" id="xDel">Ta bort</button>' : '') +
       '<button class="ghost" id="xCancel">Avbryt</button></div>');
   document.querySelectorAll('#xDays button').forEach(b => b.onclick = () => b.classList.toggle('on'));
+  const mode = wireOnceOrWeekly(document.getElementById('xDaysWrap'));
   document.getElementById('xCancel').onclick = bClose;
   if (t) document.getElementById('xDel').onclick = () => {
     saveExtra(list.filter(x => x.id !== t.id));
@@ -5567,9 +5599,11 @@ function editExtra(streamKey, taskId, iso){
     const text = document.getElementById('xText').value.trim();
     if (!text) return;
     const picked = [...document.querySelectorAll('#xDays button.on')].map(x => x.dataset.d);
-    if (t){ t.text = text; t.days = picked.length ? picked : days; }
-    else list.push({ id: 'x' + Date.now(), s: streamKey, text: text,
-                     days: picked.length ? picked : [wd] });
+    const rec = t || { id: 'x' + Date.now(), s: streamKey };
+    rec.text = text;
+    if (mode() === 'once' && day){ rec.date = day; delete rec.days; }
+    else { delete rec.date; rec.days = picked.length ? picked : days; }
+    if (!t) list.push(rec);
     saveExtra(list);
     bClose(); bRepaint();
   };
@@ -5601,7 +5635,7 @@ function streamBlocks(rows, st, dayIso){
       '<span class="stn">' + done + '/' + g.rows.length + '</span>' +
       '<span class="sthx">' +
         (g.s.mine
-          ? '<button data-blk="task:' + g.s.k.slice(3) + '" title="ny uppgift">+</button>' +
+          ? '<button data-blk="task:' + g.s.k.slice(3) + (dayIso ? ':' + dayIso : '') + '" title="ny uppgift">+</button>' +
             '<button data-blk="' + g.s.k.slice(3) + '" title="\u00e4ndra block">\u270e</button>'
           : (dayIso ? '<button data-xt="' + g.s.k + '||' + dayIso + '" title="ny uppgift">+</button>' : '')) +
       '</span></div>' +
