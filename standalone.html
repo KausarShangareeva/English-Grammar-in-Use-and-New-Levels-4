@@ -6479,7 +6479,7 @@ function paintWordChips(){
     const short = (UNAMES[u] || '').replace(/^Academic Word List \u00b7 /, 'AWL ');
     /* the set name already says SFI A; repeating the code reads as a stutter */
     const label = bk ? (bk.e || '') + ' ' + bk.t
-                     : (LANG === 'sv' ? short
+                     : (LANG === 'sv' ? short + (svDaysOfSet(u).length ? ' \u00b7 ' + svRange(svDaysOfSet(u)) : '')
                         : u.slice(0,3) === 'AWL' ? short : u + ' \u00b7 ' + short);
     const m = mood('set:' + u);
     return rule + '<button data-u="' + u + '"' + (bk ? ' class="bk"' : '') +
@@ -6654,11 +6654,38 @@ function wireSvText(){
   };
 }
 
+/* one set = one week: its days and the dates they cover */
+function svDaysOfSet(u){
+  const out = [];
+  svSchedule().forEach((d, ix) => { if (d.words[0] && d.words[0].u === u) out.push(ix + 1); });
+  return out;
+}
+function svRange(days){
+  if (!days.length) return '';
+  const sch = svSchedule();
+  const a = new Date(sch[days[0] - 1].iso + 'T00:00:00'), b = new Date(sch[days[days.length - 1] - 1].iso + 'T00:00:00');
+  const m = d => d.toLocaleDateString('sv-SE', { month: 'short' }).replace(/\.$/, '');
+  return a.getMonth() === b.getMonth()
+    ? a.getDate() + '\u2013' + b.getDate() + ' ' + m(b)
+    : a.getDate() + ' ' + m(a) + '\u2013' + b.getDate() + ' ' + m(b);
+}
+/* Comedy Queen counts its own weeks; SFI keeps the course weeks */
+function svWeekName(d){
+  const u = (d.words[0] && d.words[0].u) || '';
+  return u.slice(0,3) === 'CQ-' ? 'Vecka ' + u.slice(3) + ' \u00b7 Comedy Queen'
+                                : 'Vecka ' + d.week + ' \u00b7 ' + d.set.replace('SFI-','SFI ');
+}
 function svDayCard(){
   if (LANG !== 'sv') return '';
   const sch = svSchedule();
   if (!sch.length) return '';
   if (!svDay) svDay = svDayToday();
+  /* the chosen set decides which week is shown */
+  const setDays = wUnit ? svDaysOfSet(wUnit) : [];
+  if (setDays.length && setDays.indexOf(svDay) < 0){
+    const t = svDayToday();
+    svDay = setDays.indexOf(t) >= 0 ? t : setDays[0];
+  }
   const cur = sch[svDay - 1] || sch[0];
   const today = cur.words;
   const back = svDay > 1 ? svWordsOfDay(svDay - 1) : [];
@@ -6667,9 +6694,12 @@ function svDayCard(){
                        .reduce((a, d) => a.concat(d.words), []);
   let pick = '', week = 0;
   sch.forEach((d, ix) => {
+    if (setDays.length && setDays.indexOf(ix + 1) < 0) return;
     if (d.week !== week){
       week = d.week;
-      pick += '<span class="wk">Vecka ' + week + ' \u00b7 ' + d.set.replace('SFI-','SFI ') + '</span>';
+      const wd = []; sch.forEach((x, j) => { if (x.week === week) wd.push(j + 1); });
+      pick += '<span class="wk">' + svWeekName(d) +
+        ' \u00b7 ' + svRange(wd) + '</span>';
     }
     const doneHere = svDoneMap()['d' + (ix + 1) + ':new'];
     pick += '<button data-d="' + (ix + 1) + '" class="' +
@@ -6679,7 +6709,7 @@ function svDayCard(){
   });
   return '<div class="svday" id="svDayCard">' +
     '<div class="dh">' + cur.theme + '</div>' +
-    '<div class="ds"><b>' + svNiceDate(cur.iso) + '</b> \u00b7 vecka ' + cur.week +
+    '<div class="ds"><b>' + svNiceDate(cur.iso) + '</b> \u00b7 ' + svWeekName(cur).split(' \u00b7 ')[0].toLowerCase() +
     ', dag ' + cur.inWeek + ' av 6 \u00b7 ' + cur.set.replace('SFI-','SFI ') +
     ' \u2014 femtio nya ord. I morgon kommer de tillbaka med n\u00e4sta femtio. ' +
     'S\u00f6ndag \u00e4r ledig.</div>' +
