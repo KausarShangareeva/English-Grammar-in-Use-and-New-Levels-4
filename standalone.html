@@ -3900,7 +3900,7 @@ function storageWorks(){
   catch(e){ return false; }
 }
 const BACKUP_KEYS = ['task-status-8weeks','task-moves-8weeks','nl4vocab_v1',
-                     'oshima_essays-read','story-read','awards-done','studyhub_last','studyhub_sv_done','studyhub_cq_read'];
+                     'oshima_essays-read','story-read','awards-done','studyhub_last','studyhub_sv_done','studyhub_cq_read','gram-mistakes'];
 function saveBackup(){
   const data = { savedAt:new Date().toISOString(), v:1, store:{} };
   BACKUP_KEYS.forEach(k => { const v = readJSON(k); if (v) data.store[k] = v; });
@@ -7223,6 +7223,62 @@ function gqButtons(g){
    listed at the end. */
 let gqMix = false, gqMissed = [];
 const satPool = g => g.items.filter(i => Array.isArray(i.o) && i.o.length && /^(B2|C1)/.test(String(i.l || '')));
+/* ---- my mistakes: every grammar question you got wrong waits here until you get it right ---- */
+let gqReview = false;
+function gramMistakes(){ return readJSON('gram-mistakes') || {}; }
+function mistakeKey(it){
+  let gi = it._src ? GR.findIndex(g => g.id === it._src) : GR.findIndex(g => g.items.indexOf(it) >= 0);
+  if (gi < 0) return null;
+  let n = GR[gi].items.indexOf(it);
+  if (n < 0) n = GR[gi].items.findIndex(x => x.s === it.s && x.a === it.a);
+  return n < 0 ? null : GR[gi].id + '#' + n;
+}
+function noteMistake(it, ok){
+  const k = mistakeKey(it); if (!k) return;
+  const m = gramMistakes();
+  if (ok){ if (m[k]){ delete m[k]; writeJSON('gram-mistakes', m); } return; }
+  m[k] = { n: ((m[k] && m[k].n) || 0) + 1, d: isoToday() };
+  writeJSON('gram-mistakes', m);
+}
+function mistakeItems(){
+  const m = gramMistakes(), out = [];
+  Object.keys(m).forEach(k => {
+    const p = k.lastIndexOf('#'), g = GR.find(x => x.id === k.slice(0, p));
+    const it = g && g.items[+k.slice(p + 1)];
+    if (it && it.o && it.o.length) out.push(Object.assign({}, it, { _src: g.id, _lesson: g.t }));
+  });
+  return out;
+}
+function startMistakeQuiz(){
+  const list = mistakeItems();
+  if (!list.length) return;
+  gqMix = false; gqReview = true; gqMissed = []; gqIx = -1;
+  GQ = shuffle(list).slice(0, 30); gqi = 0; gqRight = 0;
+  gqBack = 'grammar'; gqTitle = 'My mistakes';
+  quizExit = () => { gqReview = false; go('grammar'); };
+  $('#dash').classList.add('off');
+  ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
+   '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
+  hideAll('#quizView');
+  $('#quizView').classList.add('on');
+  $('#tagline').textContent = '\uD83D\uDD01 My mistakes \u2014 the questions you got wrong, until you get them right';
+  toTop();
+  renderGQ();
+}
+function finishMistakes(){
+  gqReview = false;
+  $('#qBar').style.width = '100%';
+  const left = mistakeItems().length;
+  $('#qCard').innerHTML =
+    '<div class="qdone"><div class="big">' + gqRight + '/' + GQ.length + '</div>' +
+    '<div class="lb2">correct \u00b7 my mistakes</div><div class="msg">' +
+    (left ? left + (left === 1 ? ' question is' : ' questions are') + ' still on your list.' : '\uD83C\uDF89 Your list is empty \u2014 every mistake is fixed.') + '</div>' +
+    (left ? '<button class="qnext" id="qAgain">Repeat the rest \u00b7 ' + left + '</button>' : '') +
+    '<button class="qnext" id="qBack2">Back to grammar</button></div>';
+  const ag = document.getElementById('qAgain'); if (ag) ag.onclick = startMistakeQuiz;
+  document.getElementById('qBack2').onclick = () => go('grammar');
+  paintCards();
+}
 function startSaturdayQuiz(per){
   per = per || 1;
   writeJSON('sat-per', per);
@@ -7305,6 +7361,7 @@ function renderGQ(){
     const chosen = opts[Number(b.dataset.i)];
     const ok = String(chosen).trim() === String(it.a).trim();
     if (ok) gqRight++;
+    try { noteMistake(it, ok); } catch(e){}
     if (it._src){ if (ok) markSeen('gram:' + it._src, 'quiz'); else gqMissed.push({ id: it._src, t: it._lesson }); }
     const s2 = nlLoad();
     const today = new Date();
@@ -7337,6 +7394,7 @@ function renderGQ(){
   });
 }
 function finishGQ(){
+  if (gqReview) return finishMistakes();
   if (gqMix) return finishSaturday();
   markPassed('gram:' + GR[gqIx].id);
   writeJSON('guide_last_course', GR[gqIx].sec === 'Speaking' ? 'speaking' : 'grammar');
@@ -8461,7 +8519,11 @@ function paintGramList(){
     '<span class="gos">' + [[1,'Quick'],[2,'Full'],[3,'Marathon']].map(([p, l]) => '<button data-satper="' + p + '"' +
       (p === satPer ? ' class="on"' : '') + ' title="' + p + (p === 1 ? ' question' : ' questions') + ' from every lesson">' + l + ' \u00b7 ' +
       satCount(p) + ' \u25b6</button>').join('') + '</span></div>';
-  box.innerHTML = satBtn + (nFlag ? '<div class="gflagnote">\uD83D\uDEA9 ' + nFlag + (nFlag === 1 ? ' lesson' : ' lessons') +
+  const nMis = mistakeItems().length;
+  const misBtn = nMis ? '<div class="gsat"><span class="ic">\uD83D\uDD01</span><span class="tx"><b>My mistakes \u00b7 ' + nMis +
+    '</b>Every question you got wrong waits here until you answer it right</span>' +
+    '<span class="gos"><button id="gMis">Repeat \u00b7 ' + Math.min(30, nMis) + ' \u25b6</button></span></div>' : '';
+  box.innerHTML = misBtn + satBtn + (nFlag ? '<div class="gflagnote">\uD83D\uDEA9 ' + nFlag + (nFlag === 1 ? ' lesson' : ' lessons') +
       ' flagged to review' + '<button id="gFlagOnly"' + (gramFlagOnly ? ' class="on"' : '') + '>' +
       (gramFlagOnly ? '\u2190 Show all lessons' : 'Show only flagged') + '</button></div>' : '') +
     (gramFlagOnly && !secs.length ? '<div class="gflagempty">No flagged lessons in this section.</div>' : '') +
@@ -8486,6 +8548,7 @@ function paintGramList(){
         '<span class="ch">\u203a</span></button>';
     }).join('')).join('');
   box.querySelectorAll('[data-satper]').forEach(b => b.onclick = () => startSaturdayQuiz(+b.dataset.satper));
+  const gm = document.getElementById('gMis'); if (gm) gm.onclick = startMistakeQuiz;
   const fo = document.getElementById('gFlagOnly');
   if (fo) fo.onclick = () => { gramFlagOnly = !gramFlagOnly; paintGramList(); window.scrollTo(0, 0); };
   box.querySelectorAll('[data-flag]').forEach(f => f.onclick = e => {
