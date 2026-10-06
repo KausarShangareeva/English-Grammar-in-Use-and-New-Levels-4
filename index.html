@@ -2298,6 +2298,13 @@ html[data-theme="dark"] .stream{background:rgba(255,255,255,.04)}
 }
 html[data-theme="dark"] .stream .sth{color:color-mix(in srgb, var(--sc) 70%, #fff)}
 html[data-theme="dark"] .svev.ev-cafe{background:#94505F;color:#fff}
+
+/* dark mode: hovering a task lightens it a touch instead of turning it white */
+html[data-theme="dark"] .trow:hover{background:rgba(255,255,255,.06)}
+html[data-theme="dark"] .stream .trow:hover{background:rgba(255,255,255,.08);box-shadow:inset 3px 0 0 var(--sc)}
+@supports (background: color-mix(in srgb, red 10%, black)){
+  html[data-theme="dark"] .stream .trow:hover{background:color-mix(in srgb, var(--sc) 24%, #151c1f)}
+}
 </style>
 </head>
 <body>
