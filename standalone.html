@@ -3077,7 +3077,7 @@ function paintToday(where){
     return;
   }
   const status = readJSON('task-status-8weeks') || {};
-  const dayRows0 = rowsForDay(day.iso || isoToday());
+  const dayRows0 = allRowsForDay(day.iso || isoToday());
   const done = dayRows0.filter(r => Number(status[r.i]) === 1).length;
   const missed = dayRows0.filter(r => Number(status[r.i]) === 2).length;
   const dayRows = rowsForDay(day.iso || isoToday());
@@ -3885,6 +3885,15 @@ function rowsForDay(iso){
   });
   return applyOrder(iso, out);
 }
+/* everything a day holds for counting: the plan, the tasks you added, your own blocks */
+function allRowsForDay(iso){
+  let out = rowsForDay(iso);
+  try {
+    STREAMS.forEach(st => { out = out.concat(extraForDay(st.k, iso)); });
+    blocksForDay(iso).forEach(b => { out = out.concat(blockRows(b, iso)); });
+  } catch(e){}
+  return out;
+}
 /* ---- keeping the marks safe ---- */
 function storageWorks(){
   try { localStorage.setItem('__probe','1'); localStorage.removeItem('__probe'); return true; }
@@ -4067,10 +4076,11 @@ function svSweepBack(){
 }
 function wireSvUI(){
   if (!window.MutationObserver) return;
+  /* translate in the same tick as the change, before the browser draws it, so a
+     repainted list never shows its English for a moment and then flips */
   const obs = new MutationObserver(() => {
-    if (LANG !== 'sv') return;
-    clearTimeout(window.__svT);
-    window.__svT = setTimeout(svSweep, 40);
+    if (LANG !== 'sv' || svSweeping) return;
+    svSweep();
   });
   obs.observe(document.body, { childList: true, subtree: true });
 }
@@ -5714,9 +5724,9 @@ function paintWeek(){
   const wk = WEEKS[wkIx]; if (!wk) return;
   recomputeQueues();
   const st = taskStatus(), iso = isoToday();
-  const all = wk.days.reduce((a,d) => a + rowsForDay(d.iso).length, 0);
+  const all = wk.days.reduce((a,d) => a + allRowsForDay(d.iso).length, 0);
   const done = wk.days.reduce((a,d) =>
-    a + rowsForDay(d.iso).filter(r => Number(st[r.i]) === 1).length, 0);
+    a + allRowsForDay(d.iso).filter(r => Number(st[r.i]) === 1).length, 0);
   /* the number the course itself uses: the week of 5 September was week 5 */
   const cw = courseWeek(wk.days[0].iso);
   $('#wkTitle').textContent = cw ? 'Week ' + cw.n : 'Between courses';
@@ -5726,20 +5736,20 @@ function paintWeek(){
   $('#wkPrev').disabled = wkIx === 0;
   $('#wkNext').disabled = wkIx >= WEEKS.length - 1;
   $('#wkDays').innerHTML = wk.days.map(d => {
-    const rows = rowsForDay(d.iso);
-    const dn = rows.filter(r => Number(st[r.i]) === 1).length;
-    const dm = rows.filter(r => Number(st[r.i]) === 2).length;
+    const rows = rowsForDay(d.iso), every = allRowsForDay(d.iso);
+    const dn = every.filter(r => Number(st[r.i]) === 1).length;
+    const dm = every.filter(r => Number(st[r.i]) === 2).length;
     const open = (openDays[d.iso] !== undefined) ? openDays[d.iso] : (d.iso === iso);
     return '<div class="day' + (d.iso === iso ? ' isnow' : '') +
-      (rows.length && dn === rows.length ? ' done' : '') + (open ? ' open' : '') + '" data-iso="' + d.iso + '">' +
+      (every.length && dn === every.length ? ' done' : '') + (open ? ' open' : '') + '" data-iso="' + d.iso + '">' +
       '<button class="dayh" data-day="' + d.iso + '"><span class="dn">' + gEsc(d.d) + '</span>' +
       '<span class="dd">' + d.iso.slice(8) + '.' + d.iso.slice(5,7) +
       (d.iso === iso ? ' \u00b7 today' : '') + '</span>' +
-      '<span class="dc">' + dn + '/' + rows.length +
+      '<span class="dc">' + dn + '/' + every.length +
       (dm ? ' <span class="miss">\u2715' + dm + '</span>' : '') + '</span>' +
       '<span class="cara">' + (open ? '\u2303' : '\u2304') + '</span></button>' +
       '<div class="dbar"><i style="width:' +
-        Math.round(dn / Math.max(1, rows.length) * 100) + '%"></i></div>' +
+        Math.round(dn / Math.max(1, every.length) * 100) + '%"></i></div>' +
       '<div class="tlist">' + streamBlocks(rows, st, d.iso) + '</div></div>';
   }).join('');
   wireDrag($('#wkDays'));
