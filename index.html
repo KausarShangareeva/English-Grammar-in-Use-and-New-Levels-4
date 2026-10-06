@@ -7228,13 +7228,22 @@ function scoreTag(id, lvl){
   const r = (gramScores()[id] || {})[lvl];
   return r ? ' \u00b7 \u2705 ' + r.last + '%' + (r.best > r.last ? ' (best ' + r.best + '%)' : '') : '';
 }
+/* a result stays bright for a week, then fades a little each day; after three weeks
+   it is gone from the list (the score itself is kept) and the quiz asks to be redone */
+const SC_FRESH = 7, SC_GONE = 21;
 function scoreChip(g){
   const t = gramScores()[g.id] || {};
   const levels = GQ_LEVELS.filter(([l]) => l === 'all' || gqPool(g, l).length);
   return '<span class="qres">' + levels.map(([l, name]) => {
       const r = t[l];
-      return '<span class="gsc' + (r ? (r.best >= 80 ? ' good' : ' done') : '') + '">' + (r ? '\u2705 ' : '\u25cb ') + name +
-        ' \u00b7 ' + (r ? r.last + '%' + (r.best > r.last ? ' <i>best ' + r.best + '%</i>' : '') : 'not yet') + '</span>';
+      const age = r ? (daysSince(r.d) || 0) : null;
+      if (!r) return '<span class="gsc">\u25cb ' + name + ' \u00b7 not yet</span>';
+      if (age >= SC_GONE)
+        return '<span class="gsc" title="last time ' + r.last + '%, ' + age + ' days ago">\u25cb ' + name + ' \u00b7 time to redo</span>';
+      const fade = age <= SC_FRESH ? 1 : 1 - 0.75 * (age - SC_FRESH) / (SC_GONE - SC_FRESH);
+      return '<span class="gsc' + (r.best >= 80 ? ' good' : ' done') + '" style="opacity:' + fade.toFixed(2) + '">\u2705 ' + name +
+        ' \u00b7 ' + r.last + '%' + (r.best > r.last ? ' <i>best ' + r.best + '%</i>' : '') +
+        (age > SC_FRESH ? ' <i>\u00b7 ' + age + ' days ago</i>' : '') + '</span>';
     }).join('') + '</span>';
 }
 function scoreLine(g){
