@@ -7238,7 +7238,7 @@ function scoreChip(g){
       return '<span class="gsc' + (r ? (r.best >= 80 ? ' good' : ' done') : '') + '">' + (r ? '\u2705 ' : '\u25cb ') + name +
         ' \u00b7 ' + (r ? r.last + '%' + (r.best > r.last ? ' <i>best ' + r.best + '%</i>' : '') : 'not yet') + '</span>';
     }).join('') +
-    (old ? '<span class="gsc old">\u2705 done ' + fmtDate(old) + ', level not saved</span>' : '') + '</span>';
+    (old ? '<span class="gsc old" title="This quiz was finished in an older version of the site, which did not save which quiz it was or the score. Redo any quiz here to get a proper result.">\u2705 quiz done ' + fmtDate(old) + ' \u00b7 old version, no score</span>' : '') + '</span>';
 }
 function scoreLine(g){
   const t = gramScores()[g.id] || {};
