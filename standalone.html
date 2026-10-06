@@ -6158,7 +6158,7 @@ function buildQuestions(pool){
   return list.map((w, ix) => {
     let qMode = window.qModeFor ? window.qModeFor(w, ix) : null;
     const others = shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3);
-    let prompt, sub, answer, options, label, kind = qMode;
+    let prompt, sub, answer, options, label, kind = qMode, srcs = null;
     if (qMode === 'type'){
       label = 'type the word'; prompt = w.m || w.r || ''; sub = (w.p || '') + ' \u00b7 unit ' + w.u;
       answer = variants(w)[0]; options = null;
@@ -6169,21 +6169,21 @@ function buildQuestions(pool){
       options = ['Safe in an essay','Spoken only','Neutral'];
     } else if (qMode === 'en2ru'){
       label = 'what does it mean?'; prompt = w.w; sub = w.p || '';
-      answer = w.r || ''; options = shuffle([w].concat(others).map(x => x.r || ''));
+      answer = w.r || ''; srcs = shuffle([w].concat(others)); options = srcs.map(x => x.r || '');
     } else if (qMode === 'def2en'){
       label = 'which word is this?'; prompt = w.m || w.r || ''; sub = w.p || '';
-      answer = w.w; options = shuffle([w].concat(others).map(x => x.w));
+      answer = w.w; srcs = shuffle([w].concat(others)); options = srcs.map(x => x.w);
     } else if (qMode === 'cloze'){
       label = 'fill the gap';
       prompt = String(w.e[0][0]); sub = w.r || '';
       answer = w.e[0][1];
-      options = shuffle([w.e[0][1]].concat(others.map(x =>
-        (x.e && x.e.length) ? x.e[0][1] : x.w)));
+      srcs = shuffle([w].concat(others));
+      options = srcs.map(x => x === w ? w.e[0][1] : ((x.e && x.e.length) ? x.e[0][1] : x.w));
     } else {
       label = 'which word is this?'; prompt = w.r || ''; sub = w.m || '';
-      answer = w.w; options = shuffle([w].concat(others).map(x => x.w));
+      answer = w.w; srcs = shuffle([w].concat(others)); options = srcs.map(x => x.w);
     }
-    return { w, prompt, sub, answer, options, label, kind };
+    return { w, prompt, sub, answer, options, label, kind, srcs };
   }).filter(q => q.prompt && q.answer && (q.kind === 'type' || (q.options && q.options.length > 1)));
 }
 function startQuiz(pool2, title, back){
@@ -6274,9 +6274,25 @@ function answerQ(chosen, btn){
     q.kind === 'type' && vs.length > 1 ? 'accepted: ' + gEsc(vs.join(', ')) : '',
     w.m ? gEsc(w.m) : '', w.c ? gSafe(w.c) : '', w.n ? gSafe(w.n) : '' ]
     .filter(Boolean).join('<br>');
+  /* a wrong pick says what the word you chose actually is, so the mistake teaches something */
+  let why = '';
+  if (!ok && q.kind !== 'type'){
+    const ix = btn && btn.dataset ? Number(btn.dataset.ix) : -1;
+    const o = (q.srcs && ix >= 0) ? q.srcs[ix] : null;
+    if (q.kind === 'reg'){
+      why = '<div class="qwhy"><span class="h">why not \u201c' + gEsc(chosen) + '\u201d</span>' +
+        '<b>Safe in an essay</b> = formal, fine in academic writing \u00b7 <b>Spoken only</b> = informal, keep it out of essays \u00b7 <b>Neutral</b> = fine anywhere.</div>';
+    } else if (o && o !== w){
+      const meaning = gEsc(o.r || '') + (o.m ? ' \u2014 ' + gEsc(o.m) : '');
+      why = '<div class="qwhy"><span class="h">why not \u201c' + gEsc(chosen) + '\u201d</span>' +
+        (q.kind === 'en2ru'
+          ? 'That is the meaning of <b>' + gEsc(o.w) + '</b>, a different word.'
+          : '<b>' + gEsc(o.w) + '</b> means: ' + meaning + '.') + '</div>';
+    }
+  }
   $('#qCard').insertAdjacentHTML('beforeend',
     '<div class="qfb">' + (ok ? '\u2713 ' : '\u2715 ') + '<b>' + gEsc(w.w) + '</b>' + spk(w.w) + ' \u2014 ' +
-    gEsc(w.r || '') + (extra ? '<br>' + extra : '') + '</div>' +
+    gEsc(w.r || '') + (extra ? '<br>' + extra : '') + why + '</div>' +
     '<button class="qnext" id="qNext">' + (qi + 1 >= Q.length ? 'See the result' : 'Next') + '</button>');
   document.getElementById('qNext').onclick = () => { qi++; saveResume(); renderQ(); };
 }
