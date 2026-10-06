@@ -2290,6 +2290,14 @@ html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)
 
 .gscores{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}.gsc{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line,rgba(0,0,0,.12));color:var(--mut);background:transparent}.gsc.done{color:var(--sand,#b7791f);border-color:currentColor}.gsc.good{color:var(--sage,#2f855a);border-color:currentColor}.gsc.old{color:var(--mut);font-style:italic}.gsc i{font-style:normal;opacity:.75}
 .qres{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:0 0 auto;margin-left:8px}.qres .gsc{white-space:nowrap}
+
+/* dark mode: the schedule's coloured blocks keep their hue but sit dark, so light text stays readable */
+html[data-theme="dark"] .stream{background:rgba(255,255,255,.04)}
+@supports (background: color-mix(in srgb, red 10%, black)){
+  html[data-theme="dark"] .stream{background:color-mix(in srgb, var(--sc) 16%, #151c1f)}
+}
+html[data-theme="dark"] .stream .sth{color:color-mix(in srgb, var(--sc) 70%, #fff)}
+html[data-theme="dark"] .svev.ev-cafe{background:#94505F;color:#fff}
 </style>
 </head>
 <body>
