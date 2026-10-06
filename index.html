@@ -2288,6 +2288,7 @@ html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)
 .trow i.mine{font-style:normal;font-family:var(--ui);font-size:9px;font-weight:800;
   letter-spacing:.8px;text-transform:uppercase;color:var(--sand);margin-left:6px}
 
+.gscores{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}.gsc{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line,rgba(0,0,0,.12));color:var(--mut);background:transparent}.gsc.done{color:var(--sand,#b7791f);border-color:currentColor}.gsc.good{color:var(--sage,#2f855a);border-color:currentColor}.gsc.old{color:var(--mut);font-style:italic}.gsc i{font-style:normal;opacity:.75}
 </style>
 </head>
 <body>
@@ -3900,7 +3901,7 @@ function storageWorks(){
   catch(e){ return false; }
 }
 const BACKUP_KEYS = ['task-status-8weeks','task-moves-8weeks','nl4vocab_v1',
-                     'oshima_essays-read','story-read','awards-done','studyhub_last','studyhub_sv_done','studyhub_cq_read','gram-mistakes'];
+                     'oshima_essays-read','story-read','awards-done','studyhub_last','studyhub_sv_done','studyhub_cq_read','gram-mistakes','gram-scores'];
 function saveBackup(){
   const data = { savedAt:new Date().toISOString(), v:1, store:{} };
   BACKUP_KEYS.forEach(k => { const v = readJSON(k); if (v) data.store[k] = v; });
@@ -7213,10 +7214,36 @@ let GQ = [], gqi = 0, gqRight = 0, gqBack = 'grammar', gqTitle = '';
 let gqIx = 0;
 /* lvl = 'B2' or 'C1' for a round of that level only; nothing = every level mixed */
 const gqPool = (g, lvl) => lvl ? g.items.filter(i => String(i.l || '').indexOf(lvl) === 0) : g.items;
+/* each quiz of a topic keeps its own result: the general round, B2 only, C1 only */
+let gqLvl = 'all';
+const GQ_LEVELS = [['all','General'],['B2','B2'],['C1','C1']];
+function gramScores(){ return readJSON('gram-scores') || {}; }
+function recordGramScore(id, lvl, pct){
+  const all = gramScores(), t = all[id] || (all[id] = {}), r = t[lvl] || {};
+  t[lvl] = { last: pct, best: Math.max(pct, r.best || 0), d: isoToday(), n: (r.n || 0) + 1 };
+  writeJSON('gram-scores', all);
+}
+function scoreTag(id, lvl){
+  const r = (gramScores()[id] || {})[lvl];
+  return r ? ' \u00b7 \u2705 ' + r.last + '%' + (r.best > r.last ? ' (best ' + r.best + '%)' : '') : '';
+}
+function scoreLine(g){
+  const t = gramScores()[g.id] || {};
+  const levels = GQ_LEVELS.filter(([l]) => l === 'all' || gqPool(g, l).length);
+  const any = levels.some(([l]) => t[l]);
+  const old = !any && passes()['gram:' + g.id];
+  return '<div class="gscores">' + levels.map(([l, name]) => {
+      const r = t[l];
+      return '<span class="gsc' + (r ? (r.best >= 80 ? ' good' : ' done') : '') + '">' + (r ? '\u2705 ' : '\u25cb ') + name +
+        (r ? ' \u00b7 ' + r.last + '%' + (r.best > r.last ? ' <i>best ' + r.best + '%</i>' : '') : ' \u00b7 not yet') + '</span>';
+    }).join('') +
+    (old ? '<span class="gsc old">\u2705 a quiz finished ' + fmtDate(old) + ' \u2014 level and score were not recorded then</span>' : '') +
+    '</div>';
+}
 function gqButtons(g){
   return ['B2','C1'].map(l => { const n = gqPool(g, l).length;
     return n ? '<button class="' + l.toLowerCase() + '" data-gqlv="' + l + '" title="' + n + ' ' + l +
-      ' questions in this lesson">' + l + ' only \u00b7 ' + Math.min(20, n) + '</button>' : ''; }).join('');
+      ' questions in this lesson">' + l + ' only \u00b7 ' + Math.min(20, n) + scoreTag(g.id, l) + '</button>' : ''; }).join('');
 }
 /* Saturday quiz: one B2 or C1 question from every grammar lesson, mixed. A right
    answer counts as that lesson's weekly quiz; the lessons with a wrong answer are
@@ -7324,8 +7351,8 @@ function finishSaturday(){
 }
 function startGramQuiz(ix, lvl){
   const g = GR[ix]; if (!g || !g.items.length) return;
-  gqMix = false;
-  gqIx = ix;
+  gqMix = false; gqReview = false;
+  gqIx = ix; gqLvl = lvl || 'all';
   GQ = shuffle(gqPool(g, lvl)).slice(0, 20);
   gqi = 0; gqRight = 0;
   gqBack = (g.sec === 'Speaking') ? 'speaking' : 'grammar';
@@ -7397,6 +7424,7 @@ function finishGQ(){
   if (gqReview) return finishMistakes();
   if (gqMix) return finishSaturday();
   markPassed('gram:' + GR[gqIx].id);
+  recordGramScore(GR[gqIx].id, gqLvl, Math.round(gqRight / Math.max(1, GQ.length) * 100));
   writeJSON('guide_last_course', GR[gqIx].sec === 'Speaking' ? 'speaking' : 'grammar');
   try { localStorage.removeItem('guide_current'); } catch(e){}
   delete MEM['guide_current'];
@@ -7405,7 +7433,7 @@ function finishGQ(){
   const pct = Math.round(gqRight / GQ.length * 100);
   $('#qCard').innerHTML =
     '<div class="qdone"><div class="big">' + gqRight + '/' + GQ.length + '</div>' +
-    '<div class="lb2">correct</div><div class="msg">' +
+    '<div class="lb2">correct \u00b7 ' + pct + '% \u00b7 ' + (gqLvl === 'all' ? 'general quiz' : gqLvl + ' quiz') + ' saved</div><div class="msg">' +
     (pct >= 80 ? 'You can use this one in writing now.'
      : pct >= 50 ? 'Read the table again \u2014 the rule is nearly there.'
      : 'Worth reading the whole topic through before another round.') + '</div>' +
@@ -8543,7 +8571,7 @@ function paintGramList(){
         '<div class="d">' + gEsc(g.sub) + '</div>' +
         '<div class="m">' + nv + ' cards \u00b7 ' + nex + ' examples \u00b7 ' +
         g.items.length + ' questions</div>' +
-        '<div class="seenl">' + seenLine('gram:' + g.id) + '</div></span>' +
+        '<div class="seenl">' + seenLine('gram:' + g.id) + '</div>' + (g.items.length ? scoreLine(g) : '') + '</span>' +
         moodChip('gram:' + g.id) + gFlag(g.id) +
         '<span class="ch">\u203a</span></button>';
     }).join('')).join('');
@@ -8687,7 +8715,9 @@ function openGramTopic(ix){
   pb.classList.toggle('hide', !g.items.length);
   pb.className = 'openraw quiz' + (g.items.length ? '' : ' hide');
   pb.textContent = '\u25b6 Practise \u00b7 ' + Math.min(20, g.items.length) +
-    (g.items.length > 20 ? ' of ' + g.items.length : '') + ' questions';
+    (g.items.length > 20 ? ' of ' + g.items.length : '') + ' questions' + scoreTag(g.id, 'all');
+  { const old = document.getElementById('gScoreTop'); if (old) old.remove(); }
+  $('#gramLv').insertAdjacentHTML('afterend', '<div id="gScoreTop">' + (g.items.length ? scoreLine(g) : '') + '</div>');
   pb.title = 'each round takes 20 random questions from the ' + g.items.length + ' in this lesson';
   pb.onclick = () => startGramQuiz(ix);
   $('#gramLv').innerHTML = gqButtons(g);
@@ -8699,7 +8729,7 @@ function openGramTopic(ix){
       '<div class="endquiz"><div class="eh">Read it through? Now see if it stuck.</div>' +
       '<button id="gEndQuiz">\u25b6 Practise \u00b7 ' + Math.min(20, g.items.length) +
       (g.items.length > 20 ? ' of ' + g.items.length : '') + ' questions</button>' +
-      '<div class="gqlv" id="gEndLv">' + gqButtons(g) + '</div></div>');
+      '<div class="gqlv" id="gEndLv">' + gqButtons(g) + '</div>' + scoreLine(g) + '</div>');
     document.getElementById('gEndQuiz').onclick = () => startGramQuiz(ix);
     document.querySelectorAll('#gEndLv [data-gqlv]').forEach(b => b.onclick = () => startGramQuiz(ix, b.dataset.gqlv));
   }
