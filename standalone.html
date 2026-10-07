@@ -2306,6 +2306,8 @@ html[data-theme="dark"] .stream .trow:hover{background:rgba(255,255,255,.08);box
   html[data-theme="dark"] .stream .trow:hover{background:color-mix(in srgb, var(--sc) 24%, #151c1f)}
 }
 .ebrole{display:inline-flex;gap:4px;flex-wrap:wrap}.ebrole button{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line2,rgba(0,0,0,.15));background:transparent;color:var(--mut);cursor:pointer}.ebrole button.on{background:var(--sea);border-color:var(--sea);color:#fff}
+.tsg{display:flex;align-items:center;justify-content:space-between;gap:10px}.tsmix{font:inherit;font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;padding:5px 12px;border-radius:999px;border:1.5px solid #8E5BB5;background:transparent;color:#8E5BB5;cursor:pointer;white-space:nowrap}.tsmix:hover{background:#8E5BB5;color:#fff}
+html[data-theme="dark"] .tsmix{border-color:#C9A3E6;color:#C9A3E6}html[data-theme="dark"] .tsmix:hover{background:#C9A3E6;color:#1b1b1b}
 </style>
 </head>
 <body>
@@ -7386,6 +7388,55 @@ function mistakeItems(){
   });
   return out;
 }
+/* ---- one C1 round across all four present (or past, or future) tenses ---- */
+let gqTenseMix = null;
+function tenseMixItems(group){
+  const out = [];
+  TENSES.filter(t => t.g === group).forEach(t => {
+    const g = GR.find(x => x.id === t.topic); if (!g) return;
+    g.items.forEach(it => { if (String(it.l).indexOf('C1') === 0 && it.o && it.o.length)
+      out.push(Object.assign({}, it, { _src: g.id, _lesson: g.t })); });
+  });
+  return out;
+}
+function tenseMixTag(group){
+  const r = (gramScores()['mix-' + group.toLowerCase()] || {}).C1;
+  if (!r) return '';
+  const age = daysSince(r.d) || 0;
+  if (age >= SC_GONE) return ' \u00b7 time to redo';
+  return ' \u00b7 \u2705 ' + r.last + '%' + (r.best > r.last ? ' (best ' + r.best + '%)' : '');
+}
+function startTenseMix(group){
+  const list = tenseMixItems(group); if (!list.length) return;
+  gqMix = false; gqReview = false; gqTenseMix = group; gqMissed = []; gqIx = -1;
+  GQ = shuffle(list).slice(0, 20); gqi = 0; gqRight = 0;
+  gqBack = 'grammar'; gqTitle = 'All ' + group + ' tenses \u00b7 C1';
+  quizExit = () => { gqTenseMix = null; go('grammar'); };
+  $('#dash').classList.add('off');
+  ['#wordsView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic','#readList',
+   '#storyView','#cardsView'].forEach(x => $(x).classList.remove('on'));
+  hideAll('#quizView');
+  $('#quizView').classList.add('on');
+  $('#tagline').textContent = '\uD83C\uDFAF All ' + group + ' tenses \u00b7 C1 \u2014 twenty questions from the four ' + group.toLowerCase() + ' tenses, mixed';
+  toTop();
+  renderGQ();
+}
+function finishTenseMix(){
+  const group = gqTenseMix; gqTenseMix = null;
+  const pct = Math.round(gqRight / Math.max(1, GQ.length) * 100);
+  recordGramScore('mix-' + group.toLowerCase(), 'C1', pct);
+  $('#qBar').style.width = '100%';
+  $('#qCard').innerHTML =
+    '<div class="qdone"><div class="big">' + gqRight + '/' + GQ.length + '</div>' +
+    '<div class="lb2">correct \u00b7 ' + pct + '% \u00b7 all ' + group.toLowerCase() + ' tenses \u00b7 C1 saved</div><div class="msg">' +
+    (pct >= 80 ? 'Strong \u2014 you can tell the ' + group.toLowerCase() + ' tenses apart at C1 level.' :
+     'Wrong answers went to \uD83D\uDD01 My mistakes \u2014 repeat them, then try again.') + '</div>' +
+    '<button class="qnext" id="qAgain">Another 20 \u00b7 ' + group + '</button>' +
+    '<button class="qnext" id="qBack2">Back to grammar</button></div>';
+  document.getElementById('qAgain').onclick = () => startTenseMix(group);
+  document.getElementById('qBack2').onclick = () => go('grammar');
+  paintCards();
+}
 function startMistakeQuiz(){
   const list = mistakeItems();
   if (!list.length) return;
@@ -7531,6 +7582,7 @@ function renderGQ(){
   });
 }
 function finishGQ(){
+  if (gqTenseMix) return finishTenseMix();
   if (gqReview) return finishMistakes();
   if (gqMix) return finishSaturday();
   markPassed('gram:' + GR[gqIx].id);
@@ -8595,7 +8647,7 @@ function wireCompare(){
 
 function tenseBlock(){
   const byGroup = ['Present','Past','Future'].map(g =>
-    '<div class="tsg">' + g + ' tenses</div>' +
+    '<div class="tsg">' + g + ' tenses<button class="tsmix" data-mixq="' + g + '" title="20 C1 questions from the four ' + g.toLowerCase() + ' tenses, mixed">\uD83C\uDFAF All ' + g.toLowerCase() + ' \u00b7 C1' + tenseMixTag(g) + '</button></div>' +
     TENSES.filter(t => t.g === g).map(t => {
       const ix = GR.findIndex(x => x.id === t.topic);
       const mid = 'gram:' + t.topic;
@@ -8688,6 +8740,7 @@ function paintGramList(){
     }).join('')).join('');
   box.querySelectorAll('[data-satper]').forEach(b => b.onclick = () => startSaturdayQuiz(+b.dataset.satper));
   const gm = document.getElementById('gMis'); if (gm) gm.onclick = startMistakeQuiz;
+  box.querySelectorAll('[data-mixq]').forEach(x => x.onclick = e => { e.stopPropagation(); startTenseMix(x.dataset.mixq); });
   const fo = document.getElementById('gFlagOnly');
   if (fo) fo.onclick = () => { gramFlagOnly = !gramFlagOnly; paintGramList(); window.scrollTo(0, 0); };
   box.querySelectorAll('[data-flag]').forEach(f => f.onclick = e => {
