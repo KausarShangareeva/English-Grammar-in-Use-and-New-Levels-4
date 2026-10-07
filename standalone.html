@@ -5440,7 +5440,15 @@ function bSheet(html){
   return box;
 }
 function bClose(){ const b = document.getElementById('bModal'); if (b) b.classList.remove('on'); }
-function bRepaint(){ if (typeof paintWeek === 'function') paintWeek(); if (typeof paintToday === 'function') paintToday(); }
+/* after any change to tasks or blocks, every place that shows them is drawn again:
+   the week, the Today panel on the Schedule page, the dashboard, the finish dates and the course cards */
+function bRepaint(){
+  try { paintWeek(); } catch(e){}
+  try { paintToday('#todayTop'); } catch(e){}
+  try { paintToday('#todayTop2'); } catch(e){}
+  try { paintFinish(); } catch(e){}
+  try { paintCards(); } catch(e){}
+}
 
 function editBlock(id){
   const list = myBlocks();
@@ -5644,8 +5652,7 @@ function wireDrag(root){
       ids.splice(below ? to + 1 : to, 0, DRAG.id);
       saveTaskOrder(iso, ids);
       DRAG = null;
-      if (typeof paintWeek === 'function') paintWeek();
-      if (typeof paintToday === 'function') paintToday();
+      bRepaint();
     };
   });
 }
