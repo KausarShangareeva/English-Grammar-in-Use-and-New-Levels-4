@@ -3640,18 +3640,22 @@ function recomputeQueues(){
 }
 /* Listening restarts from a chosen test on a chosen day: from then on two tests a day,
    a day marked with a cross does not move it on, like every other stream */
-const LISTEN_RESET = { date:'2026-10-07', from:20, total:36, set:'B2' };
+const LISTEN_RESET = { date:'2026-10-07', sets:[ { set:'B1', from:20, total:51 }, { set:'B2', from:1, total:36 } ] };
 function listenReset(st){
   const q = STREAMS_Q['LISTENING']; if (!q) return;
-  let n = LISTEN_RESET.from;
+  let k = 0, n = LISTEN_RESET.sets[0].from;
   q.forEach(slot => {
     if (slot.id.slice(0, 10) < LISTEN_RESET.date) return;
-    if (n <= LISTEN_RESET.total){
-      const to = Math.min(LISTEN_RESET.total, n + 1);
-      OVERRIDE[slot.id] = '\uD83C\uDFA7 Listening ' + LISTEN_RESET.set + ' ' + n + (to > n ? '\u2013' + to : '') + '/' + LISTEN_RESET.total;
-      if (Number(st[slot.id]) !== 2) n = to + 1;
-    } else {
+    const cur = LISTEN_RESET.sets[k];
+    if (!cur){
       OVERRIDE[slot.id] = '\uD83C\uDFA7 Listening \u2014 B1 and B2 finished \u00b7 choose the next set';
+      return;
+    }
+    const to = Math.min(cur.total, n + 1);
+    OVERRIDE[slot.id] = '\uD83C\uDFA7 Listening ' + cur.set + ' ' + n + (to > n ? '\u2013' + to : '') + '/' + cur.total;
+    if (Number(st[slot.id]) !== 2){
+      n = to + 1;
+      if (n > cur.total){ k++; n = LISTEN_RESET.sets[k] ? LISTEN_RESET.sets[k].from : 0; }
     }
   });
 }
