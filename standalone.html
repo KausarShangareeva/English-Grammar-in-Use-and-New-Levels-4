@@ -3636,6 +3636,24 @@ function recomputeQueues(){
     });
   });
   try { ebBookPlan(st); } catch(e){}
+  try { listenReset(st); } catch(e){}
+}
+/* Listening restarts from a chosen test on a chosen day: from then on two tests a day,
+   a day marked with a cross does not move it on, like every other stream */
+const LISTEN_RESET = { date:'2026-10-07', from:20, total:36, set:'B2' };
+function listenReset(st){
+  const q = STREAMS_Q['LISTENING']; if (!q) return;
+  let n = LISTEN_RESET.from;
+  q.forEach(slot => {
+    if (slot.id.slice(0, 10) < LISTEN_RESET.date) return;
+    if (n <= LISTEN_RESET.total){
+      const to = Math.min(LISTEN_RESET.total, n + 1);
+      OVERRIDE[slot.id] = '\uD83C\uDFA7 Listening ' + LISTEN_RESET.set + ' ' + n + (to > n ? '\u2013' + to : '') + '/' + LISTEN_RESET.total;
+      if (Number(st[slot.id]) !== 2) n = to + 1;
+    } else {
+      OVERRIDE[slot.id] = '\uD83C\uDFA7 Listening \u2014 B1 and B2 finished \u00b7 choose the next set';
+    }
+  });
 }
 const taskText = r => OVERRIDE[r.i] || r.t;
 
