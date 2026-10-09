@@ -2310,6 +2310,7 @@ html[data-theme="dark"] .stream .trow:hover{background:rgba(255,255,255,.08);box
 html[data-theme="dark"] .tsmix{border-color:#C9A3E6;color:#C9A3E6}html[data-theme="dark"] .tsmix:hover{background:#C9A3E6;color:#1b1b1b}
 .ebnow input[type=date],.ebdue input{width:auto;min-width:132px}.ebdue{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:800;color:var(--sea)}.ebdue input{border:1px solid var(--line2);border-radius:8px;padding:2px 6px;font-family:var(--ui);font-size:12px;color:var(--ink);background:var(--bg)}.ebfc{flex-basis:100%;font-size:12.5px;font-weight:700;color:var(--ink)}.ebfc.late{color:#C0392B}
 .ebnow .ebfc{color:var(--ink)}.ebnow .ebfc.late{color:#C0392B}
+.ebnow .ebshould{flex-basis:100%;color:var(--ink);font-weight:800}.ebnow .ebat{font-style:normal;display:inline;color:var(--sea);font-size:15px;font-weight:900}.ebfix{font-size:12px;color:var(--mut)}.ebfix summary{cursor:pointer;font-weight:700}.ebfix label{display:inline-flex;gap:6px;align-items:center;margin-top:4px}
 </style>
 </head>
 <body>
@@ -4550,11 +4551,19 @@ function ebForecast(b){
 }
 /* the plan is first worked out before the book list exists, so work it out again now */
 setTimeout(() => { try { recomputeQueues(); } catch(e){} }, 0);
-function ebForecastLine(b){
+/* where Kausar should be today if she has followed the schedule — no typing needed */
+function ebShouldBe(b){
+  const f = ebForecast(b);
+  if (!f) return '<span class="ebshould">\uD83D\uDCD6 Finished \u2014 mark it as Read</span>';
+  const at = parseInt(f.next, 10) - 1;
+  return '<span class="ebshould">\uD83D\uDCD6 You should be on page <em class="ebat">' + at + '</em> of ' + b.p +
+    (f.first === isoToday() ? ' \u00b7 today: pages ' + f.next : ' \u00b7 next: pages ' + f.next + ' on ' + fmtDate(f.first)) + '</span>';
+}
+function ebForecastLine(b, short){
   const f = ebForecast(b); if (!f) return '';
   const late = b.due && f.last >= b.due;
-  return '<span class="ebfc' + (late ? ' late' : '') + '">' + (f.first === isoToday() ? 'Today' : fmtDate(f.first)) +
-    ': pages ' + f.next + ' (' + f.pace + ' pages) \u00b7 finished ' + fmtDate(f.last) +
+  return '<span class="ebfc' + (late ? ' late' : '') + '">' + (short ? '' : (f.first === isoToday() ? 'Today' : fmtDate(f.first)) +
+    ': pages ' + f.next + ' (' + f.pace + ' pages) \u00b7 ') + 'finished ' + fmtDate(f.last) +
     (b.due ? (late ? ' \u26a0\ufe0f after the return date' : ' \u2705 before ' + fmtDate(b.due)) : '') + '</span>';
 }
 /* covers: the Line by Line colours for their books, and a steady colour from the same palette for the rest */
@@ -4799,13 +4808,14 @@ function paintEB(){
           '" data-ebpg="' + b.id + '"> pages</label>' +
         (b.g ? '<span>' + gEsc(EB_GENRE[b.g] || b.g) + '</span>' : '') + '</div>' +
         (b.s === 'read' ? '<label class="ebdone">\u2705 read on <input type="date" value="' + gEsc(b.d || '') + '" data-ebdt="' + b.id + '"></label>' : '') +
-        (b.s === 'reading' ? '<div class="ebnow"><label>\uD83D\uDCD6 I\u2019m on page <input type="number" min="0" max="' + b.p + '" value="' + (b.cp || 0) +
-          '" data-ebcp="' + b.id + '"> of ' + b.p + '</label><label><input type="number" min="1" value="' + ebPaceFor(ebRole(b)) +
+        (b.s === 'reading' ? '<div class="ebnow">' + ebShouldBe(b) +
+          '<details class="ebfix"><summary>\u270e behind or ahead?</summary><label>I\u2019m actually on page <input type="number" min="0" max="' + b.p + '" value="' + (b.cp || 0) +
+          '" data-ebcp="' + b.id + '"> of ' + b.p + '</label></details><label><input type="number" min="1" value="' + ebPaceFor(ebRole(b)) +
           '" data-ebpace="' + ebRole(b) + '"> pages a day</label>' +
           '<span class="ebrole">' + ['read','study'].map(r => '<button data-ebrole="' + r + '" data-eb="' + b.id + '"' +
             (ebRole(b) === r ? ' class="on"' : '') + '>' + EB_ROLE[r] + '</button>').join('') + '</span>' +
           '<label>\uD83D\uDCC5 return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
-          ebForecastLine(b) + '</div>' : '') +
+          ebForecastLine(b, true) + '</div>' : '') +
         (b.s === 'plan' ? '<label class="ebdue">\uD83D\uDCC5 return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
           (b.due ? ' ' + ebForecastLine(b) : '') : '') +
         '</div>' +
