@@ -2308,6 +2308,8 @@ html[data-theme="dark"] .stream .trow:hover{background:rgba(255,255,255,.08);box
 .ebrole{display:inline-flex;gap:4px;flex-wrap:wrap}.ebrole button{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line2,rgba(0,0,0,.15));background:transparent;color:var(--mut);cursor:pointer}.ebrole button.on{background:var(--sea);border-color:var(--sea);color:#fff}
 .tsg{display:flex;align-items:center;justify-content:space-between;gap:10px}.tsmix{font:inherit;font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;padding:5px 12px;border-radius:999px;border:1.5px solid #8E5BB5;background:transparent;color:#8E5BB5;cursor:pointer;white-space:nowrap}.tsmix:hover{background:#8E5BB5;color:#fff}
 html[data-theme="dark"] .tsmix{border-color:#C9A3E6;color:#C9A3E6}html[data-theme="dark"] .tsmix:hover{background:#C9A3E6;color:#1b1b1b}
+.ebnow input[type=date],.ebdue input{width:auto;min-width:132px}.ebdue{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:800;color:var(--sea)}.ebdue input{border:1px solid var(--line2);border-radius:8px;padding:2px 6px;font-family:var(--ui);font-size:12px;color:var(--ink);background:var(--bg)}.ebfc{flex-basis:100%;font-size:12.5px;font-weight:700;color:var(--ink)}.ebfc.late{color:#C0392B}
+.ebnow .ebfc{color:var(--ink)}.ebnow .ebfc.late{color:#C0392B}
 </style>
 </head>
 <body>
@@ -4533,6 +4535,28 @@ function ebSave(){ writeJSON('eng-books-list', EB); }
   (at < 0 ? rest.concat(queue) : rest.slice(0, at).concat(queue, rest.slice(at))).forEach(b => EB.push(b));
   ebSave(); writeJSON(KEY, 1);
 })();
+/* the daily paces Kausar asked for: 50 pages for reading, 10 for close study (set once) */
+(function(){ if (readJSON('eb-pace-fix-1009')) return;
+  writeJSON('book-pace', 50); writeJSON('book-pace-study', 10); writeJSON('eb-pace-fix-1009', 1); })();
+/* what the schedule has planned for one book: today's pages and the day it is finished */
+function ebForecast(b){
+  const today = isoToday(), mark = '\u00ab' + b.t + '\u00bb';
+  const ids = Object.keys(OVERRIDE).filter(id => /--book(study)?$/.test(id) && id.slice(0, 10) >= today &&
+    OVERRIDE[id].indexOf(mark) >= 0).sort();
+  if (!ids.length) return null;
+  const pg = t => { const m = t.match(/pages (\d+)\u2013(\d+)/); return m ? m[1] + '\u2013' + m[2] : ''; };
+  return { first: ids[0].slice(0, 10), last: ids[ids.length - 1].slice(0, 10), next: pg(OVERRIDE[ids[0]]),
+           pace: (() => { const m = OVERRIDE[ids[0]].match(/pages (\d+)\u2013(\d+)/); return m ? (+m[2] - +m[1] + 1) : 0; })() };
+}
+/* the plan is first worked out before the book list exists, so work it out again now */
+setTimeout(() => { try { recomputeQueues(); } catch(e){} }, 0);
+function ebForecastLine(b){
+  const f = ebForecast(b); if (!f) return '';
+  const late = b.due && f.last >= b.due;
+  return '<span class="ebfc' + (late ? ' late' : '') + '">' + (f.first === isoToday() ? 'Today' : fmtDate(f.first)) +
+    ': pages ' + f.next + ' (' + f.pace + ' pages) \u00b7 finished ' + fmtDate(f.last) +
+    (b.due ? (late ? ' \u26a0\ufe0f after the return date' : ' \u2705 before ' + fmtDate(b.due)) : '') + '</span>';
+}
 /* covers: the Line by Line colours for their books, and a steady colour from the same palette for the rest */
 const EB_COVER = {"the-mysterious-stranger":["#3d3376","#f5f0e7"],"alice-in-wonderland":["#c1c0e2","#3d3b41"],"around-the-world-in-80-days":["#006680","#fbf6ec"],"adventures-of-huckleberry-finn":["#933f00","#f6f0e6"],"the-adventures-of-sherlock-holmes":["#004a69","#f4f0e7"],"autobiography-of-benjamin-franklin":["#688eaf","#211e17"],"little-women":["#bf755e","#211e17"],"andersens-fairy-tales":["#2d665d","#fbf6ec"],"peter-pan":["#1f4c09","#f4f0e6"],"meditations":["#a4ccda","#363e3f"],"pride-and-prejudice":["#d6c19c","#423b2f"],"sense-and-sensibility":["#e6b8a9","#463932"],"jekyll-and-hyde":["#002e45","#f4f0e6"],"arsene-lupin-gentleman-burglar":["#12378b","#f4f0e8"],"the-great-gatsby":["#37664e","#fbf6ec"],"dracula":["#520000","#f5efe6"],"tom-sawyer":["#c27736","#211e17"],"the-count-of-monte-cristo":["#12378b","#f4f0e8"],"journey-to-the-center-of-the-earth":["#520000","#f5efe6"],"david-copperfield":["#20666b","#fbf6ec"],"great-expectations":["#002f1b","#f4f0e6"],"robinson-crusoe":["#795300","#f6f0e6"],"wuthering-heights":["#06436c","#f4f0e7"],"henry-david-thoreau-essays":["#2d665d","#fbf6ec"],"walden":["#406733","#fbf6ec"],"the-call-of-the-wild":["#3d3376","#f5f0e7"],"moby-dick":["#006680","#fbf6ec"],"ulysses":["#688eaf","#211e17"],"emma":["#006680","#fbf6ec"],"persuasion":["#933f00","#f6f0e6"],"gullivers-travels":["#34579f","#f5f0e8"],"heart-of-darkness":["#520000","#f5efe6"],"king-arthur-round-table":["#041f5e","#f4efe7"],"frankenstein":["#06436c","#f4f0e7"],"the-scarlet-letter":["#4f0300","#f5efe6"],"the-picture-of-dorian-gray":["#241c4f","#f4efe6"],"kidnapped":["#06436c","#f4f0e7"],"mrs-dalloway":["#c1c0e2","#3d3b41"],"the-jungle-book":["#1f4c09","#f4f0e6"],"to-the-lighthouse":["#8784bb","#211e17"],"white-fang":["#afc5ed","#383c45"],"the-return-of-sherlock-holmes":["#002e45","#f4f0e6"],"twenty-thousand-leagues-under-the-sea":["#041f5e","#f4efe7"],"aesops-fables":["#933f00","#f6f0e6"],"the-war-of-the-worlds":["#002848","#f4f0e6"],"interesting-narrative-of-olaudah-equiano":["#c27736","#211e17"],"the-island-of-doctor-moreau":["#4f0300","#f5efe6"],"the-lost-world":["#37664e","#fbf6ec"],"his-last-bow":["#004a69","#f4f0e7"],"the-time-machine":["#12378b","#f4f0e8"],"bambi":["#729566","#211e17"],"the-secret-garden":["#8c8d58","#211e17"],"the-beasts-of-tarzan":["#0b4c31","#f4f0e6"],"the-return-of-tarzan":["#795300","#f6f0e6"],"narrative-of-the-life-of-frederick-douglass-an-american-slave":["#8f3f26","#f6f0e6"],"the-merry-adventures-of-robin-hood":["#2d665d","#fbf6ec"],"a-short-history-of-the-world":["#688eaf","#211e17"],"tales-of-space-and-time":["#3d3376","#f5f0e7"],"the-velveteen-rabbit":["#e6b8a9","#463932"],"through-the-looking-glass":["#06436c","#f4f0e7"],"little-men":["#a68340","#211e17"],"treasure-island":["#20666b","#fbf6ec"],"jack-and-jill":["#c27736","#211e17"],"anne-of-green-gables":["#406733","#fbf6ec"],"max-havelaar":["#613400","#f5f0e6"],"les-miserables":["#57528d","#f5f0e8"],"the-wonderful-wizard-of-oz":["#5d9498","#211e17"],"heidi":["#afc5ed","#383c45"],"grimms-fairy-tales":["#004c43","#f4f0e6"],"mansfield-park":["#2a2900","#f4f0e6"],"the-phantom-of-the-opera":["#771600","#f6efe6"],"the-three-musketeers":["#34579f","#f5f0e8"]};
 const EB_PAL = [["#002848","#f4f0e6"],["#002e45","#f4f0e6"],["#002f1b","#f4f0e6"],["#004a69","#f4f0e7"],["#004c43","#f4f0e6"],["#006680","#fbf6ec"],["#041f5e","#f4efe7"],["#06436c","#f4f0e7"],["#0b4c31","#f4f0e6"],["#12378b","#f4f0e8"],["#1f4c09","#f4f0e6"],["#20666b","#fbf6ec"],["#241c4f","#f4efe6"],["#2a2900","#f4f0e6"],["#2d665d","#fbf6ec"],["#34579f","#f5f0e8"],["#37664e","#fbf6ec"],["#3d3376","#f5f0e7"],["#406733","#fbf6ec"],["#4f0300","#f5efe6"],["#520000","#f5efe6"],["#57528d","#f5f0e8"],["#5d9498","#211e17"],["#613400","#f5f0e6"],["#688eaf","#211e17"],["#729566","#211e17"],["#771600","#f6efe6"],["#795300","#f6f0e6"],["#8784bb","#211e17"],["#8c8d58","#211e17"],["#8f3f26","#f6f0e6"],["#933f00","#f6f0e6"],["#a4ccda","#363e3f"],["#a68340","#211e17"],["#afc5ed","#383c45"],["#bf755e","#211e17"],["#c1c0e2","#3d3b41"],["#c27736","#211e17"],["#d6c19c","#423b2f"],["#e6b8a9","#463932"]];
@@ -4781,7 +4805,9 @@ function paintEB(){
           '<span class="ebrole">' + ['read','study'].map(r => '<button data-ebrole="' + r + '" data-eb="' + b.id + '"' +
             (ebRole(b) === r ? ' class="on"' : '') + '>' + EB_ROLE[r] + '</button>').join('') + '</span>' +
           '<label>\uD83D\uDCC5 return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
-          '<span>the Schedule follows this</span></div>' : '') +
+          ebForecastLine(b) + '</div>' : '') +
+        (b.s === 'plan' ? '<label class="ebdue">\uD83D\uDCC5 return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
+          (b.due ? ' ' + ebForecastLine(b) : '') : '') +
         '</div>' +
         '<div class="ebst">' + ['read','reading','plan'].map(k => '<button class="' + k + (b.s === k ? ' on' : '') + '" data-ebs="' + k +
           '" data-eb="' + b.id + '">' + EB_ST[k] + '</button>').join('') + '</div></div>'; }).join('');
