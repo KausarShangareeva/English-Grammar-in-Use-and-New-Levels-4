@@ -4548,6 +4548,47 @@ function ebSave(){ writeJSON('eng-books-list', EB); try { recomputeQueues(); } c
 /* the daily paces Kausar asked for: 50 pages for reading, 10 for close study (set once) */
 (function(){ if (readJSON('eb-pace-fix-1009')) return;
   writeJSON('book-pace', 50); writeJSON('book-pace-study', 10); writeJSON('eb-pace-fix-1009', 1); })();
+/* books with a return date line up by that date: the one due first is read now, the rest
+   follow in order. The book being studied (observing) is left where it is. */
+function ebAutoQueue(){
+  const isRead = b => (b.s === 'plan' && !b.role) || (b.s === 'reading' && ebRole(b) !== 'study');
+  const due = EB.filter(b => isRead(b) && b.due).sort((x, y) => x.due < y.due ? -1 : x.due > y.due ? 1 : (x.p - (x.cp || 0)) - (y.p - (y.cp || 0)));
+  if (!due.length) return null;
+  const nowReading = EB.find(b => b.s === 'reading' && ebRole(b) !== 'study');
+  const first = due[0];
+  let switched = null;
+  if (nowReading !== first && (!nowReading || !nowReading.due || first.due < nowReading.due)){
+    if (nowReading){ nowReading.s = 'plan'; delete nowReading.role; }
+    first.s = 'reading'; delete first.role;
+    writeJSON('book-anchor', { id: first.id, cp: first.cp || 0, date: isoToday() });
+    switched = first;
+  }
+  /* put them in date order where the first of them already stands; everything else keeps its place */
+  const reader = EB.find(b => b.s === 'reading' && ebRole(b) !== 'study');
+  const group = (reader && !reader.due ? [reader] : []).concat(due.filter(b => b.s === 'reading'), due.filter(b => b.s === 'plan'));
+  const at = Math.min.apply(null, group.map(b => EB.indexOf(b)));
+  const rest = EB.filter(b => group.indexOf(b) < 0);
+  const order = rest.slice(0, at).concat(group, rest.slice(at));
+  EB.length = 0; order.forEach(b => EB.push(b));
+  return switched;
+}
+/* smooth reordering: cards glide from their old place to the new one (FLIP) */
+function ebFlip(paint, highlight){
+  const box = document.getElementById('ebList');
+  const key = el => { const x = el.querySelector('[data-eb]'); return x ? x.dataset.eb : null; };
+  const before = {};
+  if (box) box.querySelectorAll('.ebook').forEach(el => { const k = key(el); if (k) before[k] = el.getBoundingClientRect().top; });
+  paint();
+  if (!box || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  box.querySelectorAll('.ebook').forEach(el => {
+    const k = key(el); if (!k || before[k] == null) return;
+    const dy = before[k] - el.getBoundingClientRect().top;
+    if (dy) el.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'translateY(0)' }],
+      { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    if (highlight && highlight.indexOf(k) >= 0)
+      el.animate([{ boxShadow: '0 0 0 3px var(--sea)' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 1600, easing: 'ease-out' });
+  });
+}
 /* what the schedule has planned for one book: today's pages and the day it is finished */
 function ebForecast(b){
   const today = isoToday(), mark = '\u00ab' + b.t + '\u00bb';
@@ -4876,8 +4917,12 @@ function paintEB(){
   document.querySelectorAll('#ebList [data-ebdue]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebdue); if (!b) return;
     if (x.value) b.due = x.value; else delete b.due;
-    ebSave(); paintEB();
-    ebMsg(x.value ? '\u2705 Return by ' + fmtDate(x.value) + ' \u2014 the daily pages are worked out so it is finished in time.' : '\u2705 No return date.');
+    const sw = ebAutoQueue();
+    ebSave();
+    ebFlip(paintEB, [b.id].concat(sw ? [sw.id] : []));
+    const next = EB.find(o => o.s === 'reading' && ebRole(o) !== 'study');
+    ebMsg(sw ? '\uD83D\uDCDA Read <b>' + gEsc(sw.t) + '</b> now \u2014 it goes back first (' + fmtDate(sw.due) + '). The queue is in return-date order.'
+      : x.value ? '\u2705 Return by ' + fmtDate(x.value) + ' \u2014 the book is in the queue by its return date.' : '\u2705 No return date.');
   });
   document.querySelectorAll('#ebList [data-ebpace]').forEach(x => x.onchange = () => {
     const role = x.dataset.ebpace === 'study' ? 'study' : 'read';
