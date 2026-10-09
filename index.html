@@ -2311,6 +2311,12 @@ html[data-theme="dark"] .tsmix{border-color:#C9A3E6;color:#C9A3E6}html[data-them
 .ebnow input[type=date],.ebdue input{width:auto;min-width:132px}.ebdue{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:800;color:var(--sea)}.ebdue input{border:1px solid var(--line2);border-radius:8px;padding:2px 6px;font-family:var(--ui);font-size:12px;color:var(--ink);background:var(--bg)}.ebfc{flex-basis:100%;font-size:12.5px;font-weight:700;color:var(--ink)}.ebfc.late{color:#C0392B}
 .ebnow .ebfc{color:var(--ink)}.ebnow .ebfc.late{color:#C0392B}
 .ebnow .ebshould{flex-basis:100%;color:var(--ink);font-weight:800}.ebnow .ebat{font-style:normal;display:inline;color:var(--sea);font-size:15px;font-weight:900}.ebfix{font-size:12px;color:var(--mut)}.ebfix summary{cursor:pointer;font-weight:700}.ebfix label{display:inline-flex;gap:6px;align-items:center;margin-top:4px}
+.ebnow .ebs1{flex-basis:100%;font-weight:800;color:var(--ink);font-size:13px}.ebnow .ebs1 em{font-style:normal;font-size:20px;font-weight:900;color:var(--sea)}.ebnow .ebs1 span{margin-left:10px;color:var(--mut);font-weight:700;font-size:12.5px}
+.ebnow .ebs2{flex-basis:100%;font-size:12.5px;font-weight:700;color:var(--sage,#2f855a)}.ebnow .ebs2.late{color:#C0392B}.ebnow .ebs3{flex-basis:100%;font-size:12px;color:#C0392B;font-weight:700}
+.ebset{flex-basis:100%;font-size:12px}.ebset summary{cursor:pointer;font-weight:800;color:var(--mut);list-style:none}.ebset summary::-webkit-details-marker{display:none}
+.ebsetb{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:8px}.ebsetb label{display:inline-flex;gap:6px;align-items:center;font-weight:700;color:var(--ink)}.ebsetb input[type=date]{width:auto;min-width:132px}
+.ebdue.late{color:#C0392B}.ebdue input{margin-left:6px}
+details.ebdue summary{cursor:pointer;list-style:none}details.ebdue summary::-webkit-details-marker{display:none}.ebpen{color:var(--mut);font-weight:400;margin-left:4px}details.ebdue[open] input{margin:6px 0 0 0}
 </style>
 </head>
 <body>
@@ -4553,46 +4559,32 @@ function ebForecast(b){
 }
 /* the plan is first worked out before the book list exists, so work it out again now */
 setTimeout(() => { try { recomputeQueues(); } catch(e){} }, 0);
-/* where Kausar should be today if she has followed the schedule — no typing needed */
-function ebShouldBe(b){
+/* one short status for a book being read: where you should be, today's pages, and one line
+   that says whether it will be finished before it goes back */
+const ebDaysTo = iso => Math.round((new Date(iso + 'T00:00:00') - new Date(isoToday() + 'T00:00:00')) / 864e5);
+const ebShort = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+function ebDaysWord(n){ return n > 1 ? n + ' days' : n === 1 ? 'tomorrow' : n === 0 ? 'today' : 'overdue'; }
+function ebStatus(b){
   const f = ebForecast(b);
-  if (!f) return '<span class="ebshould">\uD83D\uDCD6 Finished \u2014 mark it as Read</span>';
-  const at = parseInt(f.next, 10) - 1;
-  return '<span class="ebshould">\uD83D\uDCD6 You should be on page <em class="ebat">' + at + '</em> of ' + b.p +
-    (f.first === isoToday() ? ' \u00b7 today: pages ' + f.next : ' \u00b7 next: pages ' + f.next + ' on ' + fmtDate(f.first)) + '</span>';
+  if (!f) return '<div class="ebs1">\u2705 Finished \u2014 mark it as Read</div>';
+  const at = parseInt(f.next, 10) - 1, today = isoToday();
+  const late = b.due && f.last >= b.due;
+  return '<div class="ebs1">Page <em>' + at + '</em> / ' + b.p + '<span>' +
+      (f.first === today ? 'today ' + f.next : ebShort(f.first) + ' ' + f.next) + '</span></div>' +
+    '<div class="ebs2' + (late ? ' late' : '') + '">' + f.pace + ' a day \u00b7 done ' + ebShort(f.last) +
+      (b.due ? ' \u00b7 return ' + ebShort(b.due) + ' (' + ebDaysWord(ebDaysTo(b.due)) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '') + '</div>' +
+    (late ? '<div class="ebs3">Won\u2019t be finished in time \u2014 raise the pages a day in Adjust.</div>' : '');
 }
-/* a plain-language forecast: how long until the book goes back, and what reading it means */
-function ebForecastLine(b, short){
-  const f = ebForecast(b), today = isoToday();
-  const left = b.p - (b.s === 'reading' && f ? parseInt(f.next, 10) - 1 : (b.cp || 0));
-  const daysTo = b.due ? Math.round((new Date(b.due + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5) : null;
-  const parts = [];
-  if (b.due){
-    parts.push('\uD83D\uDCC5 Return by ' + fmtDate(b.due) + ' \u2014 ' +
-      (daysTo > 1 ? daysTo + ' days left' : daysTo === 1 ? 'tomorrow' : daysTo === 0 ? 'today' : 'overdue'));
-  }
-  if (f){
-    const days = Object.keys(OVERRIDE).filter(id => /--book(study)?$/.test(id) && id.slice(0, 10) >= today &&
-      OVERRIDE[id].indexOf('\u00ab' + b.t + '\u00bb') >= 0).length;
-    const late = b.due && f.last >= b.due;
-    if (!late){
-      parts.push('\uD83D\uDCD6 ' + (f.first === today ? 'From today' : 'From ' + fmtDate(f.first)) + ': about ' + Math.ceil(left / Math.max(1, days)) +
-        ' pages a day for ' + days + (days === 1 ? ' day' : ' days') + ' \u2192 finished ' + fmtDate(f.last) + (b.due ? ' \u2705' : ''));
-    } else {
-      const slots = (STREAMS_Q['BOOK'] || []).map(x => x.id.slice(0, 10)).filter(d => d >= today && d < b.due).length;
-      parts.push('\u26a0\ufe0f In the current order it starts on ' + fmtDate(f.first) + ', after it has to go back.');
-      parts.push(slots > 0 ? '\uD83D\uDCA1 Start it now (move it up with \u25b2): ' + Math.ceil(left / slots) + ' pages a day for ' + slots +
-        (slots === 1 ? ' day' : ' days') + ' and it is done in time.' : '\uD83D\uDCA1 There are no reading days left before the return date.');
-    }
-  }
-  if (!f && b.due && b.s === 'plan'){
-    const slots = (STREAMS_Q['BOOK'] || []).map(x => x.id.slice(0, 10)).filter(d => d >= today && d < b.due).length;
-    parts.push('\u26a0\ufe0f Not in the reading plan yet \u2014 in the list it sits above the book you are reading now. Move it down (\u25bc) to just below that book.');
-    if (slots > 0) parts.push('\uD83D\uDCA1 If you started it now: ' + Math.ceil(left / slots) + ' pages a day for ' + slots + (slots === 1 ? ' day.' : ' days.'));
-  }
-  if (!parts.length) return '';
-  const late = b.due && ((f && f.last >= b.due) || (!f && b.s === 'plan'));
-  return '<span class="ebfc' + (late ? ' late' : '') + '">' + parts.join('<br>') + '</span>';
+/* a book waiting its turn: only shown when it has a return date */
+function ebPlanStatus(b){
+  const dateField = '<input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '" title="return by">';
+  if (!b.due) return '<label class="ebdue">\uD83D\uDCC5 ' + dateField + '</label>';
+  const f = ebForecast(b), late = f ? f.last >= b.due : true;
+  let msg;
+  if (f && !late) msg = 'starts ' + ebShort(f.first) + ' \u00b7 done ' + ebShort(f.last) + ' \u2705';
+  else if (f) msg = 'starts ' + ebShort(f.first) + ' \u2014 too late \u26a0\ufe0f move it up \u25b2';
+  else msg = 'not planned yet \u26a0\ufe0f move it just below the book you\u2019re reading';
+  return '<details class="ebdue' + (late ? ' late' : '') + '"><summary>\uD83D\uDCC5 Return ' + ebShort(b.due) + ' (' + ebDaysWord(ebDaysTo(b.due)) + ') \u00b7 ' + msg + ' <span class="ebpen">\u270e</span></summary>' + dateField + '</details>';
 }
 /* covers: the Line by Line colours for their books, and a steady colour from the same palette for the rest */
 const EB_COVER = {"the-mysterious-stranger":["#3d3376","#f5f0e7"],"alice-in-wonderland":["#c1c0e2","#3d3b41"],"around-the-world-in-80-days":["#006680","#fbf6ec"],"adventures-of-huckleberry-finn":["#933f00","#f6f0e6"],"the-adventures-of-sherlock-holmes":["#004a69","#f4f0e7"],"autobiography-of-benjamin-franklin":["#688eaf","#211e17"],"little-women":["#bf755e","#211e17"],"andersens-fairy-tales":["#2d665d","#fbf6ec"],"peter-pan":["#1f4c09","#f4f0e6"],"meditations":["#a4ccda","#363e3f"],"pride-and-prejudice":["#d6c19c","#423b2f"],"sense-and-sensibility":["#e6b8a9","#463932"],"jekyll-and-hyde":["#002e45","#f4f0e6"],"arsene-lupin-gentleman-burglar":["#12378b","#f4f0e8"],"the-great-gatsby":["#37664e","#fbf6ec"],"dracula":["#520000","#f5efe6"],"tom-sawyer":["#c27736","#211e17"],"the-count-of-monte-cristo":["#12378b","#f4f0e8"],"journey-to-the-center-of-the-earth":["#520000","#f5efe6"],"david-copperfield":["#20666b","#fbf6ec"],"great-expectations":["#002f1b","#f4f0e6"],"robinson-crusoe":["#795300","#f6f0e6"],"wuthering-heights":["#06436c","#f4f0e7"],"henry-david-thoreau-essays":["#2d665d","#fbf6ec"],"walden":["#406733","#fbf6ec"],"the-call-of-the-wild":["#3d3376","#f5f0e7"],"moby-dick":["#006680","#fbf6ec"],"ulysses":["#688eaf","#211e17"],"emma":["#006680","#fbf6ec"],"persuasion":["#933f00","#f6f0e6"],"gullivers-travels":["#34579f","#f5f0e8"],"heart-of-darkness":["#520000","#f5efe6"],"king-arthur-round-table":["#041f5e","#f4efe7"],"frankenstein":["#06436c","#f4f0e7"],"the-scarlet-letter":["#4f0300","#f5efe6"],"the-picture-of-dorian-gray":["#241c4f","#f4efe6"],"kidnapped":["#06436c","#f4f0e7"],"mrs-dalloway":["#c1c0e2","#3d3b41"],"the-jungle-book":["#1f4c09","#f4f0e6"],"to-the-lighthouse":["#8784bb","#211e17"],"white-fang":["#afc5ed","#383c45"],"the-return-of-sherlock-holmes":["#002e45","#f4f0e6"],"twenty-thousand-leagues-under-the-sea":["#041f5e","#f4efe7"],"aesops-fables":["#933f00","#f6f0e6"],"the-war-of-the-worlds":["#002848","#f4f0e6"],"interesting-narrative-of-olaudah-equiano":["#c27736","#211e17"],"the-island-of-doctor-moreau":["#4f0300","#f5efe6"],"the-lost-world":["#37664e","#fbf6ec"],"his-last-bow":["#004a69","#f4f0e7"],"the-time-machine":["#12378b","#f4f0e8"],"bambi":["#729566","#211e17"],"the-secret-garden":["#8c8d58","#211e17"],"the-beasts-of-tarzan":["#0b4c31","#f4f0e6"],"the-return-of-tarzan":["#795300","#f6f0e6"],"narrative-of-the-life-of-frederick-douglass-an-american-slave":["#8f3f26","#f6f0e6"],"the-merry-adventures-of-robin-hood":["#2d665d","#fbf6ec"],"a-short-history-of-the-world":["#688eaf","#211e17"],"tales-of-space-and-time":["#3d3376","#f5f0e7"],"the-velveteen-rabbit":["#e6b8a9","#463932"],"through-the-looking-glass":["#06436c","#f4f0e7"],"little-men":["#a68340","#211e17"],"treasure-island":["#20666b","#fbf6ec"],"jack-and-jill":["#c27736","#211e17"],"anne-of-green-gables":["#406733","#fbf6ec"],"max-havelaar":["#613400","#f5f0e6"],"les-miserables":["#57528d","#f5f0e8"],"the-wonderful-wizard-of-oz":["#5d9498","#211e17"],"heidi":["#afc5ed","#383c45"],"grimms-fairy-tales":["#004c43","#f4f0e6"],"mansfield-park":["#2a2900","#f4f0e6"],"the-phantom-of-the-opera":["#771600","#f6efe6"],"the-three-musketeers":["#34579f","#f5f0e8"]};
@@ -4836,16 +4828,15 @@ function paintEB(){
           '" data-ebpg="' + b.id + '"> pages</label>' +
         (b.g ? '<span>' + gEsc(EB_GENRE[b.g] || b.g) + '</span>' : '') + '</div>' +
         (b.s === 'read' ? '<label class="ebdone">\u2705 read on <input type="date" value="' + gEsc(b.d || '') + '" data-ebdt="' + b.id + '"></label>' : '') +
-        (b.s === 'reading' ? '<div class="ebnow">' + ebShouldBe(b) +
-          '<details class="ebfix"><summary>\u270e behind or ahead?</summary><label>I\u2019m actually on page <input type="number" min="0" max="' + b.p + '" value="' + (b.cp || 0) +
-          '" data-ebcp="' + b.id + '"> of ' + b.p + '</label></details><label><input type="number" min="1" value="' + ebPaceFor(ebRole(b)) +
-          '" data-ebpace="' + ebRole(b) + '"> pages a day</label>' +
+        (b.s === 'reading' ? '<div class="ebnow">' + ebStatus(b) +
+          '<details class="ebset"><summary>\u2699\ufe0f Adjust</summary><div class="ebsetb">' +
           '<span class="ebrole">' + ['read','study'].map(r => '<button data-ebrole="' + r + '" data-eb="' + b.id + '"' +
             (ebRole(b) === r ? ' class="on"' : '') + '>' + EB_ROLE[r] + '</button>').join('') + '</span>' +
-          '<label>\uD83D\uDCC5 return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
-          ebForecastLine(b, true) + '</div>' : '') +
-        (b.s === 'plan' ? '<label class="ebdue">\uD83D\uDCC5 return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
-          (b.due ? ' ' + ebForecastLine(b) : '') : '') +
+          '<label>Pages a day <input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"></label>' +
+          '<label>Return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
+          '<label>I\u2019m actually on page <input type="number" min="0" max="' + b.p + '" value="' + (b.cp || 0) + '" data-ebcp="' + b.id + '"></label>' +
+          '</div></details></div>' : '') +
+        (b.s === 'plan' ? ebPlanStatus(b) : '') +
         '</div>' +
         '<div class="ebst">' + ['read','reading','plan'].map(k => '<button class="' + k + (b.s === k ? ' on' : '') + '" data-ebs="' + k +
           '" data-eb="' + b.id + '">' + EB_ST[k] + '</button>').join('') + '</div></div>'; }).join('');
