@@ -4919,6 +4919,23 @@ function paintEB(){
   document.querySelectorAll('#ebList [data-ebup]').forEach(x => x.onclick = () => ebMove(x.dataset.ebup, EB.findIndex(b => b.id === x.dataset.ebup) - 1));
   document.querySelectorAll('#ebList [data-ebdn]').forEach(x => x.onclick = () => ebMove(x.dataset.ebdn, EB.findIndex(b => b.id === x.dataset.ebdn) + 1));
   document.querySelectorAll('#ebList [data-ebpos]').forEach(x => x.onchange = () => ebMove(x.dataset.ebpos, (parseInt(x.value, 10) || 1) - 1));
+  /* while typing pages or pace, the card's forecast updates live (the list is redrawn when you leave the field) */
+  const ebLive = (x, apply) => { clearTimeout(x._t); x._t = setTimeout(() => {
+    const v = parseInt(x.value, 10); if (!(v > 0)) return;
+    apply(v); writeJSON('eng-books-list', EB); try { recomputeQueues(); } catch(e){}
+    document.querySelectorAll('#ebList .ebook').forEach(card => {
+      const id = (card.querySelector('[data-eb]') || {}).dataset; const bk = id && byId(id.eb); if (!bk) return;
+      const now = card.querySelector('.ebnow');
+      if (now && bk.s === 'reading'){
+        now.querySelectorAll('.ebs1,.ebs2,.ebs3').forEach(e => e.remove());
+        now.insertAdjacentHTML('afterbegin', ebStatus(bk));
+      }
+      const d = card.querySelector('.ebdue');
+      if (d && bk.s === 'plan' && bk.due && d.tagName === 'DETAILS'){ d.outerHTML = ebPlanStatus(bk); }
+    });
+  }, 250); };
+  document.querySelectorAll('#ebList [data-ebpg]').forEach(x => { x.oninput = () => ebLive(x, v => { byId(x.dataset.ebpg).p = v; }); });
+  document.querySelectorAll('#ebList [data-ebpace]').forEach(x => { x.oninput = () => ebLive(x, v => writeJSON(x.dataset.ebpace === 'study' ? 'book-pace-study' : 'book-pace', v)); });
   document.querySelectorAll('#ebList [data-ebpg]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebpg), v = parseInt(x.value, 10);
     if (!(v > 0) || v === b.p) { x.value = b.p; return; }
