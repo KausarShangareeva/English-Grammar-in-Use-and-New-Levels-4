@@ -4509,7 +4509,9 @@ let EB = (function(){
   const st = readJSON('eng-books') || {};           /* statuses from the first version of this tab */
   return EB_START.map(b => Object.assign({}, b, st[b.id] || st[b.id.slice(-8)] ? { s: st[b.id] || st[b.id.slice(-8)] } : {}));
 })();
-function ebSave(){ writeJSON('eng-books-list', EB); }
+/* every change to the list is saved and the schedule worked out again at once, so the
+   page forecasts and the Schedule always match what is in the list */
+function ebSave(){ writeJSON('eng-books-list', EB); try { recomputeQueues(); } catch(e){} }
 /* library loans, 9 October 2026: return dates on the books, Frankenstein for close study,
    the rest read in the order they are due. Runs once; page counts stay as Kausar set them. */
 (function ebLibraryPlan(){
@@ -4857,7 +4859,7 @@ function paintEB(){
   document.querySelectorAll('#ebList [data-ebdue]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebdue); if (!b) return;
     if (x.value) b.due = x.value; else delete b.due;
-    ebSave(); try { recomputeQueues(); } catch(e){}
+    ebSave(); paintEB();
     ebMsg(x.value ? '\u2705 Return by ' + fmtDate(x.value) + ' \u2014 the daily pages are worked out so it is finished in time.' : '\u2705 No return date.');
   });
   document.querySelectorAll('#ebList [data-ebpace]').forEach(x => x.onchange = () => {
@@ -4865,6 +4867,7 @@ function paintEB(){
     const v = parseInt(x.value, 10); if (!(v > 0)) { x.value = ebPaceFor(role); return; }
     writeJSON(role === 'study' ? 'book-pace-study' : 'book-pace', v);
     try { recomputeQueues(); } catch(e){}
+    paintEB();
     ebMsg('\u2705 ' + v + ' pages a day for ' + EB_ROLE[role] + ' \u2014 the Schedule is worked out again.');
   });
   /* switch a book between reading and observing; the other book takes the other job */
