@@ -2317,6 +2317,7 @@ html[data-theme="dark"] .tsmix{border-color:#C9A3E6;color:#C9A3E6}html[data-them
 .ebsetb{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:8px}.ebsetb label{display:inline-flex;gap:6px;align-items:center;font-weight:700;color:var(--ink)}.ebsetb input[type=date]{width:auto;min-width:132px}
 .ebdue.late{color:#C0392B}.ebdue input{margin-left:6px}
 details.ebdue summary{cursor:pointer;list-style:none}details.ebdue summary::-webkit-details-marker{display:none}.ebpen{color:var(--mut);font-weight:400;margin-left:4px}details.ebdue[open] input{margin:6px 0 0 0}
+.ebnow .ebsetb{flex-basis:100%;margin-top:4px;padding-top:8px;border-top:1px dashed var(--line2,rgba(0,0,0,.12));gap:6px 12px;font-size:12px}.ebnow .ebsetb label{color:var(--mut);font-weight:700}.ebnow .ebsetb input{width:58px}.ebnow .ebsetb input[type=date]{width:auto;min-width:126px}
 </style>
 </head>
 <body>
@@ -4573,7 +4574,7 @@ function ebStatus(b){
       (f.first === today ? 'today ' + f.next : ebShort(f.first) + ' ' + f.next) + '</span></div>' +
     '<div class="ebs2' + (late ? ' late' : '') + '">' + f.pace + ' a day \u00b7 done ' + ebShort(f.last) +
       (b.due ? ' \u00b7 return ' + ebShort(b.due) + ' (' + ebDaysWord(ebDaysTo(b.due)) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '') + '</div>' +
-    (late ? '<div class="ebs3">Won\u2019t be finished in time \u2014 raise the pages a day in Adjust.</div>' : '');
+    (late ? '<div class="ebs3">Won\u2019t be finished in time \u2014 raise the pages a day below.</div>' : '');
 }
 /* a book waiting its turn: only shown when it has a return date */
 function ebPlanStatus(b){
@@ -4829,13 +4830,13 @@ function paintEB(){
         (b.g ? '<span>' + gEsc(EB_GENRE[b.g] || b.g) + '</span>' : '') + '</div>' +
         (b.s === 'read' ? '<label class="ebdone">\u2705 read on <input type="date" value="' + gEsc(b.d || '') + '" data-ebdt="' + b.id + '"></label>' : '') +
         (b.s === 'reading' ? '<div class="ebnow">' + ebStatus(b) +
-          '<details class="ebset"><summary>\u2699\ufe0f Adjust</summary><div class="ebsetb">' +
+          '<div class="ebsetb">' +
           '<span class="ebrole">' + ['read','study'].map(r => '<button data-ebrole="' + r + '" data-eb="' + b.id + '"' +
             (ebRole(b) === r ? ' class="on"' : '') + '>' + EB_ROLE[r] + '</button>').join('') + '</span>' +
-          '<label>Pages a day <input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"></label>' +
-          '<label>Return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
-          '<label>I\u2019m actually on page <input type="number" min="0" max="' + b.p + '" value="' + (b.cp || 0) + '" data-ebcp="' + b.id + '"></label>' +
-          '</div></details></div>' : '') +
+          '<label>pages a day <input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"></label>' +
+          '<label>return <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
+          '<label>I\u2019m on page <input type="number" min="0" max="' + b.p + '" value="' + (b.cp || 0) + '" data-ebcp="' + b.id + '"></label>' +
+          '</div></div>' : '') +
         (b.s === 'plan' ? ebPlanStatus(b) : '') +
         '</div>' +
         '<div class="ebst">' + ['read','reading','plan'].map(k => '<button class="' + k + (b.s === k ? ' on' : '') + '" data-ebs="' + k +
