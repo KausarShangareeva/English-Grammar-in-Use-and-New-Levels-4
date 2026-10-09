@@ -4540,7 +4540,7 @@ function ebSave(){ writeJSON('eng-books-list', EB); try { recomputeQueues(); } c
   due.forEach(([b, d]) => { if (b) b.due = d; });
   EB.forEach(b => { if (b.s === 'reading' && b !== fr && b !== gat) b.s = 'plan'; });
   if (fr){ fr.s = 'reading'; fr.role = 'study'; writeJSON('book-anchor-study', { id: fr.id, cp: fr.cp || 0, date: '2026-10-09' }); }
-  if (gat){ gat.s = 'reading'; delete gat.role; writeJSON('book-anchor', { id: gat.id, cp: gat.cp || 0, date: '2026-10-09' }); }
+  if (gat){ gat.s = 'reading'; delete gat.role; gat.started = gat.started || '2026-10-09'; writeJSON('book-anchor', { id: gat.id, cp: gat.cp || 0, date: '2026-10-09' }); }
   [art, mic, car].forEach(b => { if (b){ b.s = 'plan'; delete b.role; } });
   /* reading order: what is due first comes first, straight after the book being read */
   const queue = [gat, art, mic, car].filter(Boolean);
@@ -4555,16 +4555,17 @@ function ebSave(){ writeJSON('eng-books-list', EB); try { recomputeQueues(); } c
   writeJSON('book-pace', 50); writeJSON('book-pace-study', 10); writeJSON('eb-pace-fix-1009', 1); })();
 /* books with a return date line up by that date: the one due first is read now, the rest
    follow in order. The book being studied (observing) is left where it is. */
-function ebAutoQueue(){
+function ebAutoQueue(allowSwitch){
   const isRead = b => (b.s === 'plan' && !b.role) || (b.s === 'reading' && ebRole(b) !== 'study');
   const due = EB.filter(b => isRead(b) && b.due).sort((x, y) => x.due < y.due ? -1 : x.due > y.due ? 1 : (x.p - (x.cp || 0)) - (y.p - (y.cp || 0)));
   if (!due.length) return null;
   const nowReading = EB.find(b => b.s === 'reading' && ebRole(b) !== 'study');
   const first = due[0];
   let switched = null;
-  if (nowReading !== first && (!nowReading || !nowReading.due || first.due < nowReading.due)){
+  /* the book being read is only changed when a return date was just set; a book you picked yourself stays */
+  if (allowSwitch && nowReading !== first && (!nowReading || !nowReading.due || first.due < nowReading.due)){
     if (nowReading){ nowReading.s = 'plan'; delete nowReading.role; }
-    first.s = 'reading'; delete first.role;
+    first.s = 'reading'; delete first.role; if (!first.started) first.started = isoToday();
     writeJSON('book-anchor', { id: first.id, cp: first.cp || 0, date: isoToday() });
     switched = first;
   }
@@ -4622,7 +4623,7 @@ function ebStatus(b){
   if (!f) return '<div class="ebs1">\u2705 Finished \u2014 mark it as Read</div>';
   const today = isoToday(), late = b.due && f.last >= b.due;
   const anchor = readJSON(ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor');
-  const started = anchor && anchor.id === b.id ? anchor.date : f.first;
+  const started = b.started || (anchor && anchor.id === b.id ? anchor.date : f.first);
   const end = parseInt(f.next.split('\u2013')[1] || f.next, 10);
   const row = (k, v, cls) => '<dt>' + k + '</dt><dd' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</dd>';
   const v = (name, html) => '<span data-v="' + name + '">' + html + '</span>';
@@ -4712,13 +4713,25 @@ function ebSet(id, s){
     swapped.s = 'plan'; delete swapped.role;
     others.splice(others.indexOf(swapped), 1);
   }
+  const wasReader = b.s === 'reading' && ebRole(b) !== 'study';
   b.s = s; b.d = s === 'read' ? isoToday() : '';
+  if (s === 'reading' && !b.started) b.started = isoToday();
   if (s === 'reading'){
     b.cp = 0;
     if (others.length && ebRole(others[0]) === 'read') b.role = 'study'; else delete b.role;
     writeJSON(ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor', { id: b.id, cp: 0, date: isoToday() });
   } else delete b.role;
-  ebSave(); ebFlip(paintEB, [b.id].concat(swapped ? [swapped.id] : []));
+  /* the book being read was finished or put back: the next one in line takes its place */
+  let promoted = null;
+  if (wasReader && s !== 'reading' && !EB.some(o => o.s === 'reading' && ebRole(o) !== 'study')){
+    const cand = EB.filter(o => o.s === 'plan' && !o.role);
+    const dated = cand.filter(o => o.due).sort((x, y) => x.due < y.due ? -1 : 1);
+    promoted = dated[0] || cand[0] || null;
+    if (promoted){ promoted.s = 'reading'; if (!promoted.started) promoted.started = isoToday();
+      writeJSON('book-anchor', { id: promoted.id, cp: promoted.cp || 0, date: isoToday() }); }
+  }
+  ebSave(); ebFlip(paintEB, [b.id].concat(swapped ? [swapped.id] : [], promoted ? [promoted.id] : []));
+  if (promoted) ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> done \u2014 next up: <b>' + gEsc(promoted.t) + '</b>' + (promoted.due ? ' (return ' + fmtDate(promoted.due) + ')' : '') + '.');
   if (swapped) ebMsg('\uD83D\uDCD6 Now reading <b>' + gEsc(b.t) + '</b> \u2014 <b>' + gEsc(swapped.t) + '</b> went back to the queue.');
   ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 ' + (s === 'read' ? 'read on ' + ebDay(b.d) : EB_ST[s].toLowerCase()) + '.');
 }
@@ -4958,7 +4971,7 @@ function paintEB(){
   document.querySelectorAll('#ebList [data-ebdue]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebdue); if (!b) return;
     if (x.value) b.due = x.value; else delete b.due;
-    const sw = ebAutoQueue();
+    const sw = ebAutoQueue(true);
     ebSave();
     ebFlip(paintEB, [b.id].concat(sw ? [sw.id] : []));
     const next = EB.find(o => o.s === 'reading' && ebRole(o) !== 'study');
