@@ -4823,6 +4823,8 @@ function ebAddForm(){
   };
 }
 function paintEB(){
+  /* keep the queue in return-date order every time the list is shown */
+  { const was = EB.map(b => b.id + b.s).join(); ebAutoQueue(); if (EB.map(b => b.id + b.s).join() !== was) ebSave(); }
   const n = { read:0, reading:0, plan:0 }; let pages = 0;
   EB.forEach(b => { n[b.s]++; if (b.s === 'read') pages += b.p; });
   const total = EB.length || 1, C = 2 * Math.PI * 70;
