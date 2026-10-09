@@ -4621,7 +4621,7 @@ function ebStatus(b){
   const late = b.due && f.last >= b.due;
   const end = parseInt(f.next.split('\u2013')[1] || f.next, 10);
   return '<div class="ebs1">' + (f.first === today
-      ? '\uD83D\uDCD6 Today: pages ' + f.next + ' \u2192 by tonight you\u2019re on page <em>' + end + '</em> of ' + b.p
+      ? '\uD83D\uDCD6 Today, ' + new Date(today + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }) + ': pages ' + f.next + ' \u2192 by tonight you\u2019re on page <em>' + end + '</em> of ' + b.p
       : '\uD83D\uDCD6 You\u2019re on page <em>' + at + '</em> of ' + b.p + '<span>next: pages ' + f.next + ' on ' + ebShort(f.first) + '</span>') + '</div>' +
     '<div class="ebs2' + (late ? ' late' : '') + '">' + f.pace + ' pages a day \u2192 you finish on ' + ebShort(f.last) +
       (b.due ? ' \u00b7 return by ' + ebShort(b.due) + ' (' + (ebDaysTo(b.due) > 1 ? ebDaysTo(b.due) + ' days left' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '') + '</div>' +
