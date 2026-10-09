@@ -4507,6 +4507,32 @@ let EB = (function(){
   return EB_START.map(b => Object.assign({}, b, st[b.id] || st[b.id.slice(-8)] ? { s: st[b.id] || st[b.id.slice(-8)] } : {}));
 })();
 function ebSave(){ writeJSON('eng-books-list', EB); }
+/* library loans, 9 October 2026: return dates on the books, Frankenstein for close study,
+   the rest read in the order they are due. Runs once; page counts stay as Kausar set them. */
+(function ebLibraryPlan(){
+  const KEY = 'eb-library-plan-1009';
+  if (readJSON(KEY)) return;
+  const find = re => EB.find(b => re.test(b.t || ''));
+  const add = (t, a, p, l, g) => { const b = { id:'lib' + t.replace(/\W+/g,'').slice(0,12).toLowerCase(), t:t, a:a, p:p, l:l, g:g, s:'plan', d:'' }; EB.push(b); return b; };
+  const fr  = find(/frankenstein/i);
+  const gat = find(/gatsby/i);
+  const art = find(/articulating/i) || add('Articulating Design Decisions', 'Tom Greever', 232, 'B2+', 'nonfiction');
+  const mic = find(/mice/i);
+  const car = find(/win friends/i) || add('How to Win Friends and Influence People', 'Dale Carnegie', 291, 'B2', 'nonfiction');
+  const due = [[gat,'2026-10-13'],[art,'2026-10-26'],[mic,'2026-11-06'],[car,'2026-11-06'],[fr,'2026-11-06']];
+  due.forEach(([b, d]) => { if (b) b.due = d; });
+  EB.forEach(b => { if (b.s === 'reading' && b !== fr && b !== gat) b.s = 'plan'; });
+  if (fr){ fr.s = 'reading'; fr.role = 'study'; writeJSON('book-anchor-study', { id: fr.id, cp: fr.cp || 0, date: '2026-10-09' }); }
+  if (gat){ gat.s = 'reading'; delete gat.role; writeJSON('book-anchor', { id: gat.id, cp: gat.cp || 0, date: '2026-10-09' }); }
+  [art, mic, car].forEach(b => { if (b){ b.s = 'plan'; delete b.role; } });
+  /* reading order: what is due first comes first, straight after the book being read */
+  const queue = [gat, art, mic, car].filter(Boolean);
+  const rest = EB.filter(b => queue.indexOf(b) < 0);
+  const at = rest.findIndex(b => b.s === 'plan');
+  EB.length = 0;
+  (at < 0 ? rest.concat(queue) : rest.slice(0, at).concat(queue, rest.slice(at))).forEach(b => EB.push(b));
+  ebSave(); writeJSON(KEY, 1);
+})();
 /* covers: the Line by Line colours for their books, and a steady colour from the same palette for the rest */
 const EB_COVER = {"the-mysterious-stranger":["#3d3376","#f5f0e7"],"alice-in-wonderland":["#c1c0e2","#3d3b41"],"around-the-world-in-80-days":["#006680","#fbf6ec"],"adventures-of-huckleberry-finn":["#933f00","#f6f0e6"],"the-adventures-of-sherlock-holmes":["#004a69","#f4f0e7"],"autobiography-of-benjamin-franklin":["#688eaf","#211e17"],"little-women":["#bf755e","#211e17"],"andersens-fairy-tales":["#2d665d","#fbf6ec"],"peter-pan":["#1f4c09","#f4f0e6"],"meditations":["#a4ccda","#363e3f"],"pride-and-prejudice":["#d6c19c","#423b2f"],"sense-and-sensibility":["#e6b8a9","#463932"],"jekyll-and-hyde":["#002e45","#f4f0e6"],"arsene-lupin-gentleman-burglar":["#12378b","#f4f0e8"],"the-great-gatsby":["#37664e","#fbf6ec"],"dracula":["#520000","#f5efe6"],"tom-sawyer":["#c27736","#211e17"],"the-count-of-monte-cristo":["#12378b","#f4f0e8"],"journey-to-the-center-of-the-earth":["#520000","#f5efe6"],"david-copperfield":["#20666b","#fbf6ec"],"great-expectations":["#002f1b","#f4f0e6"],"robinson-crusoe":["#795300","#f6f0e6"],"wuthering-heights":["#06436c","#f4f0e7"],"henry-david-thoreau-essays":["#2d665d","#fbf6ec"],"walden":["#406733","#fbf6ec"],"the-call-of-the-wild":["#3d3376","#f5f0e7"],"moby-dick":["#006680","#fbf6ec"],"ulysses":["#688eaf","#211e17"],"emma":["#006680","#fbf6ec"],"persuasion":["#933f00","#f6f0e6"],"gullivers-travels":["#34579f","#f5f0e8"],"heart-of-darkness":["#520000","#f5efe6"],"king-arthur-round-table":["#041f5e","#f4efe7"],"frankenstein":["#06436c","#f4f0e7"],"the-scarlet-letter":["#4f0300","#f5efe6"],"the-picture-of-dorian-gray":["#241c4f","#f4efe6"],"kidnapped":["#06436c","#f4f0e7"],"mrs-dalloway":["#c1c0e2","#3d3b41"],"the-jungle-book":["#1f4c09","#f4f0e6"],"to-the-lighthouse":["#8784bb","#211e17"],"white-fang":["#afc5ed","#383c45"],"the-return-of-sherlock-holmes":["#002e45","#f4f0e6"],"twenty-thousand-leagues-under-the-sea":["#041f5e","#f4efe7"],"aesops-fables":["#933f00","#f6f0e6"],"the-war-of-the-worlds":["#002848","#f4f0e6"],"interesting-narrative-of-olaudah-equiano":["#c27736","#211e17"],"the-island-of-doctor-moreau":["#4f0300","#f5efe6"],"the-lost-world":["#37664e","#fbf6ec"],"his-last-bow":["#004a69","#f4f0e7"],"the-time-machine":["#12378b","#f4f0e8"],"bambi":["#729566","#211e17"],"the-secret-garden":["#8c8d58","#211e17"],"the-beasts-of-tarzan":["#0b4c31","#f4f0e6"],"the-return-of-tarzan":["#795300","#f6f0e6"],"narrative-of-the-life-of-frederick-douglass-an-american-slave":["#8f3f26","#f6f0e6"],"the-merry-adventures-of-robin-hood":["#2d665d","#fbf6ec"],"a-short-history-of-the-world":["#688eaf","#211e17"],"tales-of-space-and-time":["#3d3376","#f5f0e7"],"the-velveteen-rabbit":["#e6b8a9","#463932"],"through-the-looking-glass":["#06436c","#f4f0e7"],"little-men":["#a68340","#211e17"],"treasure-island":["#20666b","#fbf6ec"],"jack-and-jill":["#c27736","#211e17"],"anne-of-green-gables":["#406733","#fbf6ec"],"max-havelaar":["#613400","#f5f0e6"],"les-miserables":["#57528d","#f5f0e8"],"the-wonderful-wizard-of-oz":["#5d9498","#211e17"],"heidi":["#afc5ed","#383c45"],"grimms-fairy-tales":["#004c43","#f4f0e6"],"mansfield-park":["#2a2900","#f4f0e6"],"the-phantom-of-the-opera":["#771600","#f6efe6"],"the-three-musketeers":["#34579f","#f5f0e8"]};
 const EB_PAL = [["#002848","#f4f0e6"],["#002e45","#f4f0e6"],["#002f1b","#f4f0e6"],["#004a69","#f4f0e7"],["#004c43","#f4f0e6"],["#006680","#fbf6ec"],["#041f5e","#f4efe7"],["#06436c","#f4f0e7"],["#0b4c31","#f4f0e6"],["#12378b","#f4f0e8"],["#1f4c09","#f4f0e6"],["#20666b","#fbf6ec"],["#241c4f","#f4efe6"],["#2a2900","#f4f0e6"],["#2d665d","#fbf6ec"],["#34579f","#f5f0e8"],["#37664e","#fbf6ec"],["#3d3376","#f5f0e7"],["#406733","#fbf6ec"],["#4f0300","#f5efe6"],["#520000","#f5efe6"],["#57528d","#f5f0e8"],["#5d9498","#211e17"],["#613400","#f5f0e6"],["#688eaf","#211e17"],["#729566","#211e17"],["#771600","#f6efe6"],["#795300","#f6f0e6"],["#8784bb","#211e17"],["#8c8d58","#211e17"],["#8f3f26","#f6f0e6"],["#933f00","#f6f0e6"],["#a4ccda","#363e3f"],["#a68340","#211e17"],["#afc5ed","#383c45"],["#bf755e","#211e17"],["#c1c0e2","#3d3b41"],["#c27736","#211e17"],["#d6c19c","#423b2f"],["#e6b8a9","#463932"]];
@@ -4616,46 +4642,47 @@ function ebSyncStudyRows(){
     }
   });
 }
+/* pages for one day: the usual pace, or more when a book has a return date and would not
+   be finished in time otherwise. Worked out again every day, so a missed day spreads over the rest. */
+function ebDayPace(b, page, base, dates, k){
+  const left = b.p - page + 1;
+  if (!b.due) return Math.min(left, base);
+  const days = dates.slice(k).filter(d => d < b.due).length;
+  if (days <= 0) return left;
+  return Math.min(left, Math.max(base, Math.ceil(left / days)));
+}
 function ebBookPlan(st){
   try { ebStudyPlan(st); } catch(e){}
   const q = STREAMS_Q['BOOK']; if (!q) return;
-  const a = ebAnchor(); const pace = ebPace();
-  const chunks = [];
-  if (a){
-    const start = EB.findIndex(b => b.id === a.id);
-    const books = [EB[start]].concat(EB.slice(start + 1).filter(b => b.s === 'plan' && !b.role));
-    books.forEach((b, k) => {
-      let from = k === 0 ? Math.min(b.p, (a.cp || 0)) + 1 : 1;
-      while (from <= b.p){
-        const to = Math.min(b.p, from + pace - 1);
-        chunks.push('\uD83D\uDCD6 Book reading \u2014 \u00ab' + b.t + '\u00bb, pages ' + from + '\u2013' + to + ' of ' + b.p);
-        from = to + 1;
-      }
-    });
-  }
-  let ptr = 0;
-  q.forEach(slot => {
-    if (!a || slot.id.slice(0, 10) < a.date) return;      /* days before stay as they were */
-    OVERRIDE[slot.id] = chunks[ptr] || '\uD83D\uDCD6 Book reading \u2014 choose the next book';
-    if (Number(st[slot.id]) !== 2 && ptr < chunks.length) ptr++;
+  const a = ebAnchor(); const base = ebPace();
+  const start = a ? EB.findIndex(b => b.id === a.id) : -1;
+  const books = start < 0 ? [] : [EB[start]].concat(EB.slice(start + 1).filter(b => b.s === 'plan' && !b.role));
+  const slots = q.filter(slot => a && slot.id.slice(0, 10) >= a.date);
+  const dates = slots.map(slot => slot.id.slice(0, 10));
+  let bi = 0, page = books.length ? Math.min(books[0].p, a.cp || 0) + 1 : 1;
+  slots.forEach((slot, k) => {
+    while (books[bi] && page > books[bi].p){ bi++; page = 1; }
+    const b = books[bi];
+    if (!b){ OVERRIDE[slot.id] = '\uD83D\uDCD6 Book reading \u2014 choose the next book'; return; }
+    const n = ebDayPace(b, page, base, dates, k), to = page + n - 1;
+    OVERRIDE[slot.id] = '\uD83D\uDCD6 Book reading \u2014 \u00ab' + b.t + '\u00bb, pages ' + page + '\u2013' + to + ' of ' + b.p +
+      (b.due ? ' \u00b7 return by ' + fmtDate(b.due) : '');
+    if (Number(st[slot.id]) !== 2) page = to + 1;
   });
 }
 function ebStudyPlan(st){
   const a = ebAnchorFor('study'); if (!a) return;
   const b = EB.find(x => x.id === a.id); if (!b) return;
-  const pace = ebPaceFor('study'), chunks = [];
-  let from = Math.min(b.p, a.cp || 0) + 1;
-  while (from <= b.p){
-    const to = Math.min(b.p, from + pace - 1);
-    chunks.push(EB_ROLE.study + ' \u2014 \u00ab' + b.t + '\u00bb, pages ' + from + '\u2013' + to + ' of ' + b.p + ' \u00b7 grammar and words');
-    from = to + 1;
-  }
-  const slots = Object.keys(PLAN).sort().filter(iso => iso >= a.date && PLAN[iso].rows.some(r => r.i === iso + '--bookstudy'));
-  let ptr = 0;
-  slots.forEach(iso => {
+  const base = ebPaceFor('study');
+  const dates = Object.keys(PLAN).sort().filter(iso => iso >= a.date && PLAN[iso].rows.some(r => r.i === iso + '--bookstudy'));
+  let page = Math.min(b.p, a.cp || 0) + 1;
+  dates.forEach((iso, k) => {
     const id = iso + '--bookstudy';
-    OVERRIDE[id] = chunks[ptr] || EB_ROLE.study + ' \u2014 choose the next book to observe';
-    if (Number(st[id]) !== 2 && ptr < chunks.length) ptr++;
+    if (page > b.p){ OVERRIDE[id] = EB_ROLE.study + ' \u2014 choose the next book to observe'; return; }
+    const n = ebDayPace(b, page, base, dates, k), to = page + n - 1;
+    OVERRIDE[id] = EB_ROLE.study + ' \u2014 \u00ab' + b.t + '\u00bb, pages ' + page + '\u2013' + to + ' of ' + b.p + ' \u00b7 grammar and words' +
+      (b.due ? ' \u00b7 return by ' + fmtDate(b.due) : '');
+    if (Number(st[id]) !== 2) page = to + 1;
   });
 }
 function ebSetPage(id, v){
@@ -4753,6 +4780,7 @@ function paintEB(){
           '" data-ebpace="' + ebRole(b) + '"> pages a day</label>' +
           '<span class="ebrole">' + ['read','study'].map(r => '<button data-ebrole="' + r + '" data-eb="' + b.id + '"' +
             (ebRole(b) === r ? ' class="on"' : '') + '>' + EB_ROLE[r] + '</button>').join('') + '</span>' +
+          '<label>\uD83D\uDCC5 return by <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
           '<span>the Schedule follows this</span></div>' : '') +
         '</div>' +
         '<div class="ebst">' + ['read','reading','plan'].map(k => '<button class="' + k + (b.s === k ? ' on' : '') + '" data-ebs="' + k +
@@ -4790,6 +4818,12 @@ function paintEB(){
     b.d = x.value; ebSave(); ebMsg('✅ <b>' + gEsc(b.t) + '</b> — read on ' + ebDay(b.d) + '.');
   });
   document.querySelectorAll('#ebList [data-ebcp]').forEach(x => x.onchange = () => ebSetPage(x.dataset.ebcp, parseInt(x.value, 10) || 0));
+  document.querySelectorAll('#ebList [data-ebdue]').forEach(x => x.onchange = () => {
+    const b = byId(x.dataset.ebdue); if (!b) return;
+    if (x.value) b.due = x.value; else delete b.due;
+    ebSave(); try { recomputeQueues(); } catch(e){}
+    ebMsg(x.value ? '\u2705 Return by ' + fmtDate(x.value) + ' \u2014 the daily pages are worked out so it is finished in time.' : '\u2705 No return date.');
+  });
   document.querySelectorAll('#ebList [data-ebpace]').forEach(x => x.onchange = () => {
     const role = x.dataset.ebpace === 'study' ? 'study' : 'read';
     const v = parseInt(x.value, 10); if (!(v > 0)) { x.value = ebPaceFor(role); return; }
