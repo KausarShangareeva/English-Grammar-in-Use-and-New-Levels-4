@@ -2320,6 +2320,9 @@ details.ebdue summary{cursor:pointer;list-style:none}details.ebdue summary::-web
 .ebnow .ebsetb{flex-basis:100%;margin-top:4px;padding-top:8px;border-top:1px dashed var(--line2,rgba(0,0,0,.12));gap:6px 12px;font-size:12px}.ebnow .ebsetb label{color:var(--mut);font-weight:700}.ebnow .ebsetb input{width:58px}.ebnow .ebsetb input[type=date]{width:auto;min-width:126px}
 /* long book list: cards off screen are not laid out until they come near, so clicks stay quick */
 #ebList .ebook{content-visibility:auto;contain-intrinsic-size:auto 150px}
+.ebnow .ebgrid{flex-basis:100%;display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0;font-size:13px}.ebnow .ebgrid dt{color:var(--mut);font-weight:700}.ebnow .ebgrid dd{margin:0;color:var(--ink);font-weight:800}.ebnow .ebgrid dd em{font-style:normal;color:var(--sea);font-size:16px;font-weight:900}.ebnow .ebgrid dd.ok{color:var(--sage,#2f855a)}.ebnow .ebgrid dd.late{color:#C0392B}
+.ebnow .ebgrid input{width:56px;border:1px solid var(--line2);border-radius:7px;padding:1px 5px;font:inherit;font-size:12.5px;margin-right:4px}.ebnow .ebgrid input[type=date]{width:auto;min-width:128px}
+.ebnow .ebgrid [data-v]{color:inherit;font-weight:inherit}
 </style>
 </head>
 <body>
@@ -4617,14 +4620,22 @@ function ebDaysWord(n){ return n > 1 ? n + ' days' : n === 1 ? 'tomorrow' : n ==
 function ebStatus(b){
   const f = ebForecast(b);
   if (!f) return '<div class="ebs1">\u2705 Finished \u2014 mark it as Read</div>';
-  const at = parseInt(f.next, 10) - 1, today = isoToday();
-  const late = b.due && f.last >= b.due;
+  const today = isoToday(), late = b.due && f.last >= b.due;
+  const anchor = readJSON(ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor');
+  const started = anchor && anchor.id === b.id ? anchor.date : f.first;
   const end = parseInt(f.next.split('\u2013')[1] || f.next, 10);
-  return '<div class="ebs1">' + (f.first === today
-      ? '\uD83D\uDCD6 Today, ' + new Date(today + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }) + ': pages ' + f.next + ' \u2192 by tonight you\u2019re on page <em>' + end + '</em> of ' + b.p
-      : '\uD83D\uDCD6 You\u2019re on page <em>' + at + '</em> of ' + b.p + '<span>next: pages ' + f.next + ' on ' + ebShort(f.first) + '</span>') + '</div>' +
-    '<div class="ebs2' + (late ? ' late' : '') + '">' + f.pace + ' pages a day \u2192 you finish on ' + ebShort(f.last) +
-      (b.due ? ' \u00b7 return by ' + ebShort(b.due) + ' (' + (ebDaysTo(b.due) > 1 ? ebDaysTo(b.due) + ' days left' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '') + '</div>' +
+  const row = (k, v, cls) => '<dt>' + k + '</dt><dd' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</dd>';
+  const v = (name, html) => '<span data-v="' + name + '">' + html + '</span>';
+  const dueTxt = b.due ? ' (' + (ebDaysTo(b.due) > 1 ? 'in ' + ebDaysTo(b.due) + ' days' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '';
+  return '<dl class="ebgrid">' +
+    row('Started', ebShort(started)) +
+    row('Finish', v('fin', ebShort(f.last))) +
+    row(f.first === today ? 'Today, ' + ebShort(today) : 'Next, ' + ebShort(f.first),
+      v('today', f.first === today ? 'be on page <em>' + end + '</em> of ' + b.p : 'pages ' + f.next)) +
+    row('Pace', '<input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"> pages a day' +
+      v('pace', f.pace !== ebPaceFor(ebRole(b)) ? ' \u00b7 today ' + f.pace + ' to finish in time' : '')) +
+    row('Return', '<input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '">' + v('due', dueTxt), late ? 'late' : 'ok') +
+    '</dl>' +
     (late ? '<div class="ebs3">Won\u2019t be finished in time \u2014 raise the pages a day below.</div>' : '');
 }
 /* a book waiting its turn: only shown when it has a return date */
@@ -4889,8 +4900,6 @@ function paintEB(){
           '<div class="ebsetb">' +
           '<span class="ebrole">' + ['read','study'].map(r => '<button data-ebrole="' + r + '" data-eb="' + b.id + '"' +
             (ebRole(b) === r ? ' class="on"' : '') + '>' + EB_ROLE[r] + '</button>').join('') + '</span>' +
-          '<label>pages a day <input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"></label>' +
-          '<label>return <input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '"></label>' +
           '</div></div>' : '') +
         (b.s === 'plan' ? ebPlanStatus(b) : '') +
         '</div>' +
@@ -4927,8 +4936,8 @@ function paintEB(){
       const id = (card.querySelector('[data-eb]') || {}).dataset; const bk = id && byId(id.eb); if (!bk) return;
       const now = card.querySelector('.ebnow');
       if (now && bk.s === 'reading'){
-        now.querySelectorAll('.ebs1,.ebs2,.ebs3').forEach(e => e.remove());
-        now.insertAdjacentHTML('afterbegin', ebStatus(bk));
+        const tmp = document.createElement('div'); tmp.innerHTML = ebStatus(bk);
+        tmp.querySelectorAll('[data-v]').forEach(n => { const o = now.querySelector('[data-v="' + n.dataset.v + '"]'); if (o) o.innerHTML = n.innerHTML; });
       }
       const d = card.querySelector('.ebdue');
       if (d && bk.s === 'plan' && bk.due && d.tagName === 'DETAILS'){ d.outerHTML = ebPlanStatus(bk); }
