@@ -2318,6 +2318,8 @@ html[data-theme="dark"] .tsmix{border-color:#C9A3E6;color:#C9A3E6}html[data-them
 .ebdue.late{color:#C0392B}.ebdue input{margin-left:6px}
 details.ebdue summary{cursor:pointer;list-style:none}details.ebdue summary::-webkit-details-marker{display:none}.ebpen{color:var(--mut);font-weight:400;margin-left:4px}details.ebdue[open] input{margin:6px 0 0 0}
 .ebnow .ebsetb{flex-basis:100%;margin-top:4px;padding-top:8px;border-top:1px dashed var(--line2,rgba(0,0,0,.12));gap:6px 12px;font-size:12px}.ebnow .ebsetb label{color:var(--mut);font-weight:700}.ebnow .ebsetb input{width:58px}.ebnow .ebsetb input[type=date]{width:auto;min-width:126px}
+/* long book list: cards off screen are not laid out until they come near, so clicks stay quick */
+#ebList .ebook{content-visibility:auto;contain-intrinsic-size:auto 150px}
 </style>
 </head>
 <body>
@@ -4577,12 +4579,18 @@ function ebFlip(paint, highlight){
   const box = document.getElementById('ebList');
   const key = el => { const x = el.querySelector('[data-eb]'); return x ? x.dataset.eb : null; };
   const before = {};
-  if (box) box.querySelectorAll('.ebook').forEach(el => { const k = key(el); if (k) before[k] = el.getBoundingClientRect().top; });
+  const vh = window.innerHeight;
+  /* only cards near the screen are measured, so a long list stays quick */
+  if (box) box.querySelectorAll('.ebook').forEach(el => { const r = el.getBoundingClientRect(); if (r.bottom > -vh && r.top < 2 * vh){ const k = key(el); if (k) before[k] = r.top; } });
   paint();
   if (!box || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  /* read every new position first, then start the animations, so the page lays out only once */
+  const moves = [];
   box.querySelectorAll('.ebook').forEach(el => {
     const k = key(el); if (!k || before[k] == null) return;
-    const dy = before[k] - el.getBoundingClientRect().top;
+    moves.push([el, k, before[k] - el.getBoundingClientRect().top]);
+  });
+  moves.forEach(([el, k, dy]) => {
     if (dy) el.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'translateY(0)' }],
       { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' });
     if (highlight && highlight.indexOf(k) >= 0)
@@ -4592,8 +4600,8 @@ function ebFlip(paint, highlight){
 /* what the schedule has planned for one book: today's pages and the day it is finished */
 function ebForecast(b){
   const today = isoToday(), mark = '\u00ab' + b.t + '\u00bb';
-  const ids = Object.keys(OVERRIDE).filter(id => /--book(study)?$/.test(id) && id.slice(0, 10) >= today &&
-    OVERRIDE[id].indexOf(mark) >= 0).sort();
+  if (!ebForecast.ids || ebForecast.ov !== OVERRIDE){ ebForecast.ov = OVERRIDE; ebForecast.ids = Object.keys(OVERRIDE).filter(id => /--book(study)?$/.test(id)).sort(); }
+  const ids = ebForecast.ids.filter(id => id.slice(0, 10) >= today && OVERRIDE[id].indexOf(mark) >= 0);
   if (!ids.length) return null;
   const pg = t => { const m = t.match(/pages (\d+)\u2013(\d+)/); return m ? m[1] + '\u2013' + m[2] : ''; };
   return { first: ids[0].slice(0, 10), last: ids[ids.length - 1].slice(0, 10), next: pg(OVERRIDE[ids[0]]),
@@ -4611,8 +4619,10 @@ function ebStatus(b){
   if (!f) return '<div class="ebs1">\u2705 Finished \u2014 mark it as Read</div>';
   const at = parseInt(f.next, 10) - 1, today = isoToday();
   const late = b.due && f.last >= b.due;
-  return '<div class="ebs1">\uD83D\uDCD6 You should be on page <em>' + at + '</em> of ' + b.p + '<span>' +
-      (f.first === today ? 'today ' + f.next : ebShort(f.first) + ' ' + f.next) + '</span></div>' +
+  const end = parseInt(f.next.split('\u2013')[1] || f.next, 10);
+  return '<div class="ebs1">' + (f.first === today
+      ? '\uD83D\uDCD6 Today: pages ' + f.next + ' \u2192 by tonight you\u2019re on page <em>' + end + '</em> of ' + b.p
+      : '\uD83D\uDCD6 You\u2019re on page <em>' + at + '</em> of ' + b.p + '<span>next: pages ' + f.next + ' on ' + ebShort(f.first) + '</span>') + '</div>' +
     '<div class="ebs2' + (late ? ' late' : '') + '">' + f.pace + ' pages a day \u2192 you finish on ' + ebShort(f.last) +
       (b.due ? ' \u00b7 return by ' + ebShort(b.due) + ' (' + (ebDaysTo(b.due) > 1 ? ebDaysTo(b.due) + ' days left' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '') + '</div>' +
     (late ? '<div class="ebs3">Won\u2019t be finished in time \u2014 raise the pages a day below.</div>' : '');
@@ -4684,10 +4694,12 @@ function ebMsg(html){
 function ebSet(id, s){
   const b = EB.find(x => x.id === id); if (!b || b.s === s) return;
   const others = EB.filter(x => x.s === 'reading' && x !== b);
+  let swapped = null;
   if (s === 'reading' && others.length >= 2){
-    ebMsg('\u26a0\ufe0f Two books are already on: <b>' + others.map(x => gEsc(x.t)).join('</b> and <b>') +
-      '</b>. Mark one as Read or Want to read first.', true);
-    return;
+    /* two books are on already: the one being read goes back to the queue, the studied one stays */
+    swapped = others.find(x => ebRole(x) !== 'study') || others[0];
+    swapped.s = 'plan'; delete swapped.role;
+    others.splice(others.indexOf(swapped), 1);
   }
   b.s = s; b.d = s === 'read' ? isoToday() : '';
   if (s === 'reading'){
@@ -4695,7 +4707,8 @@ function ebSet(id, s){
     if (others.length && ebRole(others[0]) === 'read') b.role = 'study'; else delete b.role;
     writeJSON(ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor', { id: b.id, cp: 0, date: isoToday() });
   } else delete b.role;
-  ebSave(); try { recomputeQueues(); } catch(e){} paintEB();
+  ebSave(); ebFlip(paintEB, [b.id].concat(swapped ? [swapped.id] : []));
+  if (swapped) ebMsg('\uD83D\uDCD6 Now reading <b>' + gEsc(b.t) + '</b> \u2014 <b>' + gEsc(swapped.t) + '</b> went back to the queue.');
   ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 ' + (s === 'read' ? 'read on ' + ebDay(b.d) : EB_ST[s].toLowerCase()) + '.');
 }
 /* The reading rows of the schedule are built from this list, so reordering books
