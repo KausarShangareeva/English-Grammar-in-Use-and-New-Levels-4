@@ -4561,12 +4561,38 @@ function ebShouldBe(b){
   return '<span class="ebshould">\uD83D\uDCD6 You should be on page <em class="ebat">' + at + '</em> of ' + b.p +
     (f.first === isoToday() ? ' \u00b7 today: pages ' + f.next : ' \u00b7 next: pages ' + f.next + ' on ' + fmtDate(f.first)) + '</span>';
 }
+/* a plain-language forecast: how long until the book goes back, and what reading it means */
 function ebForecastLine(b, short){
-  const f = ebForecast(b); if (!f) return '';
-  const late = b.due && f.last >= b.due;
-  return '<span class="ebfc' + (late ? ' late' : '') + '">' + (short ? '' : (f.first === isoToday() ? 'Today' : fmtDate(f.first)) +
-    ': pages ' + f.next + ' (' + f.pace + ' pages) \u00b7 ') + 'finished ' + fmtDate(f.last) +
-    (b.due ? (late ? ' \u26a0\ufe0f after the return date' : ' \u2705 before ' + fmtDate(b.due)) : '') + '</span>';
+  const f = ebForecast(b), today = isoToday();
+  const left = b.p - (b.s === 'reading' && f ? parseInt(f.next, 10) - 1 : (b.cp || 0));
+  const daysTo = b.due ? Math.round((new Date(b.due + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5) : null;
+  const parts = [];
+  if (b.due){
+    parts.push('\uD83D\uDCC5 Return by ' + fmtDate(b.due) + ' \u2014 ' +
+      (daysTo > 1 ? daysTo + ' days left' : daysTo === 1 ? 'tomorrow' : daysTo === 0 ? 'today' : 'overdue'));
+  }
+  if (f){
+    const days = Object.keys(OVERRIDE).filter(id => /--book(study)?$/.test(id) && id.slice(0, 10) >= today &&
+      OVERRIDE[id].indexOf('\u00ab' + b.t + '\u00bb') >= 0).length;
+    const late = b.due && f.last >= b.due;
+    if (!late){
+      parts.push('\uD83D\uDCD6 ' + (f.first === today ? 'From today' : 'From ' + fmtDate(f.first)) + ': about ' + Math.ceil(left / Math.max(1, days)) +
+        ' pages a day for ' + days + (days === 1 ? ' day' : ' days') + ' \u2192 finished ' + fmtDate(f.last) + (b.due ? ' \u2705' : ''));
+    } else {
+      const slots = (STREAMS_Q['BOOK'] || []).map(x => x.id.slice(0, 10)).filter(d => d >= today && d < b.due).length;
+      parts.push('\u26a0\ufe0f In the current order it starts on ' + fmtDate(f.first) + ', after it has to go back.');
+      parts.push(slots > 0 ? '\uD83D\uDCA1 Start it now (move it up with \u25b2): ' + Math.ceil(left / slots) + ' pages a day for ' + slots +
+        (slots === 1 ? ' day' : ' days') + ' and it is done in time.' : '\uD83D\uDCA1 There are no reading days left before the return date.');
+    }
+  }
+  if (!f && b.due && b.s === 'plan'){
+    const slots = (STREAMS_Q['BOOK'] || []).map(x => x.id.slice(0, 10)).filter(d => d >= today && d < b.due).length;
+    parts.push('\u26a0\ufe0f Not in the reading plan yet \u2014 in the list it sits above the book you are reading now. Move it down (\u25bc) to just below that book.');
+    if (slots > 0) parts.push('\uD83D\uDCA1 If you started it now: ' + Math.ceil(left / slots) + ' pages a day for ' + slots + (slots === 1 ? ' day.' : ' days.'));
+  }
+  if (!parts.length) return '';
+  const late = b.due && ((f && f.last >= b.due) || (!f && b.s === 'plan'));
+  return '<span class="ebfc' + (late ? ' late' : '') + '">' + parts.join('<br>') + '</span>';
 }
 /* covers: the Line by Line colours for their books, and a steady colour from the same palette for the rest */
 const EB_COVER = {"the-mysterious-stranger":["#3d3376","#f5f0e7"],"alice-in-wonderland":["#c1c0e2","#3d3b41"],"around-the-world-in-80-days":["#006680","#fbf6ec"],"adventures-of-huckleberry-finn":["#933f00","#f6f0e6"],"the-adventures-of-sherlock-holmes":["#004a69","#f4f0e7"],"autobiography-of-benjamin-franklin":["#688eaf","#211e17"],"little-women":["#bf755e","#211e17"],"andersens-fairy-tales":["#2d665d","#fbf6ec"],"peter-pan":["#1f4c09","#f4f0e6"],"meditations":["#a4ccda","#363e3f"],"pride-and-prejudice":["#d6c19c","#423b2f"],"sense-and-sensibility":["#e6b8a9","#463932"],"jekyll-and-hyde":["#002e45","#f4f0e6"],"arsene-lupin-gentleman-burglar":["#12378b","#f4f0e8"],"the-great-gatsby":["#37664e","#fbf6ec"],"dracula":["#520000","#f5efe6"],"tom-sawyer":["#c27736","#211e17"],"the-count-of-monte-cristo":["#12378b","#f4f0e8"],"journey-to-the-center-of-the-earth":["#520000","#f5efe6"],"david-copperfield":["#20666b","#fbf6ec"],"great-expectations":["#002f1b","#f4f0e6"],"robinson-crusoe":["#795300","#f6f0e6"],"wuthering-heights":["#06436c","#f4f0e7"],"henry-david-thoreau-essays":["#2d665d","#fbf6ec"],"walden":["#406733","#fbf6ec"],"the-call-of-the-wild":["#3d3376","#f5f0e7"],"moby-dick":["#006680","#fbf6ec"],"ulysses":["#688eaf","#211e17"],"emma":["#006680","#fbf6ec"],"persuasion":["#933f00","#f6f0e6"],"gullivers-travels":["#34579f","#f5f0e8"],"heart-of-darkness":["#520000","#f5efe6"],"king-arthur-round-table":["#041f5e","#f4efe7"],"frankenstein":["#06436c","#f4f0e7"],"the-scarlet-letter":["#4f0300","#f5efe6"],"the-picture-of-dorian-gray":["#241c4f","#f4efe6"],"kidnapped":["#06436c","#f4f0e7"],"mrs-dalloway":["#c1c0e2","#3d3b41"],"the-jungle-book":["#1f4c09","#f4f0e6"],"to-the-lighthouse":["#8784bb","#211e17"],"white-fang":["#afc5ed","#383c45"],"the-return-of-sherlock-holmes":["#002e45","#f4f0e6"],"twenty-thousand-leagues-under-the-sea":["#041f5e","#f4efe7"],"aesops-fables":["#933f00","#f6f0e6"],"the-war-of-the-worlds":["#002848","#f4f0e6"],"interesting-narrative-of-olaudah-equiano":["#c27736","#211e17"],"the-island-of-doctor-moreau":["#4f0300","#f5efe6"],"the-lost-world":["#37664e","#fbf6ec"],"his-last-bow":["#004a69","#f4f0e7"],"the-time-machine":["#12378b","#f4f0e8"],"bambi":["#729566","#211e17"],"the-secret-garden":["#8c8d58","#211e17"],"the-beasts-of-tarzan":["#0b4c31","#f4f0e6"],"the-return-of-tarzan":["#795300","#f6f0e6"],"narrative-of-the-life-of-frederick-douglass-an-american-slave":["#8f3f26","#f6f0e6"],"the-merry-adventures-of-robin-hood":["#2d665d","#fbf6ec"],"a-short-history-of-the-world":["#688eaf","#211e17"],"tales-of-space-and-time":["#3d3376","#f5f0e7"],"the-velveteen-rabbit":["#e6b8a9","#463932"],"through-the-looking-glass":["#06436c","#f4f0e7"],"little-men":["#a68340","#211e17"],"treasure-island":["#20666b","#fbf6ec"],"jack-and-jill":["#c27736","#211e17"],"anne-of-green-gables":["#406733","#fbf6ec"],"max-havelaar":["#613400","#f5f0e6"],"les-miserables":["#57528d","#f5f0e8"],"the-wonderful-wizard-of-oz":["#5d9498","#211e17"],"heidi":["#afc5ed","#383c45"],"grimms-fairy-tales":["#004c43","#f4f0e6"],"mansfield-park":["#2a2900","#f4f0e6"],"the-phantom-of-the-opera":["#771600","#f6efe6"],"the-three-musketeers":["#34579f","#f5f0e8"]};
