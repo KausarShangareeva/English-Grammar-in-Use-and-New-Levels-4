@@ -4572,8 +4572,8 @@ function ebStatus(b){
   const late = b.due && f.last >= b.due;
   return '<div class="ebs1">\uD83D\uDCD6 You should be on page <em>' + at + '</em> of ' + b.p + '<span>' +
       (f.first === today ? 'today ' + f.next : ebShort(f.first) + ' ' + f.next) + '</span></div>' +
-    '<div class="ebs2' + (late ? ' late' : '') + '">' + f.pace + ' a day \u00b7 done ' + ebShort(f.last) +
-      (b.due ? ' \u00b7 return ' + ebShort(b.due) + ' (' + ebDaysWord(ebDaysTo(b.due)) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '') + '</div>' +
+    '<div class="ebs2' + (late ? ' late' : '') + '">' + f.pace + ' pages a day \u2192 you finish on ' + ebShort(f.last) +
+      (b.due ? ' \u00b7 return by ' + ebShort(b.due) + ' (' + (ebDaysTo(b.due) > 1 ? ebDaysTo(b.due) + ' days left' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '') + '</div>' +
     (late ? '<div class="ebs3">Won\u2019t be finished in time \u2014 raise the pages a day below.</div>' : '');
 }
 /* a book waiting its turn: only shown when it has a return date */
@@ -4582,7 +4582,7 @@ function ebPlanStatus(b){
   if (!b.due) return '<label class="ebdue">\uD83D\uDCC5 ' + dateField + '</label>';
   const f = ebForecast(b), late = f ? f.last >= b.due : true;
   let msg;
-  if (f && !late) msg = 'starts ' + ebShort(f.first) + ' \u00b7 done ' + ebShort(f.last) + ' \u2705';
+  if (f && !late) msg = 'you start on ' + ebShort(f.first) + ' and finish on ' + ebShort(f.last) + ' \u2705';
   else if (f) msg = 'starts ' + ebShort(f.first) + ' \u2014 too late \u26a0\ufe0f move it up \u25b2';
   else msg = 'not planned yet \u26a0\ufe0f move it just below the book you\u2019re reading';
   return '<details class="ebdue' + (late ? ' late' : '') + '"><summary>\uD83D\uDCC5 Return ' + ebShort(b.due) + ' (' + ebDaysWord(ebDaysTo(b.due)) + ') \u00b7 ' + msg + ' <span class="ebpen">\u270e</span></summary>' + dateField + '</details>';
