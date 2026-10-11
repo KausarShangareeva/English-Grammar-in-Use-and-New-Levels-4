@@ -4552,6 +4552,17 @@ function ebSave(){ writeJSON('eng-books-list', EB); try { recomputeQueues(); } c
   (at < 0 ? rest.concat(queue) : rest.slice(0, at).concat(queue, rest.slice(at))).forEach(b => EB.push(b));
   ebSave(); writeJSON(KEY, 1);
 })();
+/* 11 October: Animal Farm was chosen to read but landed as the observed book, with
+   Charlie and the Chocolate Factory pulled in to read. Put it right once. */
+(function(){ try { if (readJSON('eb-fix-animalfarm-1011')) return;
+  const af = EB.find(b => /animal farm/i.test(b.t || '')), ch = EB.find(b => /chocolate factory/i.test(b.t || ''));
+  if (af && af.s === 'reading' && af.role === 'study'){
+    delete af.role; writeJSON('book-anchor', { id: af.id, cp: af.cp || 0, date: isoToday() });
+    if (ch && ch.s === 'reading' && ch.role !== 'study'){ ch.s = 'plan'; delete ch.role; }
+    ebSave();
+  }
+  writeJSON('eb-fix-animalfarm-1011', 1); } catch(e){}
+})();
 /* the daily paces Kausar asked for: 50 pages for reading, 10 for close study (set once) */
 (function(){ if (readJSON('eb-pace-fix-1009')) return;
   writeJSON('book-pace', 50); writeJSON('book-pace-study', 10); writeJSON('eb-pace-fix-1009', 1); })();
@@ -4707,25 +4718,23 @@ function ebMsg(html){
 }
 function ebSet(id, s){
   const b = EB.find(x => x.id === id); if (!b || b.s === s) return;
-  const others = EB.filter(x => x.s === 'reading' && x !== b);
-  let swapped = null;
-  if (s === 'reading' && others.length >= 2){
-    /* two books are on already: the one being read goes back to the queue, the studied one stays */
-    swapped = others.find(x => ebRole(x) !== 'study') || others[0];
-    swapped.s = 'plan'; delete swapped.role;
-    others.splice(others.indexOf(swapped), 1);
-  }
   const wasReader = b.s === 'reading' && ebRole(b) !== 'study';
-  b.s = s; b.d = s === 'read' ? isoToday() : '';
-  if (s === 'reading' && !b.started) b.started = isoToday();
+  let swapped = null;
   if (s === 'reading'){
-    b.cp = 0;
-    if (others.length && ebRole(others[0]) === 'read') b.role = 'study'; else delete b.role;
-    writeJSON(ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor', { id: b.id, cp: 0, date: isoToday() });
+    /* "Reading" always means the book you read now; the one read before goes back to the queue.
+       The studied (observing) book is only changed with its own buttons. */
+    swapped = EB.find(x => x !== b && x.s === 'reading' && ebRole(x) !== 'study') || null;
+    if (swapped){ swapped.s = 'plan'; delete swapped.role; }
+  }
+  b.s = s; b.d = s === 'read' ? isoToday() : '';
+  if (s === 'reading'){
+    delete b.role; b.cp = b.cp || 0;
+    if (!b.started) b.started = isoToday();
+    writeJSON('book-anchor', { id: b.id, cp: b.cp, date: isoToday() });
   } else delete b.role;
-  /* the book being read was finished or put back: the next one in line takes its place */
+  /* a finished book hands over to the next one in line (the one due back first) */
   let promoted = null;
-  if (wasReader && s !== 'reading' && !EB.some(o => o.s === 'reading' && ebRole(o) !== 'study')){
+  if (wasReader && s === 'read' && !EB.some(o => o.s === 'reading' && ebRole(o) !== 'study')){
     const cand = EB.filter(o => o.s === 'plan' && !o.role);
     const dated = cand.filter(o => o.due).sort((x, y) => x.due < y.due ? -1 : 1);
     promoted = dated[0] || cand[0] || null;
@@ -4733,9 +4742,9 @@ function ebSet(id, s){
       writeJSON('book-anchor', { id: promoted.id, cp: promoted.cp || 0, date: isoToday() }); }
   }
   ebSave(); ebFlip(paintEB, [b.id].concat(swapped ? [swapped.id] : [], promoted ? [promoted.id] : []));
-  if (promoted) ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> done \u2014 next up: <b>' + gEsc(promoted.t) + '</b>' + (promoted.due ? ' (return ' + fmtDate(promoted.due) + ')' : '') + '.');
-  if (swapped) ebMsg('\uD83D\uDCD6 Now reading <b>' + gEsc(b.t) + '</b> \u2014 <b>' + gEsc(swapped.t) + '</b> went back to the queue.');
-  ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 ' + (s === 'read' ? 'read on ' + ebDay(b.d) : EB_ST[s].toLowerCase()) + '.');
+  ebMsg(promoted ? '\u2705 <b>' + gEsc(b.t) + '</b> done \u2014 next up: <b>' + gEsc(promoted.t) + '</b>' + (promoted.due ? ' (return ' + fmtDate(promoted.due) + ')' : '') + '.'
+    : swapped ? '\uD83D\uDCD6 Now reading <b>' + gEsc(b.t) + '</b> \u2014 <b>' + gEsc(swapped.t) + '</b> went back to the queue.'
+    : '\u2705 <b>' + gEsc(b.t) + '</b> \u2014 ' + (s === 'read' ? 'read on ' + ebDay(b.d) : EB_ST[s].toLowerCase()) + '.');
 }
 /* The reading rows of the schedule are built from this list, so reordering books
    or changing pages here is all it takes. From the day the current book was set
