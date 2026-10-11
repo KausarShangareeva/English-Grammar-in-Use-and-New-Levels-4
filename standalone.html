@@ -4823,8 +4823,11 @@ function ebBookPlan(st){
   const a = ebAnchor(); const base = ebPace();
   const start = a ? EB.findIndex(b => b.id === a.id) : -1;
   const books = start < 0 ? [] : [EB[start]].concat(EB.slice(start + 1).filter(b => b.s === 'plan' && !b.role));
-  const slots = q.filter(slot => a && slot.id.slice(0, 10) >= a.date);
-  const dates = slots.map(slot => slot.id.slice(0, 10));
+  /* a reading day moved to another date counts on the day it was moved to */
+  const mv = moves(), eff = id => mv[id] || id.slice(0, 10);
+  const slots = q.filter(slot => a && eff(slot.id) >= a.date)
+    .sort((x, y) => eff(x.id) < eff(y.id) ? -1 : eff(x.id) > eff(y.id) ? 1 : (x.id < y.id ? -1 : 1));
+  const dates = slots.map(slot => eff(slot.id));
   let bi = 0, page = books.length ? Math.min(books[0].p, a.cp || 0) + 1 : 1;
   slots.forEach((slot, k) => {
     while (books[bi] && page > books[bi].p){ bi++; page = 1; }
@@ -4840,10 +4843,12 @@ function ebStudyPlan(st){
   const a = ebAnchorFor('study'); if (!a) return;
   const b = EB.find(x => x.id === a.id); if (!b) return;
   const base = ebPaceFor('study');
-  const dates = Object.keys(PLAN).sort().filter(iso => iso >= a.date && PLAN[iso].rows.some(r => r.i === iso + '--bookstudy'));
+  const mv = moves(), eff = id => mv[id] || id.slice(0, 10);
+  const ids = Object.keys(PLAN).filter(iso => PLAN[iso].rows.some(r => r.i === iso + '--bookstudy')).map(iso => iso + '--bookstudy')
+    .filter(id => eff(id) >= a.date).sort((x, y) => eff(x) < eff(y) ? -1 : eff(x) > eff(y) ? 1 : (x < y ? -1 : 1));
+  const dates = ids.map(eff);
   let page = Math.min(b.p, a.cp || 0) + 1;
-  dates.forEach((iso, k) => {
-    const id = iso + '--bookstudy';
+  ids.forEach((id, k) => {
     if (page > b.p){ OVERRIDE[id] = EB_ROLE.study + ' \u2014 choose the next book to observe'; return; }
     const n = ebDayPace(b, page, base, dates, k), to = page + n - 1;
     OVERRIDE[id] = EB_ROLE.study + ' \u2014 \u00ab' + b.t + '\u00bb, pages ' + page + '\u2013' + to + ' of ' + b.p + ' \u00b7 grammar and words' +
