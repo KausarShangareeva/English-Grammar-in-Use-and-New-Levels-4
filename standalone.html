@@ -4198,7 +4198,7 @@ function paintLangMenu(){
 }
 /* The three languages keep their own study progress \u2014 but the schedule, the
    IT goals and the settings belong to you, not to a language, so those stay shared. */
-const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','eng-books-del','book-anchor','book-pace','sat-quiz','sat-per','adapt-view','my-books','adapt-words','adapt-trans','geo-tab','adapt-read','adapt-likes','adapt-dict',
+const SHARED_KEYS = ['task-status-8weeks','task-moves-8weeks','awards-done','goal-log','my_sites','adj-deck','su-state','eng-books','eng-books-list','eng-books-del','book-anchor','book-pace','book-anchor-study','book-pace-study','eb-library-plan-1009','eb-pace-fix-1009','eb-fix-animalfarm-1011','sat-quiz','sat-per','adapt-view','my-books','adapt-words','adapt-trans','geo-tab','adapt-read','adapt-likes','adapt-dict',
                      'word_view','guide_on','studyhub_lang'];
 const _readJSON = readJSON, _writeJSON = writeJSON;
 function lkey(k){
@@ -4558,6 +4558,23 @@ function ebSave(){ writeJSON('eng-books-list', EB); try { recomputeQueues(); } c
   (at < 0 ? rest.concat(queue) : rest.slice(0, at).concat(queue, rest.slice(at))).forEach(b => EB.push(b));
   ebSave(); writeJSON(KEY, 1);
 })();
+/* never more than one book being read and one being studied: if an older version left two,
+   the one chosen last (the one the schedule points at) stays and the other goes back to the queue */
+(function ebTidyReading(){ try {
+  const a = readJSON('book-anchor'), as = readJSON('book-anchor-study');
+  const readers = EB.filter(b => b.s === 'reading' && b.role !== 'study');
+  const studied = EB.filter(b => b.s === 'reading' && b.role === 'study');
+  let changed = false;
+  if (readers.length > 1){
+    const keep = readers.find(b => a && b.id === a.id) || readers.slice().sort((x, y) => (y.started || '') < (x.started || '') ? -1 : 1)[0];
+    readers.forEach(b => { if (b !== keep){ b.s = 'plan'; delete b.role; changed = true; } });
+  }
+  if (studied.length > 1){
+    const keep = studied.find(b => as && b.id === as.id) || studied[0];
+    studied.forEach(b => { if (b !== keep){ b.s = 'plan'; delete b.role; changed = true; } });
+  }
+  if (changed) writeJSON('eng-books-list', EB);
+} catch(e){} })();
 /* 11 October: Animal Farm was chosen to read but landed as the observed book, with
    Charlie and the Chocolate Factory pulled in to read. Put it right once. */
 (function(){ try { if (readJSON('eb-fix-animalfarm-1011')) return;
