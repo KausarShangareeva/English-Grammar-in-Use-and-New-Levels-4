@@ -4648,6 +4648,19 @@ function ebForecast(b){
            pace: (() => { const m = OVERRIDE[ids[0]].match(/pages (\d+)\u2013(\d+)/); return m ? (+m[2] - +m[1] + 1) : 0; })() };
 }
 /* the plan is first worked out before the book list exists, so work it out again now */
+/* One-off: 12–14 October — only the Medborgarskolan lessons happened; everything
+   else on those days is marked ✕ so the queues move on. Marks already set are kept. */
+setTimeout(() => { try {
+  if (localStorage.getItem('seed_missed_20261014')) return;
+  const st = readJSON('task-status-8weeks') || {};
+  ['2026-10-12','2026-10-13','2026-10-14'].forEach(d => allRowsForDay(d).forEach(r => {
+    if (st[r.i] !== undefined) return;
+    st[r.i] = /Medborgarskolan/.test(r.text || r.t || '') ? 1 : 2;
+  }));
+  writeJSON('task-status-8weeks', st);
+  localStorage.setItem('seed_missed_20261014', '1');
+  try { recomputeQueues(); bRepaint(); } catch(e){}
+} catch(e){} }, 0);
 setTimeout(() => { try { recomputeQueues(); } catch(e){} }, 0);
 /* one short status for a book being read: where you should be, today's pages, and one line
    that says whether it will be finished before it goes back */
@@ -6980,7 +6993,7 @@ function svSchedule(){
   });
   return out;
 }
-/* day one is 6 October; Sundays belong to the Quran and are skipped */
+/* day one is 15 October; Sundays belong to the Quran and are skipped */
 function svDateOfDay(n){
   const d = new Date(SV_START + 'T00:00:00');
   let left = n - 1;
