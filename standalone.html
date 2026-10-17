@@ -4690,8 +4690,7 @@ function ebStatus(b){
     row(f.first === today ? 'Today, ' + ebShort(today) : 'Next, ' + ebShort(f.first),
       v('today', f.first === today ? 'be on page <em>' + end + '</em> of ' + b.p : 'pages ' + f.next)) +
     row('Pace', '<input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"> pages a day' +
-      v('days', ' <span class="ebdays ' + (late ? 'bad' : 'good') + '">(' + f.n + (f.n === 1 ? ' day' : ' days') +
-        ', done ' + ebShort(f.last) + ')' + (b.due ? (late ? ' \u26a0\ufe0f' : ' \u2705') : '') + '</span>') +
+      v('days', ' <span class="ebdays ' + (late ? 'bad' : 'good') + '">(' + f.n + (f.n === 1 ? ' day' : ' days') + ')' + (b.due ? (late ? ' \u26a0\ufe0f' : ' \u2705') : '') + '</span>') +
       v('pace', f.pace !== ebPaceFor(ebRole(b)) ? ' \u00b7 today ' + f.pace + ' to finish in time' : '')) +
     row('Return', '<input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '">' + v('due', dueTxt), late ? 'late' : 'ok') +
     '</dl>' +
