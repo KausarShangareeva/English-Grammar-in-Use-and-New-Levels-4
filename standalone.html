@@ -2327,6 +2327,9 @@ details.ebdue summary{cursor:pointer;list-style:none}details.ebdue summary::-web
 .ebnow .ebgrid{flex-basis:100%;display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0;font-size:13px}.ebnow .ebgrid dt{color:var(--mut);font-weight:700}.ebnow .ebgrid dd{margin:0;color:var(--ink);font-weight:800}.ebnow .ebgrid dd em{font-style:normal;color:var(--sea);font-size:16px;font-weight:900}.ebnow .ebgrid dd.ok{color:var(--sage,#2f855a)}.ebnow .ebgrid dd.late{color:#C0392B}
 .ebnow .ebgrid input{width:56px;border:1px solid var(--line2);border-radius:7px;padding:1px 5px;font:inherit;font-size:12.5px;margin-right:4px}.ebnow .ebgrid input[type=date]{width:auto;min-width:128px}
 .ebnow .ebgrid [data-v]{color:inherit;font-weight:inherit}
+.ebgrid .ebdays{font-weight:700;white-space:nowrap}
+.ebgrid .ebdays.good{color:#2E8B57}
+.ebgrid .ebdays.bad{color:#C0392B}
 .sukv{margin:12px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(192,57,43,.06);display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline}.sukv b{flex-basis:100%;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}.sukv .kvc{display:inline-flex;flex-direction:column}.sukv u{text-decoration:underline;text-decoration-color:#E0392B;text-decoration-thickness:3px;text-underline-offset:4px;font-weight:800;color:var(--ink)}.sukv i{font-style:normal;font-size:12px;color:var(--mut);margin-top:3px}
 html[data-theme="dark"] .sukv{background:rgba(224,57,43,.12)}
 .langrow .lflag{font-size:20px;flex:0 0 26px;line-height:1}.langrow .lvl{margin-left:auto;font-size:12px;font-weight:900;color:#fff;background:var(--lc);padding:3px 10px;border-radius:999px;letter-spacing:.03em}
@@ -4648,7 +4651,7 @@ function ebForecast(b){
   const ids = ebForecast.ids.filter(id => id.slice(0, 10) >= today && OVERRIDE[id].indexOf(mark) >= 0);
   if (!ids.length) return null;
   const pg = t => { const m = t.match(/pages (\d+)\u2013(\d+)/); return m ? m[1] + '\u2013' + m[2] : ''; };
-  return { first: ids[0].slice(0, 10), last: ids[ids.length - 1].slice(0, 10), next: pg(OVERRIDE[ids[0]]),
+  return { n: ids.length, first: ids[0].slice(0, 10), last: ids[ids.length - 1].slice(0, 10), next: pg(OVERRIDE[ids[0]]),
            pace: (() => { const m = OVERRIDE[ids[0]].match(/pages (\d+)\u2013(\d+)/); return m ? (+m[2] - +m[1] + 1) : 0; })() };
 }
 /* the plan is first worked out before the book list exists, so work it out again now */
@@ -4687,6 +4690,8 @@ function ebStatus(b){
     row(f.first === today ? 'Today, ' + ebShort(today) : 'Next, ' + ebShort(f.first),
       v('today', f.first === today ? 'be on page <em>' + end + '</em> of ' + b.p : 'pages ' + f.next)) +
     row('Pace', '<input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"> pages a day' +
+      v('days', ' <b class="ebdays ' + (late ? 'bad' : 'good') + '">\u2192 ' + f.n + (f.n === 1 ? ' day' : ' days') +
+        ' \u00b7 done ' + ebShort(f.last) + (b.due ? (late ? ' \u00b7 after the return date \u26a0\ufe0f' : ' \u00b7 in time \u2705') : '') + '</b>') +
       v('pace', f.pace !== ebPaceFor(ebRole(b)) ? ' \u00b7 today ' + f.pace + ' to finish in time' : '')) +
     row('Return', '<input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '">' + v('due', dueTxt), late ? 'late' : 'ok') +
     '</dl>' +
