@@ -4675,6 +4675,13 @@ setTimeout(() => { try { recomputeQueues(); } catch(e){} }, 0);
 const ebDaysTo = iso => Math.round((new Date(iso + 'T00:00:00') - new Date(isoToday() + 'T00:00:00')) / 864e5);
 const ebShort = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' });
 function ebDaysWord(n){ return n > 1 ? n + ' days' : n === 1 ? 'tomorrow' : n === 0 ? 'today' : 'overdue'; }
+/* reading days from a date up to the day before the book goes back (Sundays have no reading) */
+function ebDaysBefore(b, from){
+  const study = ebRole(b) === 'study', mv = moves(), eff = id => mv[id] || id.slice(0, 10);
+  const ids = study ? Object.keys(PLAN).map(iso => iso + '--bookstudy').filter(id => PLAN[id.slice(0, 10)].rows.some(r => r.i === id))
+                    : (STREAMS_Q['BOOK'] || []).map(x => x.id);
+  return ids.map(eff).filter(d => d >= from && d < b.due).length;
+}
 function ebStatus(b){
   const f = ebForecast(b);
   if (!f) return '<div class="ebs1">\u2705 Finished \u2014 mark it as Read</div>';
@@ -4691,7 +4698,15 @@ function ebStatus(b){
     row(f.first === today ? 'Today, ' + ebShort(today) : 'Next, ' + ebShort(f.first),
       v('today', f.first === today ? 'be on page <em>' + end + '</em> of ' + b.p : 'pages ' + f.next)) +
     row('Pace', '<input type="number" min="1" value="' + ebPaceFor(ebRole(b)) + '" data-ebpace="' + ebRole(b) + '"> pages a day' +
-      v('days', ' <span class="ebdays ' + (late ? 'bad' : 'good') + '">(' + f.n + (f.n === 1 ? ' day' : ' days') + ')' + (b.due ? (late ? ' \u26a0\ufe0f' : ' \u2705') : '') + '</span>') +
+      v('days', (() => {
+        /* how long the book takes at the pace you typed, against the reading days left before the return date */
+        const pace = ebPaceFor(ebRole(b)), from = parseInt(f.next, 10) || 1;
+        const need = Math.ceil((b.p - from + 1) / Math.max(1, pace));
+        const avail = b.due ? ebDaysBefore(b, f.first) : need;
+        const ok = need <= avail;
+        return ' <span class="ebdays ' + (ok ? 'good' : 'bad') + '">(' + need + (need === 1 ? ' day' : ' days') +
+          (b.due ? ' \u00b7 ' + avail + ' left' : '') + ')' + (b.due ? (ok ? ' \u2705' : ' \u26a0\ufe0f') : '') + '</span>';
+      })()) +
       v('pace', f.pace !== ebPaceFor(ebRole(b)) ? ' \u00b7 today ' + f.pace + ' to finish in time' : '')) +
     row('Return', '<input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '">' + v('due', dueTxt), late ? 'late' : 'ok') +
     '</dl>' +
