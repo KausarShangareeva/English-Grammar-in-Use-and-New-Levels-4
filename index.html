@@ -4686,7 +4686,7 @@ function ebStatus(b){
   const v = (name, html) => '<span data-v="' + name + '">' + html + '</span>';
   const dueTxt = b.due ? ' (' + (ebDaysTo(b.due) > 1 ? 'in ' + ebDaysTo(b.due) + ' days' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '';
   return '<dl class="ebgrid">' +
-    row('Started', ebShort(started)) +
+    row('Started', '<input type="date" value="' + gEsc(started) + '" max="' + today + '" data-ebstart="' + b.id + '">') +
     row('Finish', v('fin', ebShort(f.last))) +
     row(f.first === today ? 'Today, ' + ebShort(today) : 'Next, ' + ebShort(f.first),
       v('today', f.first === today ? 'be on page <em>' + end + '</em> of ' + b.p : 'pages ' + f.next)) +
@@ -5029,6 +5029,12 @@ function paintEB(){
     b.d = x.value; ebSave(); ebMsg('✅ <b>' + gEsc(b.t) + '</b> — read on ' + ebDay(b.d) + '.');
   });
   document.querySelectorAll('#ebList [data-ebcp]').forEach(x => x.onchange = () => ebSetPage(x.dataset.ebcp, parseInt(x.value, 10) || 0));
+  document.querySelectorAll('#ebList [data-ebstart]').forEach(x => x.onchange = () => {
+    const b = byId(x.dataset.ebstart); if (!b) return;
+    if (!x.value){ x.value = b.started || isoToday(); return; }
+    b.started = x.value; ebSave(); paintEB();
+    ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 started ' + fmtDate(b.started) + '.');
+  });
   document.querySelectorAll('#ebList [data-ebdue]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebdue); if (!b) return;
     if (x.value) b.due = x.value; else delete b.due;
