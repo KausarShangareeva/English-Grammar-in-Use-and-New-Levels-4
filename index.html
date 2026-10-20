@@ -4707,10 +4707,13 @@ function ebStatus(b){
         return ' <span class="ebdays ' + (ok ? 'good' : 'bad') + '">(' + need + (need === 1 ? ' day' : ' days') +
           (b.due ? ' \u00b7 ' + avail + ' left' : '') + ')' + (b.due ? (ok ? ' \u2705' : ' \u26a0\ufe0f') : '') + '</span>';
       })()) +
-      v('pace', f.pace !== ebPaceFor(ebRole(b)) ? ' \u00b7 today ' + f.pace + ' to finish in time' : '')) +
+      v('pace', (() => { if (!b.due) return '';
+        const from = parseInt(f.next, 10) || 1, avail = ebDaysBefore(b, f.first);
+        const want = avail > 0 ? Math.ceil((b.p - from + 1) / avail) : 0;
+        return want > ebPaceFor(ebRole(b)) ? ' \u00b7 ' + want + ' a day would finish in time' : ''; })())) +
     row('Return', '<input type="date" value="' + gEsc(b.due || '') + '" data-ebdue="' + b.id + '">' + v('due', dueTxt), late ? 'late' : 'ok') +
     '</dl>' +
-    (late ? '<div class="ebs3">Won\u2019t be finished in time \u2014 raise the pages a day below.</div>' : '');
+    (late ? '<div class="ebs3">At this pace the book won\u2019t be finished before the return date \u2014 renew the loan or read more pages a day.</div>' : '');
 }
 /* a book waiting its turn: only shown when it has a return date */
 function ebPlanStatus(b){
@@ -4847,9 +4850,10 @@ function ebSyncStudyRows(){
 }
 /* pages for one day: the usual pace, or more when a book has a return date and would not
    be finished in time otherwise. Worked out again every day, so a missed day spreads over the rest. */
+/* the schedule follows the pace you chose; the book card warns when that pace misses the return date */
 function ebDayPace(b, page, base, dates, k){
   const left = b.p - page + 1;
-  if (!b.due) return Math.min(left, base);
+  return Math.min(left, base);
   const days = dates.slice(k).filter(d => d < b.due).length;
   if (days <= 0) return left;
   return Math.min(left, Math.max(base, Math.ceil(left / days)));
