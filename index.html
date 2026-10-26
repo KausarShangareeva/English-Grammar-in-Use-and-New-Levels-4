@@ -6787,7 +6787,7 @@ function answerQ(chosen, btn){
     const show = extra => {
       const k = Math.min(3, n + extra);
       document.getElementById('w3N').textContent = k + ' / 3' + (k ? ' ✓' : '');
-      if (k >= 3){ w3.disabled = true; w3.classList.remove('no'); nx.disabled = false; nx.classList.remove('wait'); nx.focus(); }
+      if (k >= 3){ w3.disabled = true; w3.classList.remove('no'); nx.disabled = false; nx.classList.remove('wait'); setTimeout(() => nx.focus(), 250); }
     };
     w3.oninput = () => { w3.classList.remove('no'); show(count()); };
     w3.onkeydown = ev => {
