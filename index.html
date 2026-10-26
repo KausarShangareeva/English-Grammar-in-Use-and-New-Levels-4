@@ -234,6 +234,8 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
   width:100%;border:none;background:none;text-align:left;font-family:var(--ui);color:var(--ink);
   border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .trow:hover{background:var(--sage-l)}
+#wActions .qpick.on{background:var(--sage-l);border-color:var(--sage);box-shadow:inset 0 0 0 1px var(--sage)}
+#wActions .qstart{flex-basis:100%;justify-content:center}
 .pp{margin:4px 0;font-size:13px;color:var(--ink)}
 .pp .ppw{color:#C9607A;font-weight:800;letter-spacing:.02em}
 .pp s{color:var(--mut)}
@@ -6398,7 +6400,8 @@ function nextTaskFor(key, course, age){
   if (id.slice(0,4) === 'set:'){
     const u = id.slice(4); const bk = BOOKS.find(x => x.u === u);
     itemLabel = bk ? (bk.e || '') + ' ' + bk.t : 'Unit ' + u;
-    label = QMODES.filter(m => m[0] === mode).map(m => m[1])[0] || mode;
+    label = mode && mode.slice(0,4) === 'sel:' ? mode.slice(4).split('+').map(k => (QMODES.find(m => m[0] === k) || [k,k])[1]).join(' + ')
+          : QMODES.filter(m => m[0] === mode).map(m => m[1])[0] || mode;
   } else if (id.slice(0,5) === 'gram:'){
     const g = GR.find(x => x.id === id.slice(5)); itemLabel = g ? g.t : id; label = 'its questions';
   } else if (id.slice(0,6) === 'story:'){
@@ -6531,6 +6534,7 @@ let qMode = 'mix';
 window.qModeFor = function(w, ix){
   let t = (window.__qmode === 'mix') ? MIXABLE[ix % MIXABLE.length]
         : (window.__qmode === 'step') ? (ix % 2 ? 'def2en' : 'type')   /* step by step: type + definition only */
+        : (String(window.__qmode).slice(0,4) === 'sel:') ? (k => k[ix % k.length])(window.__qmode.slice(4).split('+'))
         : window.__qmode;
   if (t === 'def2en' && !w.m)                t = 'type';
   if (t === 'cloze' && !(w.e && w.e.length)) t = 'ru2en';
@@ -7037,16 +7041,19 @@ function paintPractise(){
   const countFor = mode => pool.filter(w =>
       (mode !== 'cloze' || (w.e && w.e.length)) && (mode !== 'reg' || w.t)).length;
   const slot = 'set:' + wUnit;
-  box.innerHTML = QMODES.map(m => {
-      const n = m[0] === 'mix' ? pool.length : countFor(m[0]);
-      const r = savedRound(slot, m[0]);
-      return '<button class="' + (m[0] === 'mix' ? 'pri' : '') + (r ? ' resume' : '') +
-        '" data-m="' + m[0] + '">' + (ICON[m[0]] || '') + ' ' + m[1] +
-        (r ? '<span class="qn">\u21ba ' + (r.qi + 1) + '/' + r.ids.length + '</span>'
-           : '<span class="qn">' + n + '</span>') + '</button>';
-    }).join('') +
-    '<button class="cards" data-m="cards">\uD83C\uDCCF Flashcards<span class="qn">' +
-    pool.length + '</span></button>';
+  /* pick one kind, several, or everything mixed — nothing starts until you press Start */
+  let sel = readJSON('quiz-pick') || ['mix'];
+  sel = sel.filter(k => QMODES.some(m => m[0] === k)); if (!sel.length) sel = ['mix'];
+  const modeOf = () => sel.length === 1 ? sel[0] : 'sel:' + sel.join('+');
+  const nFor = () => sel.length === 1 && sel[0] !== 'mix' ? countFor(sel[0]) : pool.length;
+  box.innerHTML = QMODES.map(m =>
+      '<button class="qpick' + (sel.indexOf(m[0]) >= 0 ? ' on' : '') + '" data-m="' + m[0] + '" aria-pressed="' + (sel.indexOf(m[0]) >= 0) + '">' +
+      (sel.indexOf(m[0]) >= 0 ? '✓ ' : '') + (ICON[m[0]] || '') + ' ' + m[1] +
+      '<span class="qn">' + (m[0] === 'mix' ? pool.length : countFor(m[0])) + '</span></button>').join('') +
+    '<button class="cards" data-m="cards">🃏 Flashcards<span class="qn">' + pool.length + '</span></button>' +
+    (() => { const r = savedRound(slot, modeOf());
+      return '<button class="pri qstart" data-m="start">' + (r ? '↺ Continue · ' + (r.qi + 1) + '/' + r.ids.length
+        : '▶ Start · ' + nFor() + ' questions') + '</button>'; })();
   [[GUIDE, false], [GUIDE2, true]].forEach(pair => {
     const g = pair[0];
     if (!g || g.id !== 'set:' + wUnit) return;
@@ -7055,16 +7062,26 @@ function paintPractise(){
     });
   });
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
-    if (b.dataset.m === 'cards') return startCards();
-    STEP_NOW = null;
-    const slot = 'set:' + wUnit;
-    if (savedRound(slot, b.dataset.m)) return resumeQuiz(slot, b.dataset.m);
-    qMode = b.dataset.m;
-    startQuiz();
+    const m = b.dataset.m;
+    if (m === 'cards') return startCards();
+    if (m === 'start'){
+      STEP_NOW = null;
+      const mode = modeOf();
+      if (savedRound(slot, mode)) return resumeQuiz(slot, mode);
+      qMode = mode; startQuiz(); return;
+    }
+    if (m === 'mix') sel = ['mix'];
+    else {
+      sel = sel.filter(k => k !== 'mix');
+      sel = sel.indexOf(m) >= 0 ? sel.filter(k => k !== m) : sel.concat([m]);
+      if (!sel.length) sel = ['mix'];
+    }
+    writeJSON('quiz-pick', sel);
+    paintPractise();
   });
   const hint = $('#wHint');
   if (hint) hint.textContent =
-    'the whole set \u00b7 leave one half-done and \u21ba appears on that button';
+    'tick one kind or several, then press Start \u00b7 leave a round half-done and \u21ba Continue appears';
   paintSteps();
 }
 
