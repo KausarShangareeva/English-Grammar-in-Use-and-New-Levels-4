@@ -1950,6 +1950,9 @@ html[data-theme="dark"] .adjx{background:#312A14;color:#E0C15C}
 .ldiff i.ok{color:var(--mut2)}
 .ldiff i.bad{color:#fff;background:var(--rose);border-radius:4px;padding:0 3px;margin:0 1px}
 .ldiff i.miss{color:#fff;background:var(--sage);border-radius:4px;padding:0 3px;margin:0 1px}
+.ldiff i.gap{color:var(--rose);font-weight:800;padding:0 2px}
+.ldiff i.gap:empty{display:inline-block;width:.75em}
+.qwhy .ldiff .ll{display:inline-block;min-width:84px}
 .lagain{font-family:var(--ui);font-size:11.5px;font-weight:700;color:var(--sand);margin-top:9px}
 
 
@@ -4498,18 +4501,29 @@ function paintAdjQ(){
 
 /* which letters were wrong, and where */
 function letterDiff(given, want){
-  const g = String(given), w = String(want);
-  let you = '', right = '';
-  const n = Math.max(g.length, w.length);
-  for (let i = 0; i < n; i++){
-    const a = g[i], b = w[i];
-    if (a === undefined){ right += '<i class="miss">' + b + '</i>'; continue; }
-    if (b === undefined){ you += '<i class="bad">' + a + '</i>'; continue; }
-    if (a === b){ you += '<i class="ok">' + a + '</i>'; right += '<i class="ok">' + b + '</i>'; }
-    else { you += '<i class="bad">' + a + '</i>'; right += '<i class="miss">' + b + '</i>'; }
+  /* line the two words up letter by letter (edit distance), so one skipped letter
+     doesn't make the rest of the word look wrong */
+  const g = String(given), w = String(want), G = g.toLowerCase(), W = w.toLowerCase();
+  const n = g.length, m = w.length, d = [];
+  for (let i = 0; i <= n; i++){ d[i] = [i]; }
+  for (let j = 1; j <= m; j++) d[0][j] = j;
+  for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++)
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (G[i-1] === W[j-1] ? 0 : 1));
+  const you = [], right = [];
+  let i = n, j = m;
+  while (i > 0 || j > 0){
+    if (i > 0 && j > 0 && G[i-1] === W[j-1] && d[i][j] === d[i-1][j-1]){
+      you.unshift('<i class="ok">' + gEsc(g[i-1]) + '</i>'); right.unshift('<i class="ok">' + gEsc(w[j-1]) + '</i>'); i--; j--;
+    } else if (i > 0 && j > 0 && d[i][j] === d[i-1][j-1] + 1){
+      you.unshift('<i class="bad">' + gEsc(g[i-1]) + '</i>'); right.unshift('<i class="miss">' + gEsc(w[j-1]) + '</i>'); i--; j--;
+    } else if (j > 0 && d[i][j] === d[i][j-1] + 1){
+      you.unshift('<i class="gap">_</i>'); right.unshift('<i class="miss">' + gEsc(w[j-1]) + '</i>'); j--;
+    } else {
+      you.unshift('<i class="bad">' + gEsc(g[i-1]) + '</i>'); right.unshift('<i class="gap"></i>'); i--;
+    }
   }
-  return '<div class="ldiff"><span class="ll">you wrote</span>' + you + '</div>' +
-         '<div class="ldiff"><span class="ll">it is</span>' + right + '</div>';
+  return '<div class="ldiff"><span class="ll">you wrote</span>' + (g ? you.join('') : '<i class="gap">—</i>') + '</div>' +
+         '<div class="ldiff"><span class="ll">it is</span>' + right.join('') + '</div>';
 }
 
 function checkAdjQ(){
@@ -6716,6 +6730,12 @@ function answerQ(chosen, btn){
     .filter(Boolean).join('<br>');
   /* a wrong pick says what the word you chose actually is, so the mistake teaches something */
   let why = '';
+  if (!ok && q.kind === 'type'){
+    /* show exactly which letters were wrong, missing or extra */
+    const norm2 = t => String(t).trim().toLowerCase();
+    const near = vs.slice().sort((a, b) => Math.abs(a.length - String(chosen).length) - Math.abs(b.length - String(chosen).length))[0] || w.w;
+    why = '<div class="qwhy">' + letterDiff(norm2(chosen), near) + '</div>';
+  }
   if (!ok && q.kind !== 'type'){
     const ix = btn && btn.dataset ? Number(btn.dataset.ix) : -1;
     const o = (q.srcs && ix >= 0) ? q.srcs[ix] : null;
