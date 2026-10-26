@@ -234,6 +234,16 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
   width:100%;border:none;background:none;text-align:left;font-family:var(--ui);color:var(--ink);
   border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .trow:hover{background:var(--sage-l)}
+.wsteps{margin:12px 0 4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.wsteps .wsh{font-size:13px;color:var(--mut);margin-bottom:8px}
+.wsteps .wsh b{color:var(--ink)}
+.wsteps .wsrow{display:flex;flex-wrap:wrap;gap:6px}
+.wsteps button{border:1px solid var(--line2);background:transparent;border-radius:999px;padding:5px 11px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--ink)}
+.wsteps button .n{display:inline-block;min-width:16px;font-size:11px;color:var(--mut);margin-right:4px}
+.wsteps button.big{font-weight:700}
+.wsteps button.done{background:var(--sage-l);border-color:var(--sage);color:var(--mut)}
+.wsteps button.next{border:2px solid #C9607A;box-shadow:0 0 0 3px rgba(201,96,122,.15)}
+.wsteps .wsreset{border:none;padding:0 0 0 6px;font-size:12px;color:var(--mut);text-decoration:underline;background:none}
 .trow.sg{border-left:3px solid #D4AF37;padding-left:8px}
 .trow .sgb{font-weight:700;color:#8A6D0B;background:#FBF1C7;padding:0 5px;border-radius:4px;text-decoration:underline;text-decoration-color:#D4AF37;text-underline-offset:2px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .trow .sgb{color:#F4D35E;background:#4A3D0F}}
@@ -6712,7 +6722,9 @@ function answerQ(chosen, btn){
 }
 function finishQuiz(){
   clearResume();          /* this set and this mode only */
-  markPassed(quizPool ? (quizBack === 'reading' ? storyKeyNow : essayKeyNow)
+  const stepRun = STEP_NOW; STEP_NOW = null;
+  if (stepRun) stepDone(stepRun.u, stepRun.k);
+  else markPassed(quizPool ? (quizBack === 'reading' ? storyKeyNow : essayKeyNow)
                       : ('set:' + wUnit + '|' + qMode));
   writeJSON('guide_last_course', quizPool ? quizBack
             : (wMode === 'books' ? 'books' : 'units'));
@@ -6792,8 +6804,8 @@ function resumeQuiz(slot, mode){
 }
 /* ---- flashcards ---- */
 let CD = [], ci = 0, flipped = false;
-function startCards(){
-  CD = shuffle(currentPool());
+function startCards(pool){
+  CD = shuffle(pool || currentPool());
   if (!CD.length) return;
   ci = 0; flipped = false;
   $('#dash').classList.add('off');
@@ -7018,6 +7030,7 @@ function paintPractise(){
   });
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     if (b.dataset.m === 'cards') return startCards();
+    STEP_NOW = null;
     const slot = 'set:' + wUnit;
     if (savedRound(slot, b.dataset.m)) return resumeQuiz(slot, b.dataset.m);
     qMode = b.dataset.m;
@@ -7026,6 +7039,53 @@ function paintPractise(){
   const hint = $('#wHint');
   if (hint) hint.textContent =
     'the whole set \u00b7 leave one half-done and \u21ba appears on that button';
+  paintSteps();
+}
+
+/* ---- step by step: learn 20, quiz 20, then quiz everything so far ---- */
+let STEP_NOW = null;
+const STEP_SIZE = 20;
+function stepPlan(u){
+  const pool = WD.filter(w => w.u === u), out = [];
+  const n = Math.ceil(pool.length / STEP_SIZE);
+  for (let g = 0; g < n; g++){
+    const a = g * STEP_SIZE, b = Math.min(pool.length, a + STEP_SIZE);
+    const r = (a + 1) + '–' + b;
+    out.push({ k:'L' + g, kind:'learn', t:'🃏 Learn ' + r, words:pool.slice(a, b) });
+    out.push({ k:'Q' + g, kind:'quiz', t:'✍️ Quiz ' + r, words:pool.slice(a, b) });
+    if (g > 0) out.push({ k:'R' + g, kind:'quiz', t:'🔁 Quiz 1–' + b, words:pool.slice(0, b), big:true });
+  }
+  return out;
+}
+function stepsDoneFor(u){ return (readJSON('word-steps') || {})[u] || {}; }
+function stepDone(u, k){
+  const all = readJSON('word-steps') || {};
+  (all[u] = all[u] || {})[k] = isoToday();
+  writeJSON('word-steps', all);
+}
+function paintSteps(){
+  let box = document.getElementById('wSteps');
+  const act = $('#wActions'); if (!act) return;
+  if (!box){ box = document.createElement('div'); box.id = 'wSteps'; act.insertAdjacentElement('afterend', box); }
+  const pool = WD.filter(w => w.u === wUnit);
+  if (LANG === 'sv' || pool.length <= 30){ box.innerHTML = ''; return; }
+  const plan = stepPlan(wUnit), done = stepsDoneFor(wUnit);
+  const next = plan.findIndex(s => !done[s.k]);
+  box.innerHTML = '<div class="wsteps"><div class="wsh"><b>🪜 Step by step</b> · ' + STEP_SIZE +
+    ' words at a time, then a quiz on everything so far' +
+    (Object.keys(done).length ? ' <button class="wsreset" id="wsReset">start again</button>' : '') + '</div>' +
+    '<div class="wsrow">' + plan.map((s, i) =>
+      '<button data-k="' + s.k + '" class="' + s.kind + (s.big ? ' big' : '') + (done[s.k] ? ' done' : '') + (i === next ? ' next' : '') + '">' +
+      '<span class="n">' + (i + 1) + '</span>' + s.t + (done[s.k] ? ' ✓' : '') + '</button>').join('') + '</div></div>';
+  box.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+    const s = plan.find(x => x.k === b.dataset.k); if (!s) return;
+    if (s.kind === 'learn'){ STEP_NOW = null; stepDone(wUnit, s.k); startCards(s.words); return; }
+    STEP_NOW = { u: wUnit, k: s.k };
+    qMode = 'mix';
+    startQuiz(s.words, s.t.replace(/^\S+ /, ''), wMode === 'books' ? 'books' : 'units');
+  });
+  const rs = document.getElementById('wsReset');
+  if (rs) rs.onclick = () => { const all = readJSON('word-steps') || {}; delete all[wUnit]; writeJSON('word-steps', all); paintSteps(); };
 }
 
 /* ---- fifty a day, and yesterday's fifty with them ---- */
