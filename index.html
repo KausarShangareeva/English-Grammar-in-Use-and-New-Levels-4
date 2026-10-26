@@ -7143,12 +7143,15 @@ function wUnitsFor(mode){
 function paintWordChips(){
   const box = $('#wChips'); if (!box) return;
   const us = wUnitsFor(wMode);
-  let seenAWL = false, seenSG = false;
+  let seenAWL = false, seenSG = false, seenNL = false;
   box.innerHTML = us.map(u => {
-    const isAWL = u.slice(0,3) === 'AWL', isSG = u.slice(0,2) === 'SG';
-    const rule = (isAWL && !seenAWL) ? '<span class="chipdiv">Academic Word List</span>'
-               : (isSG && !seenSG) ? '<span class="chipdiv">\uD83D\uDCD2 Solid Gold Engelska 5 <span class="cdn">' + WD.filter(x => String(x.u).slice(0,2) === 'SG').length + ' words</span></span>' : '';
+    const isAWL = u.slice(0,3) === 'AWL', isSG = u.slice(0,2) === 'SG', isNL = LANG === 'en' && /^\d/.test(u);
+    const cnt = test => '<span class="cdn">' + WD.filter(x => test(String(x.u))).length + ' words</span>';
+    const rule = (isNL && !seenNL) ? '<span class="chipdiv">\uD83D\uDCD8 New Levels 4 \u00b7 units ' + cnt(x => /^\d/.test(x)) + '</span>'
+               : (isAWL && !seenAWL) ? '<span class="chipdiv">Academic Word List ' + cnt(x => x.slice(0,3) === 'AWL') + '</span>'
+               : (isSG && !seenSG) ? '<span class="chipdiv">\uD83D\uDCD2 Solid Gold Engelska 5 ' + cnt(x => x.slice(0,2) === 'SG') + '</span>' : '';
     if (isAWL) seenAWL = true;
+    if (isNL) seenNL = true;
     if (isSG) seenSG = true;
     const n = u === 'CQ-READ' ? CQREAD.length : WD.filter(w => w.u === u).length;
     const bk = BOOKS.find(x => x.u === u);
