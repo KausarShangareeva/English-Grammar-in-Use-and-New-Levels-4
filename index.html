@@ -235,6 +235,7 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
   border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .trow:hover{background:var(--sage-l)}
 #wChips button.combo{border-style:dashed;font-weight:700}
+.chipdiv .cdn{margin-left:6px;padding:1px 8px;border-radius:999px;background:#C9607A;color:#fff;font-size:11px;letter-spacing:.02em}
 #wChips button.combo.on{background:#C9607A;color:#fff;border-color:#C9607A}
 #wChips button.incombo{box-shadow:inset 0 0 0 2px #C9607A;background:#FCEBEE}
 #wChips button.incombo:before{content:'\2713 ';color:#C9607A;font-weight:800}
@@ -7144,7 +7145,7 @@ function paintWordChips(){
   box.innerHTML = us.map(u => {
     const isAWL = u.slice(0,3) === 'AWL', isSG = u.slice(0,2) === 'SG';
     const rule = (isAWL && !seenAWL) ? '<span class="chipdiv">Academic Word List</span>'
-               : (isSG && !seenSG) ? '<span class="chipdiv">\uD83D\uDCD2 Solid Gold Engelska 5</span>' : '';
+               : (isSG && !seenSG) ? '<span class="chipdiv">\uD83D\uDCD2 Solid Gold Engelska 5 <span class="cdn">' + WD.filter(x => String(x.u).slice(0,2) === 'SG').length + ' words</span></span>' : '';
     if (isAWL) seenAWL = true;
     if (isSG) seenSG = true;
     const n = u === 'CQ-READ' ? CQREAD.length : WD.filter(w => w.u === u).length;
