@@ -6529,7 +6529,10 @@ let qMode = 'mix';
 /* in the mixed round each question picks its own kind, and falls back when a
    word cannot carry that kind */
 window.qModeFor = function(w, ix){
-  let t = (window.__qmode === 'mix') ? MIXABLE[ix % MIXABLE.length] : window.__qmode;
+  let t = (window.__qmode === 'mix') ? MIXABLE[ix % MIXABLE.length]
+        : (window.__qmode === 'step') ? (ix % 2 ? 'def2en' : 'type')   /* step by step: type + definition only */
+        : window.__qmode;
+  if (t === 'def2en' && !w.m)                t = 'type';
   if (t === 'cloze' && !(w.e && w.e.length)) t = 'ru2en';
   if (t === 'reg'   && !w.t)                 t = 'def2en';
   if (t === 'type'  && !(w.m || w.r))        t = 'ru2en';
@@ -7092,7 +7095,7 @@ function paintSteps(){
   const plan = stepPlan(wUnit), done = stepsDoneFor(wUnit);
   const next = plan.findIndex(s => !done[s.k]);
   box.innerHTML = '<div class="wsteps"><div class="wsh"><b>🪜 Step by step</b> · ' + STEP_SIZE +
-    ' words at a time, then a quiz on everything so far' +
+    ' words at a time, then a quiz on everything so far \u00b7 quizzes: \u2328\uFE0F type the word + \uD83D\uDCAC definition \u2192 word' +
     (Object.keys(done).length ? ' <button class="wsreset" id="wsReset">start again</button>' : '') + '</div>' +
     '<div class="wsrow">' + plan.map((s, i) =>
       '<button data-k="' + s.k + '" class="' + s.kind + (s.big ? ' big' : '') + (done[s.k] ? ' done' : '') + (i === next ? ' next' : '') + '">' +
@@ -7101,7 +7104,7 @@ function paintSteps(){
     const s = plan.find(x => x.k === b.dataset.k); if (!s) return;
     if (s.kind === 'learn'){ STEP_NOW = null; stepDone(wUnit, s.k); startCards(s.words); return; }
     STEP_NOW = { u: wUnit, k: s.k };
-    qMode = 'mix';
+    qMode = 'step';
     startQuiz(s.words, s.t.replace(/^\S+ /, ''), wMode === 'books' ? 'books' : 'units');
   });
   const rs = document.getElementById('wsReset');
