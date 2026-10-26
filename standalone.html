@@ -6623,7 +6623,19 @@ function variants(w){
       else out.add(e);
     });
   } else out.add(head);
+  /* words with a part in brackets: UFO (unidentified flying object) — accept the short form, the long one, or both */
+  const inner = (String(w.w).match(/\(([^)]*)\)/) || [])[1];
+  if (inner){ out.add(inner.trim()); out.add(String(w.w).trim()); }
   return [...out].filter(Boolean);
+}
+/* compare typed answers without caring about capitals, brackets or extra spaces */
+const typeNorm = t => String(t).toLowerCase().replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+function editDist(a, b){
+  const d = []; for (let i = 0; i <= a.length; i++) d[i] = [i];
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[a.length][b.length];
 }
 let Q = [], qi = 0, qRight = 0, qLocked = false, qFrom = 'units';
 /* where Back should land: set by whichever screen started the round */
@@ -6740,7 +6752,7 @@ function answerQ(chosen, btn){
   const q = Q[qi];
   const norm = t => String(t).trim().toLowerCase().replace(/\s+/g,' ');
   const ok = q.kind === 'type'
-    ? variants(q.w).some(v => norm(v) === norm(chosen))
+    ? variants(q.w).some(v => typeNorm(v) === typeNorm(chosen))
     : norm(chosen) === norm(q.answer);
   /* the same shape the trainer writes, so the two stay in step */
   const s = nlLoad();
@@ -6780,7 +6792,7 @@ function answerQ(chosen, btn){
   if (!ok && q.kind === 'type'){
     /* show exactly which letters were wrong, missing or extra */
     const norm2 = t => String(t).trim().toLowerCase();
-    const near = vs.slice().sort((a, b) => Math.abs(a.length - String(chosen).length) - Math.abs(b.length - String(chosen).length))[0] || w.w;
+    const near = vs.slice().sort((a, b) => editDist(typeNorm(chosen), typeNorm(a)) - editDist(typeNorm(chosen), typeNorm(b)))[0] || w.w;
     why = '<div class="qwhy">' + letterDiff(norm2(chosen), near) + '</div>' + mhHtml(w) + moHtml(w) +
       '<div class="w3" id="w3"><span class="h">\u270D\uFE0F Write it 3 times</span>' +
       '<input id="w3In" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + gEsc(near) + '">' +
@@ -6808,12 +6820,12 @@ function answerQ(chosen, btn){
   /* after a misspelling: type it correctly three times before Next opens */
   const w3 = document.getElementById('w3In');
   if (w3){
-    const nx = document.getElementById('qNext'), want = String(w3.placeholder).toLowerCase();
+    const nx = document.getElementById('qNext'), wants = variants(w).map(typeNorm);
     let n = 0;
     nx.disabled = true; nx.classList.add('wait');
     w3.focus();
     /* works both ways: Enter after each word, or all three in one line with commas */
-    const count = () => String(w3.value).split(/[,;\n]+/).map(t => t.trim().toLowerCase()).filter(t => t === want).length;
+    const count = () => String(w3.value).split(/[,;\n]+/).map(typeNorm).filter(t => wants.indexOf(t) >= 0).length;
     const show = extra => {
       const k = Math.min(3, n + extra);
       document.getElementById('w3N').textContent = k + ' / 3' + (k ? ' ✓' : '');
