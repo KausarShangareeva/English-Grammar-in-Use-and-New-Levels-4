@@ -6801,7 +6801,7 @@ function startCards(){
    '#storyView','#quizView'].forEach(x => $(x).classList.remove('on'));
   hideAll('#cardsView');
     $('#cardsView').classList.add('on');
-  $('#tagline').textContent = 'Tap the card to turn it over.';
+  $('#tagline').textContent = 'Tap the card to turn it over \u00b7 keys: \u2190 \u2192 move, \u2191 turn, \u2193 listen.';
   toTop();
   renderCard();
 }
@@ -7346,11 +7346,16 @@ document.addEventListener('keydown', e => {
   if (!box || !box.classList.contains('on')) return;
   if (e.key === 'ArrowRight') svCardMove(1);
   if (e.key === 'ArrowLeft') svCardMove(-1);
-  /* up or down turns the card over */
-  if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+  /* up turns the card over; down reads the side you are looking at */
+  if (e.key === 'ArrowUp'){
     e.preventDefault();
     SVFC.back = !SVFC.back;
     paintSvCard();
+  }
+  if (e.key === 'ArrowDown'){
+    e.preventDefault();
+    const w = SVFC.list[SVFC.i];
+    if (w) speak(SVFC.back && w.e && w.e.length ? w.e[0][0] : w.w, 'sv');
   }
   if (e.key === ' '){
     /* space reads the card out loud; Enter turns it */
@@ -9911,6 +9916,21 @@ $('#flipCard').onclick = () => { flipped = !flipped; renderCard(); };
 $('#cFlip').onclick    = () => { flipped = !flipped; renderCard(); };
 $('#cPrev').onclick = () => { ci = (ci - 1 + CD.length) % CD.length; flipped = false; renderCard(); };
 $('#cNext').onclick = () => { ci = (ci + 1) % CD.length; flipped = false; renderCard(); };
+/* keyboard for the flashcards: ← → move, ↑ turns the card, ↓ reads the side you are looking at */
+document.addEventListener('keydown', e => {
+  const v = document.getElementById('cardsView');
+  if (!v || !v.classList.contains('on') || !CD.length) return;
+  if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'ArrowRight'){ e.preventDefault(); $('#cNext').click(); }
+  else if (e.key === 'ArrowLeft'){ e.preventDefault(); $('#cPrev').click(); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); flipped = !flipped; renderCard(); }
+  else if (e.key === 'ArrowDown'){
+    e.preventDefault();
+    const w = CD[ci]; if (!w) return;
+    const ex = w.e && w.e.length ? String(w.e[0][0]).replace('____', w.e[0][1]) : '';
+    speak(flipped && ex ? ex : w.w);
+  }
+});
 function openTrainerAt(code){
   const c = { id:'grammar-quiz', app:'words', title:'Grammar practice',
               desc:'Practice questions run in the trainer.', go:code };
