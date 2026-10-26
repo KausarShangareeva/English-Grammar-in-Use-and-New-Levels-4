@@ -245,6 +245,7 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 .w3 input{flex:1;min-width:140px;font:inherit;font-size:18px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px}
 .w3 input.no{border-color:var(--rose);background:#FCEBEE}
 .w3 .w3n{font-weight:800;color:var(--sage)}
+.w3 .w3t{flex-basis:100%;font-size:12px;color:var(--mut)}
 .qnext.wait{opacity:.45}
 .mo{font-size:14px;margin:5px 0;color:var(--mut)}
 .mo i{font-style:normal;color:var(--mut2);margin:0 3px}
@@ -6753,7 +6754,7 @@ function answerQ(chosen, btn){
     why = '<div class="qwhy">' + letterDiff(norm2(chosen), near) + '</div>' + mhHtml(w) + moHtml(w) +
       '<div class="w3" id="w3"><span class="h">\u270D\uFE0F Write it 3 times</span>' +
       '<input id="w3In" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + gEsc(near) + '">' +
-      '<span class="w3n" id="w3N">0 / 3</span></div>';
+      '<span class="w3n" id="w3N">0 / 3</span><span class="w3t">type the word and press Enter \u2014 or all three at once: word, word, word</span></div>';
   }
   if (!ok && q.kind !== 'type'){
     const ix = btn && btn.dataset ? Number(btn.dataset.ix) : -1;
@@ -6781,15 +6782,20 @@ function answerQ(chosen, btn){
     let n = 0;
     nx.disabled = true; nx.classList.add('wait');
     w3.focus();
+    /* works both ways: Enter after each word, or all three in one line with commas */
+    const count = () => String(w3.value).split(/[,;\n]+/).map(t => t.trim().toLowerCase()).filter(t => t === want).length;
+    const show = extra => {
+      const k = Math.min(3, n + extra);
+      document.getElementById('w3N').textContent = k + ' / 3' + (k ? ' ✓' : '');
+      if (k >= 3){ w3.disabled = true; w3.classList.remove('no'); nx.disabled = false; nx.classList.remove('wait'); nx.focus(); }
+    };
+    w3.oninput = () => { w3.classList.remove('no'); show(count()); };
     w3.onkeydown = ev => {
       if (ev.key !== 'Enter') return;
       ev.preventDefault();
-      if (String(w3.value).trim().toLowerCase() === want){
-        n++; document.getElementById('w3N').textContent = n + ' / 3 ✓';
-        w3.value = ''; w3.classList.remove('no');
-        if (n === 1) w3.placeholder = '';          /* the second and third time from memory */
-        if (n >= 3){ w3.disabled = true; nx.disabled = false; nx.classList.remove('wait'); nx.focus(); }
-      } else { w3.classList.add('no'); }
+      const c = count();
+      if (c){ n += c; w3.value = ''; w3.placeholder = ''; show(0); }
+      else w3.classList.add('no');
     };
   }
 }
