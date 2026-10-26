@@ -237,6 +237,9 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 #wActions .qpick.on{background:var(--sage-l);border-color:var(--sage);box-shadow:inset 0 0 0 1px var(--sage)}
 #wActions .qstart{flex-basis:100%;justify-content:center}
 .pp{margin:4px 0;font-size:13px;color:var(--ink)}
+.tinrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tinrow .tin{flex:1;min-width:200px}
+.tpp{white-space:nowrap;font-size:15px;padding:6px 10px;border-radius:10px;background:var(--panel);border:1px dashed var(--line2)}
 .pp .ppw{color:#C9607A;font-weight:800;letter-spacing:.02em}
 .pp s{color:var(--mut)}
 .fpp{font-size:15px;margin:8px 0}
@@ -6683,6 +6686,20 @@ function startQuiz(pool2, title, back){
   toTop();
   renderQ();
 }
+/* type the word: show one preposition pattern beside the box, with the word itself hidden */
+function ppHint(w){
+  if (!w.pp) return '';
+  const first = w.pp.split(' · ').map(x => x.trim()).find(x => x && x.indexOf('✘') < 0);
+  if (!first) return '';
+  const head = String(w.w).replace(/\s*\(.*?\)/, '').trim();
+  const stem = head.length > 4 ? head.replace(/(e|y)$/i, '') : head;
+  const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let h = first.replace(new RegExp('\\b' + esc(stem) + '[a-z]*', 'gi'), '____');
+  if (h === first && head.split(' ').length > 1) return '';      /* nothing to hide safely */
+  if (!/\b[A-Z]{2,}\b/.test(h)) return '';                        /* no preposition left to show */
+  h = gEsc(h).replace(/\b([A-Z]{2,}(?: [A-Z]{2,})*)\b/g, '<b class="ppw">$1</b>');
+  return '<span class="tpp pp" title="the preposition this word goes with">🔗 ' + h + '</span>';
+}
 function renderQ(){
   if (qi >= Q.length) return finishQuiz();
   const q = Q[qi];
@@ -6697,8 +6714,8 @@ function renderQ(){
     '<div class="qprompt">' + promptHtml + '</div>' +
     (q.sub ? '<div class="qsub">' + gEsc(q.sub) + '</div>' : '<div style="height:12px"></div>') +
     (q.kind === 'type'
-      ? '<input class="tin" id="tIn" autocomplete="off" autocapitalize="off" ' +
-        'spellcheck="false" placeholder="type it in English">' +
+      ? '<div class="tinrow"><input class="tin" id="tIn" autocomplete="off" autocapitalize="off" ' +
+        'spellcheck="false" placeholder="type it in English">' + ppHint(q.w) + '</div>' +
         '<button class="qnext" id="tGo">Check</button>'
       : '<div class="qopts">' + q.options.map((o,ix) =>
           '<button class="opt" data-ix="' + ix + '">' + gEsc(o) + '</button>').join('') + '</div>');
