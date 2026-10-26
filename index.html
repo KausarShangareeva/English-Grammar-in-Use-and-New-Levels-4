@@ -6649,7 +6649,7 @@ function renderQ(){
     ? gEsc(q.prompt).replace('____', '<b style="color:var(--rose)">\u2026\u2026</b>')
     : gEsc(q.prompt);
   $('#qCard').innerHTML =
-    '<div class="qlabel">' + q.label + '</div>' +
+    '<div class="qlabel">' + (q.retry ? '\u21bb again \u00b7 ' : '') + q.label + '</div>' +
     '<div class="qprompt">' + promptHtml + '</div>' +
     (q.sub ? '<div class="qsub">' + gEsc(q.sub) + '</div>' : '<div style="height:12px"></div>') +
     (q.kind === 'type'
@@ -6680,8 +6680,10 @@ function answerQ(chosen, btn){
   /* the same shape the trainer writes, so the two stay in step */
   const s = nlLoad();
   const st = s.stats[q.w.i] || (s.stats[q.w.i] = { c:0, w:0, run:0 });
-  if (ok){ st.c++; st.run = (st.run||0) + 1; qRight++; s.xp = (s.xp||0) + 10; }
+  if (ok){ st.c++; st.run = (st.run||0) + 1; if (!q.retry) qRight++; s.xp = (s.xp||0) + 10; }
   else   { st.w++; st.run = 0; }
+  /* step by step: a missed word comes back at the end of the round until you get it right */
+  if (!ok && window.__qmode === 'step') Q.push(Object.assign({}, q, { retry: true }));
   speak(q.w.w);
   const today = new Date();
   const key = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') +
@@ -6743,14 +6745,15 @@ function finishQuiz(){
   refreshGuide();
   $('#qBar').style.width = '100%';
   $('#qCount').textContent = Q.length + ' / ' + Q.length;
-  const pct = Math.round(qRight / Q.length * 100);
+  const qFirst = Q.filter(x => !x.retry).length, qAgainN = Q.length - qFirst;
+  const pct = Math.round(qRight / qFirst * 100);
   const msg = pct >= 90 ? 'That set is close to done. Try another one.'
             : pct >= 70 ? 'Solid. The ones you missed will come back to you sooner.'
             : pct >= 40 ? 'Worth reading the list again before the next round.'
             : 'This set is still new. Read it through, then come back.';
   $('#qCard').innerHTML =
-    '<div class="qdone"><div class="big">' + qRight + '/' + Q.length + '</div>' +
-    '<div class="lb2">correct</div><div class="msg">' + msg + '</div>' +
+    '<div class="qdone"><div class="big">' + qRight + '/' + qFirst + '</div>' +
+    '<div class="lb2">correct the first time' + (qAgainN ? ' \u00b7 ' + qAgainN + ' repeated until right' : '') + '</div><div class="msg">' + msg + '</div>' +
     '<button class="qnext" id="qAgain">Another round</button>' +
     '<button class="qnext" id="qBack" style="background:var(--panel);color:var(--mut);' +
     'border:1px solid var(--line);margin-top:8px">Back to the words</button></div>';
