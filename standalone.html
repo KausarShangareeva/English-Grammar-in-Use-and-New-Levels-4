@@ -526,6 +526,7 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 .qfb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;
   line-height:1.6;color:var(--mut)}
 .qfb b{color:var(--ink)}
+.qfb .qex{font-style:italic}
 .qlv{display:inline-block;margin-left:8px;border-radius:999px;padding:2px 9px;font-size:9.5px;background:var(--sea-l);color:var(--sea);
   letter-spacing:.6px;vertical-align:1px}
 .qlv.A1,.qlv.A2,.qlv.B1{background:var(--sage-l);color:var(--sage)}
@@ -6816,7 +6817,8 @@ function answerQ(chosen, btn){
   const vs = q.kind === 'type' ? variants(w) : [];
   const extra = [
     q.kind === 'type' && vs.length > 1 ? 'accepted: ' + gEsc(vs.join(', ')) : '',
-    w.m ? gEsc(w.m) : '', w.c ? gSafe(w.c) : '', w.n ? gSafe(w.n) : '' ]
+    w.m ? gEsc(w.m) : '', w.c ? gSafe(w.c) : '', w.n ? gSafe(w.n) : '',
+    ...(w.e || []).slice(0, 2).map(x => '<span class="qex">e.g. ' + gEsc(x[0]).replace(/_{2,}/, '<b>' + gEsc(x[1]) + '</b>') + '</span>') ]
     .filter(Boolean).join('<br>');
   /* a wrong pick says what the word you chose actually is, so the mistake teaches something */
   let why = '';
