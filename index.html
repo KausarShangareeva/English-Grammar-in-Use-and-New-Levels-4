@@ -6668,8 +6668,8 @@ function variants(w){
   return [...out].filter(Boolean);
 }
 /* compare typed answers without caring about capitals, brackets or extra spaces */
-/* a / an / the / to at the start never count: "goody two-shoes" = "a goody two-shoes" */
-const typeNorm = t => String(t).toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^(a|an|the|to) (?=\S)/, '');
+/* a / an / the / to / be at the start never count: "goody two-shoes" = "a goody two-shoes" */
+const typeNorm = t => String(t).toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^(a|an|the|to|to be|be) (?=\S)/, '');
 function editDist(a, b){
   const d = []; for (let i = 0; i <= a.length; i++) d[i] = [i];
   for (let j = 1; j <= b.length; j++) d[0][j] = j;
