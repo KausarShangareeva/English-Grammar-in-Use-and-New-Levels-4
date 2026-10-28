@@ -6645,6 +6645,7 @@ window.qModeFor = function(w, ix){
         : window.__qmode;
   if (t === 'def2en' && !w.m)                t = 'type';
   if (t === 'cloze' && !(w.e && w.e.length)) t = 'ru2en';
+  if (t === 'cloze' && String(w.e[0][0]).indexOf('____') < 0 && String(w.e[0][0]).toLowerCase().indexOf(String(w.e[0][1]).toLowerCase()) < 0) t = 'ru2en';
   if (t === 'reg'   && !w.t)                 t = 'def2en';
   if (t === 'type'  && !(w.m || w.r))        t = 'ru2en';
   return t;
@@ -6659,7 +6660,7 @@ const QMODES_ALL = [
   ['reg',   'essay-safe or not?']
 ];
 /* on the Swedish platform the gap round and the essay flag are dropped */
-const SV_DROP = ['cloze', 'reg'];
+const SV_DROP = ['reg'];
 Object.defineProperty(window, 'QMODES', { get(){
   return (typeof LANG !== 'undefined' && LANG === 'sv')
     ? QMODES_ALL.filter(m => SV_DROP.indexOf(m[0]) < 0) : QMODES_ALL;
@@ -6707,7 +6708,10 @@ let quizExit = () => go(qFrom);
 
 let quizPool = null, quizTitle = '', quizBack = 'units';
 let storyKeyNow = '', essayKeyNow = '';
+/* on the Swedish platform a “set” is the chosen day: its fifty words */
+function setSlot(){ return LANG === 'sv' ? 'svday:' + (svDay || svDayToday()) : 'set:' + wUnit; }
 function currentPool(){
+  if (!quizPool && LANG === 'sv') return svWordsOfDay(svDay || svDayToday());
   return quizPool || WD.filter(w => w.u === wUnit);
 }
 function buildQuestions(pool, only){
@@ -6737,6 +6741,7 @@ function buildQuestions(pool, only){
     } else if (qMode === 'cloze'){
       label = 'fill the gap';
       prompt = String(w.e[0][0]); sub = w.r || '';
+      if (prompt.indexOf('____') < 0){ const k = prompt.toLowerCase().indexOf(String(w.e[0][1]).toLowerCase()); if (k >= 0) prompt = prompt.slice(0, k) + '____' + prompt.slice(k + String(w.e[0][1]).length); }
       answer = w.e[0][1];
       srcs = shuffle([w].concat(others));
       options = srcs.map(x => x === w ? w.e[0][1] : ((x.e && x.e.length) ? x.e[0][1] : x.w));
@@ -6795,7 +6800,7 @@ function renderQ(){
     (q.sub ? '<div class="qsub">' + gEsc(q.sub) + '</div>' : '<div style="height:12px"></div>') +
     (q.kind === 'type'
       ? '<div class="tinrow"><input class="tin" id="tIn" autocomplete="off" autocapitalize="off" ' +
-        'spellcheck="false" placeholder="type it in English">' + ppHint(q.w) + '</div>' +
+        'spellcheck="false" placeholder="' + (LANG === 'sv' ? 'skriv på svenska' : 'type it in English') + '">' + ppHint(q.w) + '</div>' +
         '<button class="qnext" id="tGo">Check</button>'
       : '<div class="qopts">' + q.options.map((o,ix) =>
           '<button class="opt" data-ix="' + ix + '">' + gEsc(o) + '</button>').join('') + '</div>');
@@ -6908,6 +6913,7 @@ function answerQ(chosen, btn){
   }
 }
 function finishQuiz(){
+  if (LANG === 'sv' && window.__svKind){ try { svMarkDone(window.__svKind, qRight, Q.filter(x => !x.retry).length); } catch(e){} window.__svKind = null; }
   clearResume();          /* this set and this mode only */
   const stepRun = STEP_NOW; STEP_NOW = null;
   if (stepRun) stepDone(stepRun.u, stepRun.k);
@@ -6948,7 +6954,7 @@ function finishQuiz(){
 /* A long round should survive a closed tab: the set, the mode, the order and
    where you had got to are written down after every answer. */
 const RESUME_KEY = 'quiz_resume';
-function resumeSlot(){ return quizPool ? 'pool:' + quizTitle : 'set:' + wUnit; }
+function resumeSlot(){ return quizPool ? 'pool:' + quizTitle : setSlot(); }
 function allResumes(){ return readJSON(RESUME_KEY) || {}; }
 function resumeKey(slot, mode){ return slot + '|' + mode; }
 function saveResume(){
@@ -7294,13 +7300,6 @@ function comboTitle(){
 }
 function paintPractise(){
   const box = $('#wActions'); if (!box) return;
-  /* the Swedish platform has its own round: fifty a day, typed */
-  if (LANG === 'sv'){
-    box.innerHTML = '';
-    const head = document.querySelector('.practise .prh');
-    if (head) head.style.display = 'none';
-    return;
-  }
   const head0 = document.querySelector('.practise .prh');
   if (head0) head0.style.display = '';
   let cb = document.getElementById('wComboInfo');
@@ -7310,11 +7309,12 @@ function paintPractise(){
   const ICON = { mix:'\u25b6', ru2en:'\uD83C\uDDF7\uD83C\uDDFA', type:'\u2328\uFE0F',
                  en2ru:'\uD83C\uDDEC\uD83C\uDDE7', def2en:'\uD83D\uDCAC',
                  cloze:'\u2712\uFE0F', reg:'\uD83D\uDEA9' };
+  if (LANG === 'sv'){ ICON.ru2en = '\uD83C\uDDEC\uD83C\uDDE7'; ICON.en2ru = '\uD83C\uDDF8\uD83C\uDDEA'; }
   const cpool = comboPool();
   const pool = cpool || currentPool();
   const countFor = mode => pool.filter(w =>
       (mode !== 'cloze' || (w.e && w.e.length)) && (mode !== 'reg' || w.t)).length;
-  const slot = cpool ? 'pool:' + comboTitle() : 'set:' + wUnit;
+  const slot = cpool ? 'pool:' + comboTitle() : setSlot();
   /* pick one kind, several, or everything mixed — nothing starts until you press Start */
   let sel = readJSON('quiz-pick') || ['mix'];
   sel = sel.filter(k => QMODES.some(m => m[0] === k)); if (!sel.length) sel = ['mix'];
@@ -7367,8 +7367,10 @@ function paintPractise(){
 /* ---- step by step: learn 20, quiz 20, then quiz everything so far ---- */
 let STEP_NOW = null;
 const STEP_SIZE = 20;
-function stepPlan(u){
-  const pool = WD.filter(w => w.u === u), out = [];
+function stepKey(){ return LANG === 'sv' ? 'sv-d' + (svDay || svDayToday()) : wUnit; }
+function stepPool(){ return LANG === 'sv' ? svWordsOfDay(svDay || svDayToday()) : WD.filter(w => w.u === wUnit); }
+function stepPlan(pool){
+  const out = [];
   const n = Math.ceil(pool.length / STEP_SIZE);
   for (let g = 0; g < n; g++){
     const a = g * STEP_SIZE, b = Math.min(pool.length, a + STEP_SIZE);
@@ -7389,9 +7391,9 @@ function paintSteps(){
   let box = document.getElementById('wSteps');
   const act = $('#wActions'); if (!act) return;
   if (!box){ box = document.createElement('div'); box.id = 'wSteps'; act.insertAdjacentElement('afterend', box); }
-  const pool = WD.filter(w => w.u === wUnit);
-  if (LANG === 'sv' || pool.length <= 30 || comboActive()){ box.innerHTML = ''; return; }
-  const plan = stepPlan(wUnit), done = stepsDoneFor(wUnit);
+  const pool = stepPool(), SK = stepKey();
+  if (pool.length <= 30 || comboActive()){ box.innerHTML = ''; return; }
+  const plan = stepPlan(pool), done = stepsDoneFor(SK);
   const next = plan.findIndex(s => !done[s.k]);
   box.innerHTML = '<div class="wsteps"><div class="wsh"><b>🪜 Step by step</b> · ' + STEP_SIZE +
     ' words at a time, then a quiz on everything so far \u00b7 quizzes: \u2328\uFE0F type the word + \uD83D\uDCAC definition \u2192 word' +
@@ -7401,13 +7403,13 @@ function paintSteps(){
       '<span class="n">' + (i + 1) + '</span>' + s.t + (done[s.k] ? ' ✓' : '') + '</button>').join('') + '</div></div>';
   box.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
     const s = plan.find(x => x.k === b.dataset.k); if (!s) return;
-    if (s.kind === 'learn'){ STEP_NOW = null; stepDone(wUnit, s.k); startCards(s.words); return; }
-    STEP_NOW = { u: wUnit, k: s.k };
+    if (s.kind === 'learn'){ STEP_NOW = null; stepDone(SK, s.k); startCards(s.words); return; }
+    STEP_NOW = { u: SK, k: s.k };
     qMode = 'step';
     startQuiz(s.words, s.t.replace(/^\S+ /, ''), wMode === 'books' ? 'books' : 'units');
   });
   const rs = document.getElementById('wsReset');
-  if (rs) rs.onclick = () => { const all = readJSON('word-steps') || {}; delete all[wUnit]; writeJSON('word-steps', all); paintSteps(); };
+  if (rs) rs.onclick = () => { const all = readJSON('word-steps') || {}; delete all[SK]; writeJSON('word-steps', all); paintSteps(); };
 }
 
 /* ---- fifty a day, and yesterday's fifty with them ---- */
@@ -7661,7 +7663,7 @@ function wireSvDay(){
   if (!box) return;
   box.querySelectorAll('.dpick button').forEach(b => b.onclick = () => {
     svDay = +b.dataset.d;
-    paintWordList();
+    paintWordList(); paintPractise();
   });
   box.querySelectorAll('.dbtn').forEach(b => b.onclick = () => {
     const kind = b.dataset.q;
@@ -7669,9 +7671,11 @@ function wireSvDay(){
     const sch = svSchedule(), cur = sch[svDay - 1] || sch[0];
     const weekSoFar = sch.slice(0, svDay).filter(x => x.week === cur.week)
                          .reduce((a, x) => a.concat(x.words), []);
-    if (kind === 'cards'){ startSvCards(today); return; }
+    if (kind === 'cards'){ startCards(today); return; }
     const pool = kind === 'new' ? today : kind === 'rep' ? back : weekSoFar;
-    startSvQuiz(pool, kind);
+    window.__svKind = kind;
+    qMode = 'type';
+    startQuiz(pool, (kind === 'new' ? 'Dagens ord' : kind === 'rep' ? 'Gårdagens ord' : 'Allt hittills i veckan') + ' · ' + svNiceDate(cur.iso), 'units');
   });
 }
 /* ---- the typed quiz: English in, Swedish out ---- */
