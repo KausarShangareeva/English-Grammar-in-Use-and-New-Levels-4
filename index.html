@@ -531,6 +531,10 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 .qfb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;
   line-height:1.6;color:var(--mut)}
 .qfb b{color:var(--ink)}
+.qmiss{margin:14px 0 4px;text-align:left;font-size:13.5px;line-height:1.6}
+.qmiss .qmh{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin-bottom:4px}
+.qmiss span{display:inline-block;margin:0 10px 4px 0;padding:2px 9px;border-radius:999px;border:1px solid var(--line)}
+.qmiss span i{color:var(--mut);font-style:normal;font-size:.9em}
 .qrestart{margin-left:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);font:inherit;font-size:13px;cursor:pointer}
 .qrestart:hover{color:var(--ink);border-color:var(--ink)}
 .qfb .qex{font-style:italic}
@@ -6799,6 +6803,7 @@ function answerQ(chosen, btn){
   const st = s.stats[q.w.i] || (s.stats[q.w.i] = { c:0, w:0, run:0 });
   if (ok){ st.c++; st.run = (st.run||0) + 1; if (!q.retry) qRight++; s.xp = (s.xp||0) + 10; }
   else   { st.w++; st.run = 0; }
+  if (!ok && !q.retry) q.missed = true;      /* for “repeat only my mistakes” at the end */
   /* step by step: a missed word comes back at the end of the round until you get it right */
   if (!ok && window.__qmode === 'step') Q.push(Object.assign({}, q, { retry: true }));
   speak(q.w.w);
@@ -6886,7 +6891,7 @@ function finishQuiz(){
   clearResume();          /* this set and this mode only */
   const stepRun = STEP_NOW; STEP_NOW = null;
   if (stepRun) stepDone(stepRun.u, stepRun.k);
-  else if (!(quizPool && String(quizTitle).indexOf('\uD83E\uDDFA') === 0)) markPassed(quizPool ? (quizBack === 'reading' ? storyKeyNow : essayKeyNow)
+  else if (!(quizPool && (String(quizTitle).indexOf('\uD83E\uDDFA') === 0 || String(quizTitle).indexOf('🔁') === 0))) markPassed(quizPool ? (quizBack === 'reading' ? storyKeyNow : essayKeyNow)
                       : ('set:' + wUnit + '|' + qMode));
   writeJSON('guide_last_course', quizPool ? quizBack
             : (wMode === 'books' ? 'books' : 'units'));
@@ -6896,6 +6901,7 @@ function finishQuiz(){
   $('#qBar').style.width = '100%';
   $('#qCount').textContent = Q.length + ' / ' + Q.length;
   const qFirst = Q.filter(x => !x.retry).length, qAgainN = Q.length - qFirst;
+  const missW = []; Q.forEach(x => { if (x.missed && missW.indexOf(x.w) < 0) missW.push(x.w); });
   const pct = Math.round(qRight / qFirst * 100);
   const msg = pct >= 90 ? 'That set is close to done. Try another one.'
             : pct >= 70 ? 'Solid. The ones you missed will come back to you sooner.'
@@ -6904,11 +6910,16 @@ function finishQuiz(){
   $('#qCard').innerHTML =
     '<div class="qdone"><div class="big">' + qRight + '/' + qFirst + '</div>' +
     '<div class="lb2">correct the first time' + (qAgainN ? ' \u00b7 ' + qAgainN + ' repeated until right' : '') + '</div><div class="msg">' + msg + '</div>' +
-    '<button class="qnext" id="qAgain">Another round</button>' +
+    (missW.length ? '<div class="qmiss"><div class="qmh">✗ mistakes · ' + missW.length + '</div>' +
+      missW.map(w => '<span>' + gEsc(w.w) + ' <i>' + gEsc(w.r || '') + '</i></span>').join('') + '</div>' +
+      '<button class="qnext" id="qMiss">🔁 Repeat only my mistakes · ' + missW.length + '</button>' : '') +
+    '<button class="qnext" id="qAgain"' + (missW.length ? ' style="background:var(--panel);color:var(--ink);border:1px solid var(--line);margin-top:8px"' : '') + '>Another round · all words</button>' +
     '<button class="qnext" id="qBack" style="background:var(--panel);color:var(--mut);' +
     'border:1px solid var(--line);margin-top:8px">Back to the words</button></div>';
   if (!quizPool && wUnit) markSeen('set:' + wUnit, 'quiz');
   document.getElementById('qAgain').onclick = () => startQuiz(quizPool, quizTitle, quizBack);
+  const mb = document.getElementById('qMiss');
+  if (mb) mb.onclick = () => { const t = String(quizTitle || '').replace(/^🔁 mistakes · /, ''); startQuiz(missW.slice(), '🔁 mistakes · ' + (t || 'this set'), quizBack); };
   document.getElementById('qBack').onclick = () => quizExit();
   paintCards();
 }
@@ -6925,7 +6936,7 @@ function saveResume(){
   const all = allResumes();
   all[resumeKey(resumeSlot(), qMode)] = {
     slot: resumeSlot(), mode: qMode, qi: qi, right: qRight,
-    ids: Q.map(x => x.w.i), title: quizTitle, back: quizBack,
+    ids: Q.map(x => x.w.i), miss: Q.filter(x => x.missed).map(x => x.w.i), title: quizTitle, back: quizBack,
     poolIds: quizPool ? quizPool.map(w => w.i) : null, savedAt: isoToday()
   };
   writeJSON(RESUME_KEY, all);
@@ -6960,6 +6971,8 @@ function resumeQuiz(slot, mode){
   Q = buildQuestions(pool.some(x => x.i === words[0].i) ? pool : words, words);
   qi = Math.min(r.qi, Q.length - 1);
   qRight = r.right || 0;
+  const missSet = new Set(r.miss || []);
+  Q.forEach((x, k) => { if (k < qi && missSet.has(x.w.i)) x.missed = true; });
   qLocked = false;
   hideAll('#quizView');
   $('#quizView').classList.add('on');
