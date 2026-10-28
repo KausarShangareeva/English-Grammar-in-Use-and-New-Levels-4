@@ -6684,12 +6684,12 @@ let storyKeyNow = '', essayKeyNow = '';
 function currentPool(){
   return quizPool || WD.filter(w => w.u === wUnit);
 }
-function buildQuestions(pool){
+function buildQuestions(pool, only){
   const usable = pool.filter(w =>
     (qMode !== 'cloze' || (w.e && w.e.length)) &&
     (qMode !== 'reg'   || w.t));
   /* the whole set, not a sample: 51 words means 51 questions */
-  const list = shuffle(usable);
+  const list = only || shuffle(usable);   /* only = a saved order to rebuild exactly */
   return list.map((w, ix) => {
     let qMode = window.qModeFor ? window.qModeFor(w, ix) : null;
     const others = shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3);
@@ -6952,8 +6952,8 @@ function resumeQuiz(slot, mode){
   qMode = r.mode || 'mix';
   window.__qmode = qMode;
   const pool = quizPool || WD.filter(w => w.u === wUnit);
-  Q = words.map(w => buildQuestions([w].concat(
-        shuffle(pool.filter(x => x.i !== w.i)).slice(0, 3)))[0]).filter(Boolean);
+  /* rebuild the saved round word for word (it used to pick a random neighbour, so some words came back again and again) */
+  Q = buildQuestions(pool.some(x => x.i === words[0].i) ? pool : words, words);
   qi = Math.min(r.qi, Q.length - 1);
   qRight = r.right || 0;
   qLocked = false;
