@@ -6669,6 +6669,9 @@ function variants(w){
   /* words with a part in brackets: UFO (unidentified flying object) — accept the short form, the long one, or both */
   const inner = (String(w.w).match(/\(([^)]*)\)/) || [])[1];
   if (inner){ out.add(inner.trim()); out.add(String(w.w).trim()); }
+  /* in a “be …” phrase the last preposition may be left out: be confined (to) */
+  [...out].forEach(v => { const m = v.match(/^(be .+?) (to|in|on|of|with|at|for|about|from|into)$/i);
+    if (m) out.add(m[1]); });
   return [...out].filter(Boolean);
 }
 /* compare typed answers without caring about capitals, brackets or extra spaces */
