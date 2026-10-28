@@ -531,6 +531,8 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 .qfb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;
   line-height:1.6;color:var(--mut)}
 .qfb b{color:var(--ink)}
+.qrestart{margin-left:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);font:inherit;font-size:13px;cursor:pointer}
+.qrestart:hover{color:var(--ink);border-color:var(--ink)}
 .qfb .qex{font-style:italic}
 .qlv{display:inline-block;margin-left:8px;border-radius:999px;padding:2px 9px;font-size:9.5px;background:var(--sea-l);color:var(--sea);
   letter-spacing:.6px;vertical-align:1px}
@@ -6936,6 +6938,8 @@ function clearResume(slot, mode){
 function savedRound(slot, mode){
   const r = allResumes()[resumeKey(slot, mode)];
   if (!r || !r.ids || r.qi >= r.ids.length) return null;
+  /* a round saved by the old broken Continue has the same word twice: drop it */
+  if (r.mode !== 'step' && new Set(r.ids).size !== r.ids.length){ clearResume(slot, mode); return null; }
   return r;
 }
 function resumeQuiz(slot, mode){
@@ -7290,7 +7294,8 @@ function paintPractise(){
     '<button class="cards" data-m="cards">🃏 Flashcards<span class="qn">' + pool.length + '</span></button>' +
     (() => { const r = savedRound(slot, modeOf());
       return '<button class="pri qstart" data-m="start">' + (r ? '↺ Continue · ' + (r.qi + 1) + '/' + r.ids.length
-        : '▶ Start · ' + nFor() + ' questions') + '</button>'; })();
+        : '▶ Start · ' + nFor() + ' questions') + '</button>' +
+        (r ? '<button class="qrestart" data-m="restart">↻ Start over</button>' : ''); })();
   [[GUIDE, false], [GUIDE2, true]].forEach(pair => {
     const g = pair[0];
     if (!g || g.id !== 'set:' + wUnit) return;
@@ -7301,10 +7306,11 @@ function paintPractise(){
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
     const m = b.dataset.m;
     if (m === 'cards') return startCards(cpool || undefined);
-    if (m === 'start'){
+    if (m === 'start' || m === 'restart'){
       STEP_NOW = null;
       const mode = modeOf();
-      if (savedRound(slot, mode)) return resumeQuiz(slot, mode);
+      if (m === 'restart') clearResume(slot, mode);
+      else if (savedRound(slot, mode)) return resumeQuiz(slot, mode);
       qMode = mode;
       if (cpool) startQuiz(cpool, comboTitle(), wMode === 'books' ? 'books' : 'units');
       else startQuiz();
