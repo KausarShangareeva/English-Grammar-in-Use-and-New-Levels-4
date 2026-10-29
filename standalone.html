@@ -6911,7 +6911,8 @@ function answerQ(chosen, btn){
       if (ev.key !== 'Enter') return;
       ev.preventDefault();
       const c = count();
-      if (c){ n += c; w3.value = ''; w3.placeholder = ''; show(0); }
+      /* each correct Enter: the word is said aloud once (three typed at once → said three times) */
+      if (c){ n += c; w3.value = ''; w3.placeholder = ''; show(0); try { speak(Array(Math.min(c, 3)).fill(variants(w)[0]).join('. ')); } catch(e){} }
       else w3.classList.add('no');
     };
   }
