@@ -535,6 +535,9 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 .qmiss .qmh{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin-bottom:4px}
 .qmiss span{display:inline-block;margin:0 10px 4px 0;padding:2px 9px;border-radius:999px;border:1px solid var(--line)}
 .qmiss span i{color:var(--mut);font-style:normal;font-size:.9em}
+#wChips button.setdone{background:#E3F4E6;border-color:#7FC48D;color:#2F6B3B}
+#wChips button.setdone[aria-pressed="true"]{background:#4FA060;border-color:#4FA060;color:#fff}
+:root[data-theme="dark"] #wChips button.setdone{background:#1F3A26;border-color:#3F8A52;color:#BFE5C7}
 .qrestart{margin-left:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);font:inherit;font-size:13px;cursor:pointer}
 .qrestart:hover{color:var(--ink);border-color:var(--ink)}
 .qfb .qex{font-style:italic}
@@ -6914,6 +6917,7 @@ function answerQ(chosen, btn){
   }
 }
 function finishQuiz(){
+  markSetsDone();
   if (LANG === 'sv' && window.__svKind){ try { svMarkDone(window.__svKind, qRight, Q.filter(x => !x.retry).length); } catch(e){} window.__svKind = null; }
   clearResume();          /* this set and this mode only */
   const stepRun = STEP_NOW; STEP_NOW = null;
@@ -7117,6 +7121,22 @@ function renderCard(){
    it is a reminder, not a gate. */
 const SEEN_KEY = 'studyhub_seen';
 function seenAll(){ return readJSON(SEEN_KEY) || {}; }
+/* ✅ a lesson goes green for a week once a quiz has covered every one of its words
+   (one lesson, several ticked together, or step-by-step's last round) */
+const SETDONE_KEY = 'set-done';
+function setDoneDays(u){ const d = (readJSON(SETDONE_KEY) || {})[u]; return d ? daysSince(d) : null; }
+function markSetsDone(){
+  if (LANG === 'sv' && !quizPool) return;
+  const asked = new Set(Q.map(x => x.w.i));
+  const units = [...new Set(Q.map(x => x.w.u))];
+  const all = readJSON(SETDONE_KEY) || {};
+  let any = false;
+  units.forEach(u => {
+    const ws = WD.filter(w => w.u === u);
+    if (ws.length && ws.every(w => asked.has(w.i))){ all[u] = isoToday(); markSeen('set:' + u, 'quiz'); any = true; }
+  });
+  if (any) writeJSON(SETDONE_KEY, all);
+}
 function markSeen(id, kind){
   const all = seenAll();
   const r = all[id] || (all[id] = {});
@@ -7254,8 +7274,10 @@ function paintWordChips(){
                      : (LANG === 'sv' ? short + (svDaysOfSet(u).length ? ' \u00b7 ' + svRange(svDaysOfSet(u)) : '')
                         : u.slice(0,3) === 'AWL' ? short
                         : u.slice(0,2) === 'SG' ? short.replace(/^Solid Gold Engelska 5 \u00b7 /, '') : u + ' \u00b7 ' + short);
-    const m = mood('set:' + u);
-    return rule + '<button data-u="' + u + '"' + (bk ? ' class="bk"' : '') +
+    const dn = setDoneDays(u), green = dn !== null && dn < 7;
+    const m = green ? ['\u2705', '', ''] : mood('set:' + u);
+    return rule + '<button data-u="' + u + '"' + (bk ? ' class="bk' + (green ? ' setdone' : '') + '"' : (green ? ' class="setdone"' : '')) +
+      (green ? ' title="whole quiz done ' + (dn === 0 ? 'today' : dn === 1 ? 'yesterday' : dn + ' days ago') + ' \u00b7 green for a week"' : '') +
       (u === wUnit ? ' aria-pressed="true"' : '') +
       (bk && u === wUnit ? ' style="background:' + bk.g + '"' : '') +
       '>' + m[0] + ' ' + label + '<span class="n">' + n + '</span></button>';
