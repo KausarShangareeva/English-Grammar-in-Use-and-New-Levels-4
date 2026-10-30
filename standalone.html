@@ -4938,6 +4938,7 @@ function ebStatus(b){
   const dueTxt = b.due ? ' (' + (ebDaysTo(b.due) > 1 ? 'in ' + ebDaysTo(b.due) + ' days' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '';
   return '<dl class="ebgrid">' +
     row('Started', '<input type="date" value="' + gEsc(started) + '" max="' + today + '" data-ebstart="' + b.id + '">') +
+    row('I\u2019m on page', '<input type="number" min="0" max="' + b.p + '" value="' + (parseInt(f.next, 10) - 1 || 0) + '" data-ebcp="' + b.id + '" title="the last page you have read · the schedule starts from the next one"> of ' + b.p) +
     row('Finish', v('fin', ebShort(f.last))) +
     row(f.first === today ? 'Today, ' + ebShort(today) : 'Next, ' + ebShort(f.first),
       v('today', f.first === today ? 'be on page <em>' + end + '</em> of ' + b.p : 'pages ' + f.next)) +
