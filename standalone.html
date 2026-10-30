@@ -1462,7 +1462,42 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .gmoff{padding:40px 20px;text-align:center;color:var(--mut2);font-family:var(--ui)}
 .geocred{font-family:var(--ui);font-size:11px;color:var(--mut2);margin:10px 4px 0;line-height:1.5}
 .geoold{margin-top:10px;border:none;background:none;color:var(--mut2);font-family:var(--ui);font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
-.sutabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.road{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px}
+.rdh{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:12px}
+.rdh b{font-family:var(--disp);font-size:20px;color:var(--ink)}
+.rdh span{font-size:12px;color:var(--mut)}
+.rdscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px}
+.rdgrid{min-width:700px}
+.rdl{display:grid;grid-template-columns:190px 1fr;align-items:center;min-height:38px}
+.rdn{font-size:12.5px;font-weight:700;color:var(--ink);padding-right:10px;line-height:1.3}
+.rdtrack{position:relative;height:30px;border-left:1px solid var(--line)}
+.rdl:not(.rdhead):not(.rdfoot) .rdtrack{background:repeating-linear-gradient(90deg,transparent 0 calc(100%/32 - 1px),var(--line) calc(100%/32 - 1px) calc(100%/32));background-size:100% 100%}
+.rdhead .rdtrack{height:44px}
+.rdt{position:absolute;bottom:2px;transform:translateX(-50%);font-size:10px;color:var(--mut)}
+.rdt.y b{font-size:11.5px;color:var(--ink)}
+.rdb{position:absolute;top:4px;height:22px;border-radius:7px;color:#fff;font-size:10.5px;font-weight:700;overflow:hidden;white-space:nowrap;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);cursor:help}
+.rdb i{font-style:normal;padding:0 6px;line-height:22px;display:block;overflow:hidden;text-overflow:ellipsis}
+.rdb.lia{top:4px;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.22) 0 6px,transparent 6px 12px)!important;box-shadow:0 0 0 2px #F2C230}
+.rds{position:absolute;top:0;transform:translateX(-50%);font-size:17px;color:#E8B10E;text-shadow:0 1px 2px rgba(0,0,0,.25);cursor:help}
+.rds.big{font-size:22px;top:-3px}
+.rdnow{position:absolute;top:18px;bottom:-4px;border-left:2px solid #D9577A}
+.rdnow em{position:absolute;left:4px;top:-2px;font-size:10px;font-style:normal;font-weight:800;color:#D9577A}
+.rdfoot .rdtrack{height:4px;border:none}
+.rdinfo{margin-top:8px;font-size:13px;color:var(--mut);padding:8px 12px;border-radius:10px;background:var(--bg)}
+.rdinfo.on{color:var(--ink);font-weight:700}
+.rdh2{margin:18px 0 10px;font-family:var(--disp);font-size:18px;color:var(--ink)}
+.rdgold{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.rdg{border:1px solid var(--line);border-left:4px solid #E8B10E;border-radius:12px;padding:10px 12px;background:var(--bg)}
+.rdg.big{border-left-color:#F2C230;background:linear-gradient(135deg,rgba(242,194,48,.16),transparent 70%)}
+.rdg.yh{border-left-color:#2F7D57}.rdg.uni{border-left-color:#B5832A}.rdg.pr{border-left-color:#D9577A}
+.rdg.past{opacity:.55}
+.rdgd{font-size:11.5px;color:var(--mut);font-weight:700}
+.rdgd span{float:right;color:var(--ink)}
+.rdgt{font-size:15px;font-weight:800;color:var(--ink);margin:3px 0}
+.rdgx{font-size:12.5px;line-height:1.5;color:var(--mut)}
+.rdnote{margin-top:14px;font-size:12.5px;line-height:1.6;color:var(--mut);background:var(--bg);border-radius:12px;padding:10px 12px}
+@media (max-width:640px){.road{padding:14px}.rdl{grid-template-columns:120px 1fr}.rdn{font-size:11px}}
+.sutabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 .sutabs button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1.5px solid var(--line);
   background:var(--panel);color:var(--ink);border-radius:16px;padding:14px 16px;cursor:pointer;font-family:var(--ui)}
 .sutabs button .i{font-size:22px}
@@ -1470,7 +1505,7 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .sutabs button .s{font-size:11.5px;color:var(--mut2);font-weight:700}
 .sutabs button.on{border-color:var(--sea);background:var(--sea);color:#fff}
 .sutabs button.on .s{color:rgba(255,255,255,.85)}
-@media (max-width:640px){.sutabs{grid-template-columns:1fr}}
+@media (max-width:640px){.sutabs{grid-template-columns:1fr 1fr}}
 .suround{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#FBF1C7;color:#6B5410;border-radius:14px;
   padding:12px 15px;margin-bottom:12px;font-size:13px;line-height:1.55}
 .suround b{color:#4A3A08}
@@ -2569,6 +2604,7 @@ html[data-theme="dark"] .sukv{background:rgba(224,57,43,.12)}
         <div class="suclock" id="suClock"></div>
       </div>
       <div class="sutabs" id="suTabs">
+        <button data-su="road"><span class="i">🗺️</span><span class="t">Road map</span><span class="s" id="suSubR"></span></button>
         <button data-su="courses"><span class="i">🎓</span><span class="t">Mini courses</span><span class="s" id="suSubC"></span></button>
         <button data-su="lectures"><span class="i">🎤</span><span class="t">Open lectures</span><span class="s" id="suSubL"></span></button>
         <button data-su="careers"><span class="i">💼</span><span class="t">Careers</span><span class="s" id="suSubJ"></span></button>
@@ -5238,7 +5274,86 @@ const SU_TAGS = { cs:'\uD83D\uDCBB Computer science', history:'\uD83C\uDFDB\uFE0
   rhetoric:'\uD83C\uDFA4 Rhetoric', law:'\u2696\uFE0F Law', ir:'\uD83C\uDF10 Int. relations', economics:'\uD83D\uDCB0 Economics',
   management:'\uD83D\uDCCA Management', leadership:'\uD83D\uDC69\u200D\uD83D\uDCBC Leadership', other:'\u2728 Other' };
 const SU_ST = ['planned','applied','studying','done'];
-let suTab = 'courses', suTag = 'all';
+/* ---- 🗺️ the road map: Nov 2026 → summer 2029, with the golden moments starred ---- */
+const ROAD = {
+  from: '2026-11-01', to: '2029-07-01',
+  lanes: [
+    { k:'en', t:'🇬🇧 English', c:'#5B8DEF', bars:[
+      ['2026-11-16','2026-12-20','Engelska nivå 2 (= Engelska 6) · NTI · beviljad'] ] },
+    { k:'sv', t:'🇸🇪 Swedish · Komvux 100%', c:'#E0A030', bars:[
+      ['2027-01-04','2027-03-14','SVA delkurs 3 · Cuben · beviljad'],
+      ['2027-03-15','2027-05-23','SVA delkurs 4 · Cuben · beviljad'],
+      ['2027-05-24','2027-06-27','SVA nivå 1 · JENSEN · sökt'],
+      ['2027-06-28','2027-08-01','SVA nivå 2 · JENSEN · sökt · needed for YH'],
+      ['2027-08-02','2027-09-06','SVA nivå 3 · not applied yet · dates estimated'] ] },
+    { k:'ma', t:'📐 Math · self-study, 5 weeks a book', c:'#3FA796', bars:[
+      ['2027-01-04','2027-02-07','Book 1 · grundläggande delkurs 1+2'],
+      ['2027-02-08','2027-03-14','Book 2 · delkurs 3'],
+      ['2027-03-15','2027-04-18','Book 3 · delkurs 4'],
+      ['2027-04-19','2027-05-23','Matematik 1c'],
+      ['2027-05-24','2027-06-27','Matematik 2c · needed for YH'],
+      ['2027-06-28','2027-08-01','Matematik 3c'],
+      ['2027-08-02','2027-09-05','Matematik 4c · the KTH level'] ] },
+    { k:'kv', t:'🧲 Physics + social studies', c:'#8B6FD6', bars:[
+      ['2027-09-06','2027-12-19','Fysik 1 · Fysik 2 (KTH) · Samhällskunskap 1b (SU) — Komvux or self-study'] ] },
+    { k:'pr', t:'📝 Prövning (exams)', c:'#D9577A', bars:[
+      ['2027-06-01','2027-08-20','Ma 1c + Ma 2c'],
+      ['2027-10-01','2027-11-30','Ma 3c + Ma 4c'],
+      ['2028-02-01','2028-05-15','Fysik / Sh only if self-studied · last exam mid-May'] ] },
+    { k:'yh', t:'🛡️ YH Cyber Security Engineer', c:'#2F7D57', bars:[
+      ['2027-08-23','2029-06-15','YH · Medieinstitutet · distance, 100% · 2 years'],
+      ['2029-01-08','2029-06-08','LIA · 22 weeks · estimated', 'lia'] ] },
+    { k:'uni', t:'🎓 University', c:'#B5832A', bars:[
+      ['2028-08-28','2029-06-30','KTH BSc ICT (English) · or SU Computer Science'] ] }
+  ],
+  gold: [
+    ['2027-02-02','2027-03-29','🛡️ Apply to YH', 'Medieinstitutet, Cyber Security Engineer. Last time: 2 Feb – 29 Mar. Tell them SVA 2 comes 1 Aug and Matematik 2 after a summer prövning (or their free math test).', 'yh'],
+    ['2027-06-01','2027-08-20','📐 Prövning Matematik 2c', 'Needed for YH. Book early — summer sessions are rare.', 'pr'],
+    ['2027-08-23', null, '🚀 YH starts', 'About 23 August. The last two weeks overlap SVA nivå 3 and Ma 4c.', 'yh'],
+    ['2027-09-15', null, '❓ Ask YH: which weeks is the LIA?', 'The page does not say. Ask in the first weeks.', 'yh'],
+    ['2028-03-01','2028-10-31','🏦 Apply for LIA — banks & tech', 'Swedbank takes YH students for LIA (CV + short letter on why Swedbank, via their interest form). Microsoft, Google and Klarna usually choose 6–9 months ahead. Start early.', 'big'],
+    ['2028-03-15','2028-04-15','🎓 Apply to university', 'antagning.se: KTH BSc ICT first, SU Computer Science as the backup.', 'uni'],
+    ['2028-06-21', null, '📄 All grades uploaded', 'Last day to add grades (≈21 June). Last prövning by mid-May.', 'uni'],
+    ['2028-08-28', null, '🎓 University starts', 'If accepted: KTH or SU, autumn 2028.', 'uni'],
+    ['2029-01-08','2029-06-08','💼 LIA at a bank / tech company', '22 weeks, full-time. Estimated dates — confirm with the school.', 'big']
+  ]
+};
+function suRoad(){
+  const t0 = new Date(ROAD.from + 'T00:00:00').getTime(), t1 = new Date(ROAD.to + 'T00:00:00').getTime();
+  const pc = iso => Math.max(0, Math.min(100, (new Date(iso + 'T00:00:00').getTime() - t0) / (t1 - t0) * 100));
+  const fmt = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  /* month ticks, years labelled */
+  let ticks = '';
+  for (let d = new Date(ROAD.from + 'T00:00:00'); d.getTime() < t1; d.setMonth(d.getMonth() + 1)){
+    const iso = d.toISOString().slice(0, 10), jan = d.getMonth() === 0;
+    ticks += '<span class="rdt' + (jan ? ' y' : '') + '" style="left:' + pc(iso) + '%">' +
+      (jan ? '<b>' + d.getFullYear() + '</b>' : d.toLocaleDateString('en-GB', { month:'narrow' })) + '</span>';
+  }
+  const today = isoToday();
+  const lanes = ROAD.lanes.map(l => '<div class="rdl"><div class="rdn">' + l.t + '</div><div class="rdtrack">' +
+    l.bars.map(b => '<span class="rdb' + (b[3] ? ' ' + b[3] : '') + '" style="left:' + pc(b[0]) + '%;width:' + Math.max(0.8, pc(b[1]) - pc(b[0])) + '%;background:' + l.c + '" title="' +
+      gEsc(b[2] + ' · ' + fmt(b[0]) + ' – ' + fmt(b[1])) + '"><i>' + gEsc(b[2].split(' · ')[0]) + '</i></span>').join('') + '</div></div>').join('');
+  const stars = ROAD.gold.map(g => '<span class="rds ' + g[4] + '" style="left:' + pc(g[0]) + '%" title="' + gEsc(g[2] + ' · ' + fmt(g[0])) + '">★</span>').join('');
+  const gold = ROAD.gold.map(g => {
+    const d = suDays(g[0]), end = g[1] ? suDays(g[1]) : d;
+    const when = end < 0 ? 'done' : d <= 0 ? 'now' : d < 60 ? 'in ' + d + ' days' : 'in ' + Math.round(d / 30.44) + ' months';
+    return '<div class="rdg ' + g[4] + (end < 0 ? ' past' : '') + '"><div class="rdgd">' + fmt(g[0]) + (g[1] ? ' – ' + fmt(g[1]) : '') +
+      ' <span>' + when + '</span></div><div class="rdgt">' + gEsc(g[2]) + '</div><div class="rdgx">' + gEsc(g[3]) + '</div></div>';
+  }).join('');
+  return '<div class="road"><div class="rdh"><b>🗺️ My road · Nov 2026 → summer 2029</b><span>hover or tap a bar for the dates · ★ = golden moment</span></div>' +
+    '<div class="rdscroll"><div class="rdgrid">' +
+      '<div class="rdl rdhead"><div class="rdn"></div><div class="rdtrack">' + ticks + stars +
+        '<span class="rdnow" style="left:' + pc(today) + '%"><em>today</em></span></div></div>' +
+      lanes +
+      '<div class="rdl rdfoot"><div class="rdn"></div><div class="rdtrack"><span class="rdnowline" style="left:' + pc(today) + '%"></span></div></div>' +
+    '</div></div>' +
+    '<div class="rdinfo" id="rdInfo">👆 tap a bar or a ★ to see what it is and the exact dates</div>' +
+    '<div class="rdh2">⭐ Golden moments</div><div class="rdgold">' + gold + '</div>' +
+    '<div class="rdnote"><b>Watch out:</b> Jan–Sep 2027 is two full loads (Swedish 100% + a math book every 5 weeks). ' +
+      'One prövning = one course per session, so book several schools early — ask the SYV at Komvux in January 2027. ' +
+      'KTH picks by grade average (≈10% got in, 2024), so aim for high grades, not just a pass.</div></div>';
+}
+let suTab = 'road', suTag = 'all';
 function suState(){ return readJSON('su-state') || { c:{}, go:{}, st:{} }; }
 function suSave(s){ writeJSON('su-state', s); }
 function suDays(iso){ return Math.round((new Date(iso + 'T00:00:00') - new Date(isoToday() + 'T00:00:00')) / 86400000); }
@@ -5253,12 +5368,15 @@ function paintSU(){
   const up = (SU.lect.events || []).filter(e => suDays(e.date) >= 0);
   $('#suSubL').textContent = up.length ? up.length + ' coming up' : SU.find.lectures.length + ' universities';
   $('#suSubJ').textContent = SU.careers.length + ' paths';
+  { const n = ROAD.gold.find(g => suDays(g[1] || g[0]) >= 0); const e = document.getElementById('suSubR'); if (e) e.textContent = n ? 'next: ' + n[2].replace(/^\S+ /, '') : ''; }
   $('#suTabs').querySelectorAll('button').forEach(b => {
     b.classList.toggle('on', b.dataset.su === suTab);
     b.onclick = () => { suTab = b.dataset.su; writeJSON('su-tab', suTab); paintSU(); };
   });
   const box = $('#suBody');
-  if (suTab === 'courses') box.innerHTML = suCourses(st);
+  if (suTab === 'road'){ box.innerHTML = suRoad();
+    box.querySelectorAll('.rdb,.rds').forEach(b => b.onclick = () => { const i = document.getElementById('rdInfo'); if (i){ i.textContent = b.title; i.classList.add('on'); } }); }
+  else if (suTab === 'courses') box.innerHTML = suCourses(st);
   else if (suTab === 'lectures') box.innerHTML = suLectures(st);
   else box.innerHTML = suCareers(st);
   box.querySelectorAll('[data-sust]').forEach(b => b.onclick = () => {
