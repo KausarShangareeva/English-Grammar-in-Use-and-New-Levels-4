@@ -3881,7 +3881,17 @@ function finishOf(name){
     if ((OVERRIDE[q[i].id] || q[i].text) === lastText)
       return { iso: q[i].id.slice(0,10), text: lastText, ran_out: i < q.length - 1 };
   }
-  return { iso: q[q.length-1].id.slice(0,10), text: lastText, ran_out: false };
+  /* not reached inside the plan: every ✕ pushed the work on, so count the items still waiting
+     and carry on past the last planned day, Monday to Saturday */
+  const texts = q.map(x => x.text);
+  const shown = texts.indexOf(OVERRIDE[q[q.length-1].id] || q[q.length-1].text);
+  const leftItems = shown >= 0 ? q.length - 1 - shown : 0;
+  return { iso: addStudyDays(q[q.length-1].id.slice(0,10), leftItems), text: lastText, ran_out: false, late: leftItems > 0 };
+}
+function addStudyDays(iso, n){
+  const d = new Date(iso + 'T00:00:00');
+  while (n > 0){ d.setDate(d.getDate() + 1); if (d.getDay() !== 0) n--; }
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 /* the ring in each card counts the real work: units, tests, lessons, pages, words.
    Green = done (what was done before the new plan + every ✓), red = what sat on a ✕ day. */
@@ -4054,6 +4064,10 @@ function paintFinish(){
     const re = new RegExp(level + ' \\d');   /* a level followed by a test number */
     let hit = null;
     q.forEach(x => { if (re.test(OVERRIDE[x.id] || x.text)) hit = x.id.slice(0,10); });
+    /* the last planned test is not the last test: one a day after the plan ends */
+    const lastTx = OVERRIDE[q[q.length - 1].id] || '';
+    const m = lastTx.match(new RegExp(level + ' (\\d+)(?:\u2013(\\d+))?/(\\d+)'));
+    if (m && hit === q[q.length - 1].id.slice(0, 10)){ const at = +(m[2] || m[1]), tot = +m[3]; if (at < tot) hit = addStudyDays(hit, tot - at); }
     return hit;
   };
   const l1 = lastNumbered('LISTENING', 'B1');
