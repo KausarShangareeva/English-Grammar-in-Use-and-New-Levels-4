@@ -4848,6 +4848,16 @@ setTimeout(() => { try {
   localStorage.setItem('seed_missed_20261026', '1');
   try { recomputeQueues(); bRepaint(); } catch(e){}
 } catch(e){} }, 0);
+/* One-off: 27–29 October marked ✕ (asked for on 30 October; today left open). Ticks already set are kept. */
+setTimeout(() => { try {
+  if (localStorage.getItem('seed_missed_20261029')) return;
+  const st = readJSON('task-status-8weeks') || {};
+  ['2026-10-27','2026-10-28','2026-10-29'].forEach(d =>
+    allRowsForDay(d).forEach(r => { if (st[r.i] === undefined) st[r.i] = 2; }));
+  writeJSON('task-status-8weeks', st);
+  localStorage.setItem('seed_missed_20261029', '1');
+  try { recomputeQueues(); bRepaint(); } catch(e){}
+} catch(e){} }, 0);
 setTimeout(() => { try { recomputeQueues(); } catch(e){} }, 0);
 /* one short status for a book being read: where you should be, today's pages, and one line
    that says whether it will be finished before it goes back */
