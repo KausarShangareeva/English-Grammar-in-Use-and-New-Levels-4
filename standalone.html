@@ -3914,6 +3914,8 @@ function ringFor(it){
   if (/Listening/.test(L))      return mk(51, 21, q('LISTENING'), id => range(tx(id), /B1 (\d+)(?:–(\d+))?\/51/));
   if (/Oshima/.test(L))         return mk(14, 0, q('OSHIMA'), id => { const m = tx(id).match(/day (\d+) of (\d+)/); return m && m[1] === m[2] ? 1 : 0; });
   if (/50 new words/.test(L))   return mk(1000, 0, rows('sv-words'), () => 50);
+  if (/^Tafsir/.test(L))        return mk(1127, 547, q('QURAN-TAFSIR'), id => range(tx(id), /pages (\d+)\u2013(\d+)/));
+  if (/16 surahs/.test(L)){ const ids = inWin(rows('quran-review')); return ids.length ? mk(ids.length, 0, ids, () => 1) : null; }
   if (/^Reading|^Close study/.test(L)){
     const ids = /^Reading/.test(L) ? q('BOOK') : rows('bookstudy');
     const title = (L.match(/«(.+)»/) || [])[1];
@@ -4078,6 +4080,18 @@ function paintFinish(){
   if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u.iso, '154 lessons, two or three a day · certificate');
   const o = finishOf('OSHIMA');
   if (o) add('Longman Academic (Oshima)', '\uD83D\uDCD9', o.iso, 'Book 4 · 14 chapters, about 4 days each');
+  /* Quran: the review of the memorised surahs, and the tafsir, five pages a day (every day, Sundays too) */
+  { const rv = Object.keys(PLAN).sort().filter(iso => PLAN[iso].rows.some(r => r.i === iso + '--quran-review'));
+    if (rv.length) items.push({ label:'Quran \u00b7 review of the 16 surahs', emoji:'\uD83D\uDD4B', iso: rv[rv.length - 1], s: rv[0],
+      big: (() => { const mo = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']; const f = x => +x.slice(8, 10) + ' ' + mo[+x.slice(5, 7) - 1]; return f(rv[0]) + ' \u2013 ' + f(rv[rv.length - 1]) + ' ' + rv[0].slice(0, 4); })(),
+      kurs:1, note:'review days' }); }
+  { const tq = STREAMS_Q['QURAN-TAFSIR'] || [];
+    if (tq.length){
+      const lastId = tq[tq.length - 1].id, m = (OVERRIDE[lastId] || tq[tq.length - 1].text).match(/pages (\d+)\u2013(\d+) of (\d+)/);
+      let iso = lastId.slice(0, 10);
+      if (m && +m[2] < +m[3]){ const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + Math.ceil((+m[3] - +m[2]) / 5)); iso = d.toISOString().slice(0, 10); }
+      add('Tafsir \u00b7 5 pages a day', '\uD83D\uDD4B', iso, 'from page 548 of 1127');
+    } }
   /* Swedish: fifty new words a day on the Swedish platform */
   try { const sch = svSchedule(); if (sch.length){ const last = sch[sch.length - 1];
     add('Svenska · 50 new words a day', '\uD83C\uDDF8\uD83C\uDDEA', last.iso, 'goal: 1000 words · ' + sch.reduce((a, d) => a + d.words.length, 0) + ' in the plan'); } } catch(e){}
