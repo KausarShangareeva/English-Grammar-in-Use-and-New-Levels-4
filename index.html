@@ -3855,13 +3855,15 @@ const taskText = r => OVERRIDE[r.i] || r.t;
 const COURSE_DATES = [
   { k:'Engelska 5 · national exam', e:'\uD83C\uDFF4', s:'2026-11-03', d:'2026-11-04', n:'NTI-skolan · 3 and 4 November' },
   { k:'Engelska nivå 1 (= Engelska 5)', e:'\uD83C\uDFF4', s:'2026-10-12', d:'2026-11-15', n:'Kursdatum' },
-  { k:'Engelska nivå 2 (= Engelska 6)', e:'\uD83C\uDFF4', s:'2026-11-16', d:'2026-12-20', n:'Kursdatum · exam date not set yet' }
+  { k:'Engelska nivå 2 (= Engelska 6)', e:'\uD83C\uDFF4', s:'2026-11-16', d:'2026-12-20', n:'Kursdatum · exam date not set yet' },
+  { k:'Svenska B1 · 63090 · Medborgarskolan', e:'\uD83C\uDFEB', s:'2026-11-09', d:'2026-12-02', n:'Mon + Wed, 8 lessons' },
+  { k:'Grammatik på mellannivå · 65459', e:'\uD83C\uDFEB', s:'2026-11-12', d:'2026-12-17', n:'Thursdays, 6 lessons' }
 ];
 const fmtDate = iso => {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 };
-const daysTo = iso => Math.round((new Date(iso+'T00:00:00') - new Date()) / 86400000);
+const daysTo = iso => Math.round((new Date(iso+'T00:00:00') - new Date(isoToday()+'T00:00:00')) / 86400000);
 function finishOf(name){
   const q = STREAMS_Q[name];
   if (!q || !q.length) return null;
@@ -4019,6 +4021,20 @@ function paintFinish(){
   if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u.iso, '154 lessons, two or three a day · certificate');
   const o = finishOf('OSHIMA');
   if (o) add('Longman Academic (Oshima)', '\uD83D\uDCD9', o.iso, 'Book 4 · 14 chapters, about 4 days each');
+  /* Swedish: fifty new words a day on the Swedish platform */
+  try { const sch = svSchedule(); if (sch.length){ const last = sch[sch.length - 1];
+    add('Svenska · 50 new words a day', '\uD83C\uDDF8\uD83C\uDDEA', last.iso, sch.reduce((a, d) => a + d.words.length, 0) + ' words, Mon–Sat'); } } catch(e){}
+  /* the two books: the last day of the book, and a warning when that is after it has to go back */
+  const bookEnd = (ids, emoji, role) => {
+    let hit = null;
+    ids.forEach(id => { if (hit) return;
+      const t = OVERRIDE[id] || ''; const m = t.match(/\u00ab(.+?)\u00bb, pages \d+\u2013(\d+) of (\d+)(?:.*return by (.+))?/);
+      if (m && +m[2] >= +m[3]) hit = { iso: id.slice(0, 10), title: m[1], due: m[4] || '' };
+    });
+    if (hit) add(role + ' \u00b7 \u00ab' + hit.title + '\u00bb', emoji, hit.iso, hit.due ? 'return by ' + hit.due + (new Date(hit.iso) > new Date(hit.due) ? ' \u26A0\uFE0F finishes after that' : '') : 'last page');
+  };
+  bookEnd((STREAMS_Q['BOOK'] || []).map(x => x.id), '\uD83D\uDCD6', 'Reading');
+  bookEnd(Object.keys(PLAN).sort().map(iso => iso + '--bookstudy'), '\uD83D\uDD0E', 'Close study');
 
   /* the Quran runs past the plan, so say where it gets to instead */
   const qq = STREAMS_Q['QURAN-REVIEW'];
@@ -4039,7 +4055,7 @@ function paintFinish(){
     if (c.d && c.s){
       const mo = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
       const f = iso => +iso.slice(8, 10) + ' ' + mo[+iso.slice(5, 7) - 1];
-      items.push({ label:c.k, emoji:c.e, iso:c.d, big: f(c.s) + ' \u2013 ' + f(c.d) + ' ' + c.d.slice(0, 4), kurs:1 });
+      items.push({ label:c.k, emoji:c.e, iso:c.d, big: f(c.s) + ' \u2013 ' + f(c.d) + ' ' + c.d.slice(0, 4), kurs:1, note:c.n });
     }
     else if (c.d) add(c.k, c.e, c.d, c.n);
     else items.push({ label:c.k, emoji:c.e, iso:null, note:c.n, cls:'open2', big:'\u2014' });
@@ -4068,7 +4084,7 @@ function paintFinish(){
       const cls = i.cls || (d !== null && d < 30 ? 'soon2' : '');
       return '<div class="fitem ' + cls + '"><div class="fl">' + i.emoji + ' ' + gEsc(i.label) + '</div>' +
         '<div class="fd">' + (i.big || fmtDate(i.iso)) + '</div>' +
-        '<div class="fn">' + (i.kurs ? 'Kursdatum \u00b7 ' + (d < 0 ? 'finished' : d + ' days left')
+        '<div class="fn">' + (i.kurs ? (i.note || 'Kursdatum') + ' \u00b7 ' + (d < 0 ? 'finished' : d === 0 ? 'today' : d + ' days left')
                              : i.iso ? (d + ' days \u00b7 ' + i.note) : i.note) + '</div></div>';
     }).join('') + '</div>';   /* the old Swedish week calendar is off: a clean start on 30 Oct */
   wireSvCal();
