@@ -446,6 +446,15 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
   display:flex;align-items:center;gap:6px}
 .fitem .fd{font-family:var(--disp);font-size:19px;font-weight:600;margin-top:3px;color:var(--sea)}
 .fitem .fn{font-size:11px;color:var(--mut2);margin-top:2px;line-height:1.45}
+.fitem{display:grid;grid-template-columns:54px 1fr;gap:11px;align-items:center}
+.fring{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(#4FA060 0 var(--g),#D9577A var(--g) var(--r),var(--line) var(--r) 100%)}
+.fring span{width:42px;height:42px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--ink);line-height:1}
+.fring span small{font-size:9px;font-weight:700;color:var(--mut2)}
+.fring.none{background:var(--line)}
+.fring.none span{font-size:18px}
+.fitem .ftx{min-width:0}
+.fwarn{font-size:11px;color:#C0504D;margin-top:3px;line-height:1.4}
 .fitem.soon2 .fd{color:var(--rose)}
 .fitem.open2 .fd{color:var(--mut)}
 .flegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:11px;font-size:11px;
@@ -3874,6 +3883,23 @@ function finishOf(name){
   }
   return { iso: q[q.length-1].id.slice(0,10), text: lastText, ran_out: false };
 }
+/* the ring in each card: ✓ fills it green, ✕ red, out of every day that belongs to it */
+function ringFor(it){
+  const L = it.label || '', st = readJSON('task-status-8weeks') || {};
+  const q = n => (STREAMS_Q[n] || []).map(x => x.id);
+  const rows = suf => Object.keys(PLAN).sort().reduce((a, iso) => a.concat(PLAN[iso].rows.filter(r => r.i === iso + '--' + suf).map(r => r.i)), []);
+  let ids = /Grammar in Use/.test(L) ? q('GRAMMAR') : /Udemy/.test(L) ? q('UDEMY') : /Oshima/.test(L) ? q('OSHIMA')
+          : /Listening/.test(L) ? q('LISTENING') : /^Reading/.test(L) ? q('BOOK') : /^Close study/.test(L) ? rows('bookstudy')
+          : /63090/.test(L) ? rows('sv-lesson-b1') : /65459/.test(L) ? rows('sv-lesson-gram') : /50 new words/.test(L) ? rows('sv-words')
+          : /^Engelska/.test(L) ? rows('nti') : null;
+  if (!ids) return null;
+  const from = it.s || '0000', to = it.iso || '9999';
+  ids = ids.filter(id => id.slice(0, 10) >= from && id.slice(0, 10) <= to);
+  if (!ids.length) return null;
+  const done = ids.filter(id => Number(st[id]) === 1).length, miss = ids.filter(id => Number(st[id]) === 2).length;
+  return { total: ids.length, done, miss, left: ids.length - done - miss,
+           pg: Math.round(done / ids.length * 100), pr: Math.round((done + miss) / ids.length * 100) };
+}
 function bookFinishes(){
   const q = STREAMS_Q['BOOK']; if (!q) return [];
   const out = [];
@@ -4055,7 +4081,7 @@ function paintFinish(){
     if (c.d && c.s){
       const mo = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
       const f = iso => +iso.slice(8, 10) + ' ' + mo[+iso.slice(5, 7) - 1];
-      items.push({ label:c.k, emoji:c.e, iso:c.d, big: f(c.s) + ' \u2013 ' + f(c.d) + ' ' + c.d.slice(0, 4), kurs:1, note:c.n });
+      items.push({ label:c.k, emoji:c.e, iso:c.d, big: f(c.s) + ' \u2013 ' + f(c.d) + ' ' + c.d.slice(0, 4), kurs:1, note:c.n, s:c.s });
     }
     else if (c.d) add(c.k, c.e, c.d, c.n);
     else items.push({ label:c.k, emoji:c.e, iso:null, note:c.n, cls:'open2', big:'\u2014' });
@@ -4082,10 +4108,14 @@ function paintFinish(){
     '<div class="fgrid">' + items.map(i => {
       const d = i.iso ? daysTo(i.iso) : null;
       const cls = i.cls || (d !== null && d < 30 ? 'soon2' : '');
-      return '<div class="fitem ' + cls + '"><div class="fl">' + i.emoji + ' ' + gEsc(i.label) + '</div>' +
-        '<div class="fd">' + (i.big || fmtDate(i.iso)) + '</div>' +
-        '<div class="fn">' + (i.kurs ? (i.note || 'Kursdatum') + ' \u00b7 ' + (d < 0 ? 'finished' : d === 0 ? 'today' : d + ' days left')
-                             : i.iso ? (d + ' days \u00b7 ' + i.note) : i.note) + '</div></div>';
+      const r = ringFor(i);
+      const left = d === null ? '' : d < 0 ? 'finished' : d === 0 ? 'today' : d === 1 ? 'tomorrow' : 'in ' + d + ' days';
+      const warn = /\u26A0/.test(i.note || '') ? '<div class="fwarn">\u26A0\uFE0F ' + gEsc(String(i.note).replace(/\s*\u26A0\uFE0F?\s*/, ' \u2014 ')) + '</div>' : '';
+      return '<div class="fitem ' + cls + '" title="' + gEsc((i.note || '') + (r ? ' \u00b7 ' + r.done + ' done, ' + r.miss + ' missed, ' + r.left + ' to go' : '')) + '">' +
+        (r ? '<div class="fring" style="--g:' + r.pg + '%;--r:' + r.pr + '%"><span>' + r.done + '<small>/' + r.total + '</small></span></div>' : '<div class="fring none"><span>' + i.emoji + '</span></div>') +
+        '<div class="ftx"><div class="fl">' + i.emoji + ' ' + gEsc(i.label) + '</div>' +
+        '<div class="fd">' + (i.big || (i.iso ? fmtDate(i.iso) : '\u2014')) + '</div>' +
+        '<div class="fn">' + left + '</div>' + warn + '</div></div>';
     }).join('') + '</div>';   /* the old Swedish week calendar is off: a clean start on 30 Oct */
   wireSvCal();
 }
