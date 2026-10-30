@@ -3883,22 +3883,39 @@ function finishOf(name){
   }
   return { iso: q[q.length-1].id.slice(0,10), text: lastText, ran_out: false };
 }
-/* the ring in each card: ✓ fills it green, ✕ red, out of every day that belongs to it */
+/* the ring in each card counts the real work: units, tests, lessons, pages, words.
+   Green = done (what was done before the new plan + every ✓), red = what sat on a ✕ day. */
 function ringFor(it){
   const L = it.label || '', st = readJSON('task-status-8weeks') || {};
+  const tx = id => OVERRIDE[id] || '';
   const q = n => (STREAMS_Q[n] || []).map(x => x.id);
   const rows = suf => Object.keys(PLAN).sort().reduce((a, iso) => a.concat(PLAN[iso].rows.filter(r => r.i === iso + '--' + suf).map(r => r.i)), []);
-  let ids = /Grammar in Use/.test(L) ? q('GRAMMAR') : /Udemy/.test(L) ? q('UDEMY') : /Oshima/.test(L) ? q('OSHIMA')
-          : /Listening/.test(L) ? q('LISTENING') : /^Reading/.test(L) ? q('BOOK') : /^Close study/.test(L) ? rows('bookstudy')
-          : /63090/.test(L) ? rows('sv-lesson-b1') : /65459/.test(L) ? rows('sv-lesson-gram') : /50 new words/.test(L) ? rows('sv-words')
-          : /^Engelska/.test(L) ? rows('nti') : null;
-  if (!ids) return null;
   const from = it.s || '0000', to = it.iso || '9999';
-  ids = ids.filter(id => id.slice(0, 10) >= from && id.slice(0, 10) <= to);
-  if (!ids.length) return null;
-  const done = ids.filter(id => Number(st[id]) === 1).length, miss = ids.filter(id => Number(st[id]) === 2).length;
-  return { total: ids.length, done, miss, left: ids.length - done - miss,
-           pg: Math.round(done / ids.length * 100), pr: Math.round((done + miss) / ids.length * 100) };
+  const inWin = ids => ids.filter(id => id.slice(0, 10) >= from && id.slice(0, 10) <= to);
+  const range = (t, re) => { const m = t.match(re); if (!m) return 0; const a = +m[1], b = m[2] ? +m[2] : a; return b - a + 1; };
+  const mk = (total, before, ids, count) => {
+    let done = before, miss = 0;
+    ids.forEach(id => { const v = Number(st[id]); if (v === 1) done += count(id); else if (v === 2) miss += count(id); });
+    done = Math.min(total, done); miss = Math.min(total - done, miss);
+    return { total, done, miss, left: total - done - miss, pg: Math.round(done / total * 100), pr: Math.round((done + miss) / total * 100) };
+  };
+  if (/Grammar in Use/.test(L)) return mk(145, 29, q('GRAMMAR'), id => (tx(id).match(/Unit \d+/g) || []).length);
+  if (/Udemy/.test(L))          return mk(154, 18, q('UDEMY'), id => range(tx(id), /lessons? (\d+)(?:–(\d+))?\/154/));
+  if (/Listening/.test(L))      return mk(51, 21, q('LISTENING'), id => range(tx(id), /B1 (\d+)(?:–(\d+))?\/51/));
+  if (/Oshima/.test(L))         return mk(14, 0, q('OSHIMA'), id => { const m = tx(id).match(/day (\d+) of (\d+)/); return m && m[1] === m[2] ? 1 : 0; });
+  if (/50 new words/.test(L))   return mk(1000, 0, rows('sv-words'), () => 50);
+  if (/^Reading|^Close study/.test(L)){
+    const ids = /^Reading/.test(L) ? q('BOOK') : rows('bookstudy');
+    const title = (L.match(/«(.+)»/) || [])[1];
+    const b = (typeof EB !== 'undefined' ? EB : []).find(x => x.t === title); if (!b) return null;
+    const mine = ids.filter(id => tx(id).indexOf('«' + title + '»') >= 0);
+    const first = mine.length ? (+((tx(mine[0]).match(/pages (\d+)/) || [])[1]) || 1) : 1;
+    return mk(b.p, first - 1, mine, id => range(tx(id), /pages (\d+)–(\d+)/));
+  }
+  const suf = /63090/.test(L) ? 'sv-lesson-b1' : /65459/.test(L) ? 'sv-lesson-gram' : /^Engelska/.test(L) ? 'nti' : null;
+  if (!suf) return null;
+  const ids = inWin(rows(suf)); if (!ids.length) return null;
+  return mk(ids.length, 0, ids, () => 1);
 }
 function bookFinishes(){
   const q = STREAMS_Q['BOOK']; if (!q) return [];
@@ -4049,7 +4066,7 @@ function paintFinish(){
   if (o) add('Longman Academic (Oshima)', '\uD83D\uDCD9', o.iso, 'Book 4 · 14 chapters, about 4 days each');
   /* Swedish: fifty new words a day on the Swedish platform */
   try { const sch = svSchedule(); if (sch.length){ const last = sch[sch.length - 1];
-    add('Svenska · 50 new words a day', '\uD83C\uDDF8\uD83C\uDDEA', last.iso, sch.reduce((a, d) => a + d.words.length, 0) + ' words, Mon–Sat'); } } catch(e){}
+    add('Svenska · 50 new words a day', '\uD83C\uDDF8\uD83C\uDDEA', last.iso, 'goal: 1000 words · ' + sch.reduce((a, d) => a + d.words.length, 0) + ' in the plan'); } } catch(e){}
   /* the two books: the last day of the book, and a warning when that is after it has to go back */
   const bookEnd = (ids, emoji, role) => {
     let hit = null;
