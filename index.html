@@ -3839,7 +3839,7 @@ function recomputeQueues(){
 }
 /* Listening restarts from a chosen test on a chosen day: from then on two tests a day,
    a day marked with a cross does not move it on, like every other stream */
-const LISTEN_RESET = { date:'2026-10-30', step:1, sets:[ { set:'B1', from:22, total:51 } ] };
+const LISTEN_RESET = { date:'2026-10-30', step:2, sets:[ { set:'B1', from:22, total:51 } ] };
 function listenReset(st){
   const q = STREAMS_Q['LISTENING']; if (!q) return;
   let k = 0, n = LISTEN_RESET.sets[0].from;
@@ -4074,7 +4074,7 @@ function paintFinish(){
     return hit;
   };
   const l1 = lastNumbered('LISTENING', 'B1');
-  if (l1) add('Listening B1', '\uD83C\uDFA7', l1, '51 tests, one a day');
+  if (l1) add('Listening B1', '\uD83C\uDFA7', l1, '51 tests, two a day');
   const l2 = lastNumbered('LISTENING', 'B2');
   if (l2) add('Listening B2', '\uD83C\uDFA7', l2, '36 tests, two a day \u00b7 then a new set is needed');
   const u = finishOf('UDEMY');
