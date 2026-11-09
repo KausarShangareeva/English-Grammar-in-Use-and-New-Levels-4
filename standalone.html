@@ -1403,6 +1403,14 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .ebst button.on.plan{background:var(--ink);border-color:var(--ink);color:var(--panel)}
 @media (max-width:640px){.ebring{width:140px;height:140px;flex-basis:140px}.ebook .n{display:none}}
 /* ---- Stockholm University ---- */
+.mahero{background:linear-gradient(135deg,#2F6B5E,#3FA796)}
+.mah{font-family:var(--disp);font-size:20px;margin:22px 0 10px;color:var(--ink)}
+.maempty{border:2px dashed var(--line);border-radius:16px;padding:22px;text-align:center;color:var(--mut);font-size:14px}
+.maph{border:1px solid var(--line);border-left:5px solid var(--c);border-radius:14px;padding:14px 16px;margin-bottom:12px;background:var(--panel)}
+.maphh{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+.maphh b{font-size:16px;color:var(--ink)}.maphh span{font-size:12.5px;color:var(--mut);font-weight:700}
+.maphn{font-size:13px;color:var(--mut);margin:4px 0 6px}
+.maph ol{margin:0;padding-left:20px;font-size:14px;line-height:1.7;color:var(--ink)}
 .suhero{display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#1F4E79,#276B7A);
   color:#fff;border-radius:22px;padding:22px 24px;margin-bottom:14px}
 .suhero-t{flex:1;min-width:240px}
@@ -2605,6 +2613,18 @@ html[data-theme="dark"] .sukv{background:rgba(224,57,43,.12)}
       <div id="ebList"></div>
     </section>
 
+    <section id="mathView" class="view">
+      <div class="suhero mahero">
+        <div class="suhero-t"><span class="sukick">📐 Mathematics · in English</span>
+          <h2>From fractions to Matematik 4c</h2>
+          <p>Algebra, geometry and trigonometry — the KTH requirement. Step one: the foundations, before January.</p></div>
+      </div>
+      <h3 class="mah">📚 Courses</h3>
+      <div class="maempty">No courses yet — they will appear here once you choose the site you study on.</div>
+      <h3 class="mah">🧭 The path</h3>
+      <div id="mathPath"></div>
+    </section>
+
     <section id="suView" class="view">
       <div class="suhero">
         <div class="suhero-t"><span class="sukick">🏛️ Stockholm University</span>
@@ -3145,6 +3165,7 @@ const NAV = [
   { id:'deadlines', icon:'\u23f0', label:'Deadlines' },
   { id:'sites', icon:'\uD83D\uDCBB', label:'Sites' },
   { id:'su', icon:'\uD83C\uDFDB\uFE0F', label:'Stockholm University' },
+  { id:'math', icon:'\uD83D\uDCD0', label:'Mathematics' },
   { id:'enbooks', icon:'\uD83D\uDCDA', label:'English books' },
   { id:'poems', icon:'\uD83C\uDFB5', label:'Songs & poems' },
   { id:'people', icon:'\u2728',          label:'People'   },
@@ -5468,6 +5489,31 @@ function suRoad(){
     '<div class="rdnote"><b>Watch out:</b> Jan–Sep 2027 is two full loads (Swedish 100% + a math book every 5 weeks). ' +
       'One prövning = one course per session, so book several schools early — ask the SYV at Komvux in January 2027. ' +
       'KTH picks by grade average (≈10% got in, 2024), so aim for high grades, not just a pass.</div></div>';
+}
+
+/* ---- 📐 Mathematics: the courses (empty for now) and the path from fractions to Ma 4c ---- */
+const MATH_PATH = [
+  { k:'Phase 0 · Foundations', when:'9 Nov – 31 Dec 2026', c:'#3FA796', note:'Arithmetic and pre-algebra, in English. About 1 hour a day, Mon–Sat.',
+    steps:[
+      ['Week 1 · 9–14 Nov', 'Multiplication table 1–10 by heart · place value · long multiplication'],
+      ['Week 2 · 16–21 Nov', 'Division · factors and multiples · prime numbers'],
+      ['Week 3 · 23–28 Nov', 'Fractions (refresh) · decimals · percentages'],
+      ['Week 4 · 30 Nov – 5 Dec', 'Negative numbers · order of operations · powers and square roots'],
+      ['Week 5 · 7–12 Dec', 'Ratios and proportions · units and measurement'],
+      ['Week 6 · 14–19 Dec', 'Algebra starts: variables · expressions · simplifying'],
+      ['Week 7 · 21–31 Dec', 'Linear equations · word problems · geometry basics: angles, area, perimeter'] ] },
+  { k:'Phase 1 · Grundläggande delkurs 1–4', when:'4 Jan – 18 Apr 2027', c:'#5B8DEF', note:'Cordanova books (Swedish) — 5 weeks a book.',
+    steps:[ ['Book 1', 'Delkurs 1 + 2'], ['Book 2', 'Delkurs 3'], ['Book 3', 'Delkurs 4'] ] },
+  { k:'Phase 2 · Matematik 1c → 4c', when:'19 Apr – 5 Sep 2027', c:'#8B6FD6', note:'5 weeks a course. Then prövning for each.',
+    steps:[ ['Ma 1c', 'algebra · linear functions · geometry · probability'],
+            ['Ma 2c', 'quadratic equations · linear systems · logarithms · statistics'],
+            ['Ma 3c', 'polynomials · derivatives (calculus starts) · trigonometry, the unit circle'],
+            ['Ma 4c', 'trigonometric functions · complex numbers · integrals · the KTH level'] ] }
+];
+function paintMath(){
+  const box = document.getElementById('mathPath'); if (!box) return;
+  box.innerHTML = MATH_PATH.map(p => '<div class="maph" style="--c:' + p.c + '"><div class="maphh"><b>' + p.k + '</b><span>' + p.when + '</span></div>' +
+    '<div class="maphn">' + p.note + '</div><ol>' + p.steps.map(s => '<li><b>' + s[0] + '</b> — ' + s[1] + '</li>').join('') + '</ol></div>').join('');
 }
 let suTab = 'road', suTag = 'all';
 function suState(){ return readJSON('su-state') || { c:{}, go:{}, st:{} }; }
@@ -10175,7 +10221,7 @@ const PLAN_VIEW = { id:'plan', app:'tracker', title:'Schedule',
   desc:'Every day from now to June 2027 \u2014 tick things off as you go.', go:null };
 function toTop(){ try { window.scrollTo(0,0); } catch(e){} }
 /* one place that knows every screen, so none can be left open by accident */
-const SCREENS = ['#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
+const SCREENS = ['#mathView','#view','#awards','#essaysView','#reader','#gramList','#gramTopic',
   '#readList','#storyView','#wordsView','#quizView','#cardsView','#planView','#peopleView','#textbooks','#typeQuiz','#poemsView','#poemRead','#deadView','#sitesView','#geoView','#suView','#ebView','#adaptView','#adjView','#adjQuiz'];
 function hideAll(except){
   try { clearGuideMarks(); refreshGuide(); paintFollow(); } catch(e){}
@@ -10253,7 +10299,7 @@ function geoMap(sel){
   }
 }
 function go(id){
-  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people','textbooks','poems','deadlines','sites','su','enbooks','adjectives'].indexOf(id) >= 0)
+  if (['dash','units','books','grammar','speaking','reading','essay','plan','awards','people','textbooks','poems','deadlines','sites','su','math','enbooks','adjectives'].indexOf(id) >= 0)
     saveWhere({ v: id, u: (id === 'units' || id === 'books') ? wUnit : undefined,
                 wk: (id === 'plan') ? wkIx : undefined });
   toTop();
@@ -10404,6 +10450,18 @@ function go(id){
     document.querySelectorAll('#nav button, #mobbar button')
       .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'enbooks'));
     paintEB();
+    try { localStorage.setItem('studyhub_last', id); } catch(e){}
+    return;
+  }
+  if (id === 'math'){
+    $('#dash').classList.add('off');
+    $('#view').classList.remove('on');
+    hideAll('#mathView');
+    $('#mathView').classList.add('on');
+    $('#tagline').textContent = 'Mathematics \u2014 from fractions to Matematik 4c, in English.';
+    document.querySelectorAll('#nav button, #mobbar button')
+      .forEach(b => b.setAttribute('aria-current', b.dataset.id === 'math'));
+    paintMath();
     try { localStorage.setItem('studyhub_last', id); } catch(e){}
     return;
   }
