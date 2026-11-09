@@ -1403,6 +1403,7 @@ html[data-theme="dark"] .bank i{background:rgba(0,0,0,.25)}
 .ebst button.on.plan{background:var(--ink);border-color:var(--ink);color:var(--panel)}
 @media (max-width:640px){.ebring{width:140px;height:140px;flex-basis:140px}.ebook .n{display:none}}
 /* ---- Stockholm University ---- */
+.mflag{display:inline-grid;place-items:center;width:28px;font-size:18px;font-style:normal}
 .mahero{background:linear-gradient(135deg,#2F6B5E,#3FA796)}
 .mah{font-family:var(--disp);font-size:20px;margin:22px 0 10px;color:var(--ink)}
 .maempty{border:2px dashed var(--line);border-radius:16px;padding:22px;text-align:center;color:var(--mut);font-size:14px}
@@ -4466,8 +4467,10 @@ function paintLangMenu(){
   box.innerHTML = list.map(x =>
     '<button data-l="' + x[0] + '"' + (x[0] === LANG ? ' aria-current="true"' : '') + '>' +
     flagImg(x[0]) + x[1] +
-    (x[0] === LANG ? '<span class="lcheck">\u2713</span>' : '') + '</button>').join('');
+    (x[0] === LANG ? '<span class="lcheck">\u2713</span>' : '') + '</button>').join('') +
+    '<button data-math="1"><span class="fimg mflag">\uD83D\uDCD0</span>Study Maths</button>';
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    if (b.dataset.math){ box.classList.remove('on'); go('math'); return; }
     box.classList.remove('on');
     if (b.dataset.l !== LANG) applyLang(b.dataset.l);
   });
