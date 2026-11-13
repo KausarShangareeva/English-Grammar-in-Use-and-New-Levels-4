@@ -447,6 +447,15 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 .fitem .fd{font-family:var(--disp);font-size:19px;font-weight:600;margin-top:3px;color:var(--sea)}
 .fitem .fn{font-size:11px;color:var(--mut2);margin-top:2px;line-height:1.45}
 .fitem{display:grid;grid-template-columns:54px 1fr;gap:11px;align-items:center}
+.qblocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0 8px}
+.qblock{border:1px solid var(--line);border-top:4px solid var(--c);border-radius:12px;padding:10px 12px;background:var(--panel)}
+.qbh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.qbh b{font-size:15px;color:var(--c)}.qbh span{font-size:12px;color:var(--mut);font-weight:700}
+.qbs{display:flex;flex-wrap:wrap;gap:5px}
+.qbs i{font-style:normal;font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.qlegend{display:flex;flex-wrap:wrap;gap:8px;font-size:12.5px;margin-bottom:18px}
+.qlegend span{padding:3px 10px;border-radius:999px}
+.qlegend .g{background:rgba(79,160,96,.18)}.qlegend .r{background:rgba(217,87,122,.16)}
 .qtwrap{overflow-x:auto;margin:6px 0 4px}
 .qtab{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
 .qtab th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:6px 8px;border-bottom:1px solid var(--line)}
@@ -3961,7 +3970,13 @@ function quranTable(){
       '<td class="' + mark((wq[k] || {}).id) + '">' + gEsc(w.replace(/^\S+ Wird · /, '')) + '</td></tr>';
   }).join('');
   return '<h3>🕋 Quran · muraja’a and wird</h3><div class="qtwrap"><table class="qtab"><thead><tr><th></th><th>Day</th><th>Muraja’a pages</th><th>Surahs (pages)</th><th>Wird</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<div class="ps">Block 1 (≈105 p.): Al-Baqara, Al Imran, An-Nisa · Block 2 (≈102 p.): Al-Ma’ida, Al-An’am, Al-A’raf, Al-Anfal, At-Tawba · Block 3 (≈97 p.): Yunus, Hud, Yusuf, Ar-Ra’d, Ibrahim, Al-Hijr, An-Nahl, Al-Isra, Al-Kahf. ✓ turns a cell green, ✕ red and moves the rest on by a day.</div>';
+    '<div class="qblocks">' + [
+      ['1', '≈105 pages', ['Al-Baqara','Al Imran','An-Nisa'], '#5B8DEF'],
+      ['2', '≈102 pages', ['Al-Ma\u2019ida','Al-An\u2019am','Al-A\u2019raf','Al-Anfal','At-Tawba'], '#3FA796'],
+      ['3', '≈97 pages',  ['Yunus','Hud','Yusuf','Ar-Ra\u2019d','Ibrahim','Al-Hijr','An-Nahl','Al-Isra','Al-Kahf'], '#8B6FD6']
+    ].map(b => '<div class="qblock" style="--c:' + b[3] + '"><div class="qbh"><b>Block ' + b[0] + '</b><span>' + b[1] + '</span></div>' +
+      '<div class="qbs">' + b[2].map(x => '<i>' + x + '</i>').join('') + '</div></div>').join('') + '</div>' +
+    '<div class="qlegend"><span class="g">\u2713 done</span><span class="r">\u2715 missed \u2014 the rest moves on by a day</span></div>';
 }
 function ringFor(it){
   const L = it.label || '', st = readJSON('task-status-8weeks') || {};
