@@ -452,6 +452,7 @@ html.sidecol .sidetog{padding:0 0 2px 2px}
 .qtab th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:6px 8px;border-bottom:1px solid var(--line)}
 .qtab td{padding:7px 8px;border-bottom:1px solid var(--line);color:var(--ink);vertical-align:top}
 .qtab tr.qnow td{background:rgba(232,177,14,.14);font-weight:700}
+.qtab td.qck{width:28px}.qtab td.qck input{transform:scale(1.2);accent-color:#4FA060;cursor:pointer}
 .qtab td.qok{background:rgba(79,160,96,.18)}.qtab td.qno{background:rgba(217,87,122,.16)}
 .fring{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
   background:conic-gradient(#4FA060 0 var(--g),#D9577A var(--g) var(--r),var(--line) var(--r) 100%)}
@@ -3954,11 +3955,12 @@ function quranTable(){
     if (/^✅/.test(m) && /^✅/.test(w)) return '';
     const mm = m.match(/pp\. (\S+) \(19 pages\) · (.+)$/), dt = new Date(d + 'T00:00:00');
     const mark = id => Number(st[id]) === 1 ? ' qok' : Number(st[id]) === 2 ? ' qno' : '';
-    return '<tr class="' + (d === today ? 'qnow' : '') + '"><td>' + wd[dt.getDay()] + ' ' + dt.getDate() + ' ' + dt.toLocaleDateString('en-GB', { month:'short' }) + '</td>' +
+    const wid = (wq[k] || {}).id || '', both = Number(st[x.id]) === 1 && (!wid || Number(st[wid]) === 1);
+    return '<tr class="' + (d === today ? 'qnow' : '') + '"><td class="qck"><input type="checkbox" data-qm="' + x.id + '" data-qw="' + wid + '"' + (both ? ' checked' : '') + ' title="muraja\u2019a and wird done"></td><td>' + wd[dt.getDay()] + ' ' + dt.getDate() + ' ' + dt.toLocaleDateString('en-GB', { month:'short' }) + '</td>' +
       '<td class="' + mark(x.id) + '">' + (mm ? '<b>' + mm[1] + '</b>' : '') + '</td><td class="' + mark(x.id) + '">' + (mm ? gEsc(mm[2]) : gEsc(m)) + '</td>' +
       '<td class="' + mark((wq[k] || {}).id) + '">' + gEsc(w.replace(/^\S+ Wird · /, '')) + '</td></tr>';
   }).join('');
-  return '<h3>🕋 Quran · muraja’a and wird</h3><div class="qtwrap"><table class="qtab"><thead><tr><th>Day</th><th>Muraja’a pages</th><th>Surahs (pages)</th><th>Wird</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+  return '<h3>🕋 Quran · muraja’a and wird</h3><div class="qtwrap"><table class="qtab"><thead><tr><th></th><th>Day</th><th>Muraja’a pages</th><th>Surahs (pages)</th><th>Wird</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     '<div class="ps">Block 1 (≈105 p.): Al-Baqara, Al Imran, An-Nisa · Block 2 (≈102 p.): Al-Ma’ida, Al-An’am, Al-A’raf, Al-Anfal, At-Tawba · Block 3 (≈97 p.): Yunus, Hud, Yusuf, Ar-Ra’d, Ibrahim, Al-Hijr, An-Nahl, Al-Isra, Al-Kahf. ✓ turns a cell green, ✕ red and moves the rest on by a day.</div>';
 }
 function ringFor(it){
@@ -6303,6 +6305,17 @@ function bRepaint(){
   try { paintFinish(); } catch(e){}
   try { paintCards(); } catch(e){}
 }
+/* the tick in the Quran table: both muraja\u2019a and wird of that day done (or both cleared) */
+document.addEventListener('change', e => {
+  const c = e.target; if (!c.matches || !c.matches('.qtab input[data-qm]')) return;
+  {
+    const st = readJSON('task-status-8weeks') || {};
+    [c.dataset.qm, c.dataset.qw].filter(Boolean).forEach(id => { if (c.checked) st[id] = 1; else delete st[id]; });
+    writeJSON('task-status-8weeks', st);
+    try { recomputeQueues(); } catch(e){}
+    bRepaint();
+  }
+});
 
 function editBlock(id){
   const list = myBlocks();
