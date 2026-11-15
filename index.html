@@ -7699,16 +7699,18 @@ function wUnitsFor(mode){
 function paintWordChips(){
   const box = $('#wChips'); if (!box) return;
   const us = wUnitsFor(wMode);
-  let seenAWL = false, seenSG = false, seenNL = false;
+  let seenAWL = false, seenSG = false, seenNL = false, seenSH = false;
   box.innerHTML = us.map(u => {
-    const isAWL = u.slice(0,3) === 'AWL', isSG = u.slice(0,2) === 'SG', isNL = LANG === 'en' && /^\d/.test(u);
+    const isAWL = u.slice(0,3) === 'AWL', isSG = u.slice(0,2) === 'SG', isSH = u.slice(0,2) === 'SH', isNL = LANG === 'en' && /^\d/.test(u);
     const cnt = test => '<span class="cdn">' + WD.filter(x => test(String(x.u))).length + ' words</span>';
     const rule = (isNL && !seenNL) ? '<span class="chipdiv">\uD83D\uDCD8 New Levels 4 \u00b7 units ' + cnt(x => /^\d/.test(x)) + '</span>'
                : (isAWL && !seenAWL) ? '<span class="chipdiv">Academic Word List ' + cnt(x => x.slice(0,3) === 'AWL') + '</span>'
-               : (isSG && !seenSG) ? '<span class="chipdiv">\uD83D\uDCD2 Solid Gold Engelska 5 ' + cnt(x => x.slice(0,2) === 'SG') + '</span>' : '';
+               : (isSG && !seenSG) ? '<span class="chipdiv">\uD83D\uDCD2 Solid Gold Engelska 5 ' + cnt(x => x.slice(0,2) === 'SG') + '</span>'
+               : (isSH && !seenSH) ? '<span class="chipdiv">\uD83D\uDCD2 Solid Gold 2 \u00b7 Engelska 6 ' + cnt(x => x.slice(0,2) === 'SH') + '</span>' : '';
     if (isAWL) seenAWL = true;
     if (isNL) seenNL = true;
     if (isSG) seenSG = true;
+    if (isSH) seenSH = true;
     const n = u === 'CQ-READ' ? CQREAD.length : WD.filter(w => w.u === u).length;
     const bk = BOOKS.find(x => x.u === u);
     const short = (UNAMES[u] || '').replace(/^Academic Word List \u00b7 /, 'AWL ');
@@ -7716,7 +7718,8 @@ function paintWordChips(){
     const label = bk ? (bk.e || '') + ' ' + bk.t
                      : (LANG === 'sv' ? short + (svDaysOfSet(u).length ? ' \u00b7 ' + svRange(svDaysOfSet(u)) : '')
                         : u.slice(0,3) === 'AWL' ? short
-                        : u.slice(0,2) === 'SG' ? short.replace(/^Solid Gold Engelska 5 \u00b7 /, '') : u + ' \u00b7 ' + short);
+                        : u.slice(0,2) === 'SG' ? short.replace(/^Solid Gold Engelska 5 \u00b7 /, '')
+                        : u.slice(0,2) === 'SH' ? short.replace(/^Solid Gold 2 \u00b7 Engelska 6 \u00b7 /, '') : u + ' \u00b7 ' + short);
     const dn = setDoneDays(u), green = dn !== null && dn < 7;
     const m = green ? ['\u2705', '', ''] : mood('set:' + u);
     return rule + '<button data-u="' + u + '"' + (bk ? ' class="bk' + (green ? ' setdone' : '') + '"' : (green ? ' class="setdone"' : '')) +
@@ -8386,6 +8389,7 @@ function paintWordList(){
     ? (bk ? (bk.e || '') + ' ' + bk.t : 'Words from books')
     : (wUnit.slice(0,3) === 'AWL' ? 'Academic Word List'
        : wUnit.slice(0,2) === 'SG' ? 'Solid Gold Engelska 5'
+       : wUnit.slice(0,2) === 'SH' ? 'Solid Gold 2 \u00b7 Engelska 6'
        : (LANG === 'en' ? 'Unit ' + wUnit : (UNAMES[wUnit] || wUnit).split(' \u00b7 ')[0]));
   const warn = $('#voiceWarn');
   if (warn){
