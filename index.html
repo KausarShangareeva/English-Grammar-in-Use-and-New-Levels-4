@@ -2414,6 +2414,9 @@ html[data-theme="dark"] .svday .dbtn.dcards{background:#332B18;color:var(--sand)
 
 .sth .flagi{display:inline-block;width:17px;height:11px;border-radius:2px;vertical-align:-1px;
   margin-right:7px;box-shadow:0 0 0 .5px rgba(0,0,0,.2)}
+.allx{display:block;width:100%;margin:2px 0 10px;padding:9px 12px;border:0;border-radius:10px;background:#d64545;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.allx:hover{background:#b83232}
+.allx.undo{background:transparent;color:#d64545;border:1px solid #d64545}
 .addblk{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--line2);
   background:none;border-radius:999px;padding:6px 13px;font-family:var(--ui);font-size:12px;
   font-weight:800;color:var(--mut2);cursor:pointer;margin-top:4px}
@@ -6700,6 +6703,27 @@ function weekOfToday(){
   return ix < 0 ? 0 : ix;
 }
 function taskStatus(){ return readJSON('task-status-8weeks') || {}; }
+/* The red button: a day where nothing got done. Every task not yet ticked gets \u2715
+   in one go, so the queues move on; ticks already there stay. Pressed again, it
+   takes those \u2715 away. Only for today and days already gone. */
+function allXButton(iso, every, st){
+  if (!every.length || iso > isoToday()) return '';
+  const open = every.filter(r => Number(st[r.i]) !== 1);
+  if (!open.length) return '';
+  const allX = open.every(r => Number(st[r.i]) === 2);
+  return '<button class="allx' + (allX ? ' undo' : '') + '" data-allx="' + iso + '">' +
+    (allX ? '\u21ba Take the \u2715 away' : '\u2715 Nothing done ' + (iso === isoToday() ? 'today' : 'this day') + ' \u2014 cross out everything') +
+    '</button>';
+}
+function crossOutDay(iso, then){
+  const st = taskStatus();
+  const open = allRowsForDay(iso).filter(r => Number(st[r.i]) !== 1);
+  const allX = open.length && open.every(r => Number(st[r.i]) === 2);
+  open.forEach(r => { if (allX) delete st[r.i]; else st[r.i] = 2; });
+  writeJSON('task-status-8weeks', st);
+  recomputeQueues();
+  if (then) then();
+}
 /* 0 nothing \u2192 1 done \u2192 2 could not \u2192 0 again, exactly as the tracker stored it */
 function toggleTask(id, then){
   const st = taskStatus();
@@ -6756,7 +6780,7 @@ function paintWeek(){
       '<span class="cara">' + (open ? '\u2303' : '\u2304') + '</span></button>' +
       '<div class="dbar"><i style="width:' +
         Math.round(dn / Math.max(1, every.length) * 100) + '%"></i></div>' +
-      '<div class="tlist">' + streamBlocks(rows, st, d.iso) + '</div></div>';
+      '<div class="tlist">' + allXButton(d.iso, every, st) + streamBlocks(rows, st, d.iso) + '</div></div>';
   }).join('');
   wireDrag($('#wkDays'));
   $('#wkDays').querySelectorAll('.dayh').forEach(h => h.onclick = () => {
@@ -6766,6 +6790,10 @@ function paintWeek(){
     openDays[iso2] = nowOpen;
     h.querySelector('.cara').textContent = nowOpen ? '\u2303' : '\u2304';
   });
+  $('#wkDays').querySelectorAll('.allx').forEach(b => b.onclick = () =>
+    crossOutDay(b.dataset.allx, () => {
+      paintWeek(); paintToday('#todayTop2'); paintFinish(); paintCards();
+    }));
   $('#wkDays').querySelectorAll('.trow').forEach(b => b.onclick = () =>
     toggleTask(b.dataset.task, () => {
       paintWeek(); paintToday('#todayTop2'); paintFinish(); paintCards();
