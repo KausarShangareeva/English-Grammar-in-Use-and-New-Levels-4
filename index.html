@@ -5098,7 +5098,7 @@ function ebStatus(b){
   const v = (name, html) => '<span data-v="' + name + '">' + html + '</span>';
   const dueTxt = b.due ? ' (' + (ebDaysTo(b.due) > 1 ? 'in ' + ebDaysTo(b.due) + ' days' : ebDaysWord(ebDaysTo(b.due))) + ') ' + (late ? '\u26a0\ufe0f' : '\u2705') : '';
   return '<dl class="ebgrid">' +
-    row('Started', '<input type="date" value="' + gEsc(started) + '" max="' + today + '" data-ebstart="' + b.id + '">') +
+    row(started > today ? 'Starts' : 'Started', '<input type="date" value="' + gEsc(started) + '" data-ebstart="' + b.id + '" title="a future date plans when you begin">') +
     row('I\u2019m on page', '<input type="number" min="0" max="' + b.p + '" value="' + (parseInt(f.next, 10) - 1 || 0) + '" data-ebcp="' + b.id + '" title="the last page you have read · the schedule starts from the next one"> of ' + b.p) +
     row('Finish', v('fin', ebShort(f.last))) +
     row(f.first === today ? 'Today, ' + ebShort(today) : 'Next, ' + ebShort(f.first),
@@ -5274,6 +5274,8 @@ function ebBookPlan(st){
   const books = start < 0 ? [] : [EB[start]].concat(EB.slice(start + 1).filter(b => b.s === 'plan' && !b.role));
   /* a reading day moved to another date counts on the day it was moved to */
   const mv = moves(), eff = id => mv[id] || id.slice(0, 10);
+  if (a && books[0]) q.forEach(slot => { const d = eff(slot.id); if (d >= isoToday() && d < a.date)
+    OVERRIDE[slot.id] = '\uD83D\uDCD6 Book reading \u2014 ' + books[0].t + ' starts on ' + fmtDate(a.date); });
   const slots = q.filter(slot => a && eff(slot.id) >= a.date)
     .sort((x, y) => eff(x.id) < eff(y.id) ? -1 : eff(x.id) > eff(y.id) ? 1 : (x.id < y.id ? -1 : 1));
   const dates = slots.map(slot => eff(slot.id));
@@ -5295,6 +5297,9 @@ function ebStudyPlan(st){
   const mv = moves(), eff = id => mv[id] || id.slice(0, 10);
   const ids = Object.keys(PLAN).filter(iso => PLAN[iso].rows.some(r => r.i === iso + '--bookstudy')).map(iso => iso + '--bookstudy')
     .filter(id => eff(id) >= a.date).sort((x, y) => eff(x) < eff(y) ? -1 : eff(x) > eff(y) ? 1 : (x < y ? -1 : 1));
+  Object.keys(PLAN).forEach(iso => { const id = iso + '--bookstudy'; const d = eff(id);
+    if (PLAN[iso].rows.some(r => r.i === id) && d >= isoToday() && d < a.date)
+      OVERRIDE[id] = EB_ROLE.study + ' \u2014 ' + b.t + ' starts on ' + fmtDate(a.date); });
   const dates = ids.map(eff);
   let page = Math.min(b.p, a.cp || 0) + 1;
   ids.forEach((id, k) => {
@@ -5308,7 +5313,7 @@ function ebStudyPlan(st){
 function ebSetPage(id, v){
   const b = EB.find(x => x.id === id); if (!b) return;
   b.cp = Math.max(0, Math.min(b.p, v)); ebSave();
-  writeJSON(ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor', { id: b.id, cp: b.cp, date: isoToday() });
+  writeJSON(ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor', { id: b.id, cp: b.cp, date: b.started > isoToday() ? b.started : isoToday() });
   try { recomputeQueues(); } catch(e){}
   paintEB(); ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 on page ' + b.cp + ' of ' + b.p + '. The schedule starts from here.');
 }
@@ -5459,8 +5464,16 @@ function paintEB(){
   document.querySelectorAll('#ebList [data-ebstart]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebstart); if (!b) return;
     if (!x.value){ x.value = b.started || isoToday(); return; }
-    b.started = x.value; ebSave(); paintEB();
-    ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 started ' + fmtDate(b.started) + '.');
+    b.started = x.value; ebSave();
+    /* a date ahead plans the start: the schedule gives this book its first pages on that day */
+    const key = ebRole(b) === 'study' ? 'book-anchor-study' : 'book-anchor', a = readJSON(key);
+    if (a && a.id === b.id){
+      const d = b.started > isoToday() ? b.started : (a.date > isoToday() ? isoToday() : a.date);
+      if (d !== a.date){ a.date = d; writeJSON(key, a); }
+      try { recomputeQueues(); } catch(e){}
+    }
+    paintEB();
+    ebMsg('\u2705 <b>' + gEsc(b.t) + '</b> \u2014 ' + (b.started > isoToday() ? 'you start on ' : 'started ') + fmtDate(b.started) + '.');
   });
   document.querySelectorAll('#ebList [data-ebdue]').forEach(x => x.onchange = () => {
     const b = byId(x.dataset.ebdue); if (!b) return;
