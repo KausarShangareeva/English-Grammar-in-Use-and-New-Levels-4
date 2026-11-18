@@ -3921,15 +3921,21 @@ function recomputeQueues(){
 }
 /* Listening restarts from a chosen test on a chosen day: from then on two tests a day,
    a day marked with a cross does not move it on, like every other stream */
-const LISTEN_RESET = { date:'2026-10-30', step:2, sets:[ { set:'B1', from:22, total:51 } ] };
+const LISTEN_RESET = { date:'2026-10-30', step:2, sets:[ { set:'B1', from:22, total:51 } ],
+  /* 18 Nov: B1 dropped, Listening B2 from test 1 of 52 */
+  switchTo:{ date:'2026-11-18', set:'B2', from:1, total:52 } };
 function listenReset(st){
   const q = STREAMS_Q['LISTENING']; if (!q) return;
   let k = 0, n = LISTEN_RESET.sets[0].from;
   q.forEach(slot => {
     if (slot.id.slice(0, 10) < LISTEN_RESET.date) return;
+    const sw = LISTEN_RESET.switchTo;
+    if (sw && slot.id.slice(0, 10) >= sw.date && LISTEN_RESET.sets[k] !== sw){
+      LISTEN_RESET.sets.splice(k + 1); LISTEN_RESET.sets.push(sw); k = LISTEN_RESET.sets.length - 1; n = sw.from;
+    }
     const cur = LISTEN_RESET.sets[k];
     if (!cur){
-      OVERRIDE[slot.id] = '\uD83C\uDFA7 Listening \u2014 B1 finished \u00b7 choose the next set';
+      OVERRIDE[slot.id] = '\uD83C\uDFA7 Listening \u2014 ' + LISTEN_RESET.sets[LISTEN_RESET.sets.length - 1].set + ' finished \u00b7 choose the next set';
       return;
     }
     const to = Math.min(cur.total, n + (LISTEN_RESET.step || 2) - 1);
@@ -4019,7 +4025,7 @@ function ringFor(it){
   };
   if (/Grammar in Use/.test(L)) return mk(145, 29, q('GRAMMAR'), id => (tx(id).match(/Unit \d+/g) || []).length);
   if (/Udemy/.test(L))          return mk(154, 18, q('UDEMY'), id => range(tx(id), /lessons? (\d+)(?:–(\d+))?\/154/));
-  if (/Listening/.test(L))      return mk(51, 21, q('LISTENING'), id => range(tx(id), /B1 (\d+)(?:–(\d+))?\/51/));
+  if (/Listening/.test(L))      return mk(52, 0, q('LISTENING'), id => range(tx(id), /B2 (\d+)(?:–(\d+))?\/52/));
   if (/Oshima/.test(L))         return mk(14, 0, q('OSHIMA'), id => { const m = tx(id).match(/day (\d+) of (\d+)/); return m && m[1] === m[2] ? 1 : 0; });
   if (/50 new words/.test(L))   return mk(1000, 0, rows('sv-words'), () => 50);
   if (/^Tafsir/.test(L))        return mk(1127, 547, q('QURAN-TAFSIR'), id => range(tx(id), /pages (\d+)\u2013(\d+)/));
@@ -4181,9 +4187,9 @@ function paintFinish(){
     return hit;
   };
   const l1 = lastNumbered('LISTENING', 'B1');
-  if (l1) add('Listening B1', '\uD83C\uDFA7', l1, '51 tests, two a day');
+  /* B1 was dropped on 18 Nov for B2 */
   const l2 = lastNumbered('LISTENING', 'B2');
-  if (l2) add('Listening B2', '\uD83C\uDFA7', l2, '36 tests, two a day \u00b7 then a new set is needed');
+  if (l2) add('Listening B2', '\uD83C\uDFA7', l2, '52 tests, two a day');
   const u = finishOf('UDEMY');
   if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u.iso, '154 lessons, two or three a day · certificate');
   const o = finishOf('OSHIMA');
