@@ -3920,9 +3920,9 @@ function recomputeQueues(){
   try { listenReset(st); } catch(e){}
   try { udemyFirst(st); } catch(e){}
 }
-/* 20 Nov: one grammar course at a time. Udemy only, from lesson 25, five a day, so it ends
-   with Engelska 6; Grammar in Use waits and carries on from where it stopped once Udemy is done. */
-const UDEMY_RESET = { date:'2026-11-20', from:25, step:5, total:154 };
+/* 20 Nov: one grammar course at a time. Udemy only: lesson 25 on 20 Nov, then three a day
+   (a lesson is about an hour); Grammar in Use waits and carries on from where it stopped once Udemy is done. */
+const UDEMY_RESET = { date:'2026-11-20', from:25, step:3, total:154, first:1 };
 const UDEMY_STASH = {};
 function udemyFirst(st){
   const uq = STREAMS_Q['UDEMY'], gq = STREAMS_Q['GRAMMAR']; if (!uq || !gq) return;
@@ -3930,8 +3930,9 @@ function udemyFirst(st){
   uq.forEach(slot => {
     const d = slot.id.slice(0, 10); if (d < UDEMY_RESET.date) return;
     if (n > UDEMY_RESET.total){ OVERRIDE[slot.id] = '\uD83C\uDF93 Udemy \u00b7 Scott Mendoza \u2014 \u2705 finished, get the certificate'; return; }
-    const to = Math.min(UDEMY_RESET.total, n + UDEMY_RESET.step - 1);
-    OVERRIDE[slot.id] = '\uD83C\uDF93 Udemy \u00b7 Scott Mendoza \u2014 lessons ' + n + (to > n ? '\u2013' + to : '') + '/' + UDEMY_RESET.total;
+    const step = d === UDEMY_RESET.date && UDEMY_RESET.first ? UDEMY_RESET.first : UDEMY_RESET.step;
+    const to = Math.min(UDEMY_RESET.total, n + step - 1);
+    OVERRIDE[slot.id] = '\uD83C\uDF93 Udemy \u00b7 Scott Mendoza \u2014 ' + (to > n ? 'lessons ' : 'lesson ') + n + (to > n ? '\u2013' + to : '') + '/' + UDEMY_RESET.total;
     if (Number(st[slot.id]) !== 2){ n = to + 1; if (n > UDEMY_RESET.total) done = d; }
   });
   /* Udemy not finished inside the plan: Grammar stays paused to the end of it */
@@ -4227,8 +4228,12 @@ function paintFinish(){
   /* B1 was dropped on 18 Nov for B2 */
   const l2 = lastNumbered('LISTENING', 'B2');
   if (l2) add('Listening B2', '\uD83C\uDFA7', l2, '52 tests, two a day');
-  const u = lastNumbered('UDEMY', 'lessons');
-  if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u, '154 lessons, five a day \u00b7 certificate');
+  /* Udemy: the day lesson 154 comes up; past the plan, three a day Monday to Saturday */
+  { const uq = STREAMS_Q['UDEMY'] || []; let u = null;
+    uq.forEach(x => { if (/lessons? (\d+)(?:\u2013(\d+))?\/154/.test(OVERRIDE[x.id] || '') && !u) { const m = OVERRIDE[x.id].match(/(\d+)(?:\u2013(\d+))?\/154/); if (+(m[2] || m[1]) === 154) u = x.id.slice(0, 10); } });
+    if (!u && uq.length){ const last = uq[uq.length - 1], m = (OVERRIDE[last.id] || '').match(/(\d+)(?:\u2013(\d+))?\/154/);
+      if (m) u = addStudyDays(last.id.slice(0, 10), Math.ceil((154 - +(m[2] || m[1])) / UDEMY_RESET.step)); }
+    if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u, '154 lessons, three a day \u00b7 certificate'); }
   const o = finishOf('OSHIMA');
   if (o) add('Longman Academic (Oshima)', '\uD83D\uDCD9', o.iso, 'Book 4 · 14 chapters, about 4 days each');
   /* Quran: the review of the memorised surahs, and the tafsir, five pages a day (every day, Sundays too) */
