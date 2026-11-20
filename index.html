@@ -3918,6 +3918,43 @@ function recomputeQueues(){
   });
   try { ebBookPlan(st); } catch(e){}
   try { listenReset(st); } catch(e){}
+  try { udemyFirst(st); } catch(e){}
+}
+/* 20 Nov: one grammar course at a time. Udemy only, from lesson 25, five a day, so it ends
+   with Engelska 6; Grammar in Use waits and carries on from where it stopped once Udemy is done. */
+const UDEMY_RESET = { date:'2026-11-20', from:25, step:5, total:154 };
+const UDEMY_STASH = {};
+function udemyFirst(st){
+  const uq = STREAMS_Q['UDEMY'], gq = STREAMS_Q['GRAMMAR']; if (!uq || !gq) return;
+  let n = UDEMY_RESET.from, done = null;
+  uq.forEach(slot => {
+    const d = slot.id.slice(0, 10); if (d < UDEMY_RESET.date) return;
+    if (n > UDEMY_RESET.total){ OVERRIDE[slot.id] = '\uD83C\uDF93 Udemy \u00b7 Scott Mendoza \u2014 \u2705 finished, get the certificate'; return; }
+    const to = Math.min(UDEMY_RESET.total, n + UDEMY_RESET.step - 1);
+    OVERRIDE[slot.id] = '\uD83C\uDF93 Udemy \u00b7 Scott Mendoza \u2014 lessons ' + n + (to > n ? '\u2013' + to : '') + '/' + UDEMY_RESET.total;
+    if (Number(st[slot.id]) !== 2){ n = to + 1; if (n > UDEMY_RESET.total) done = d; }
+  });
+  /* Udemy not finished inside the plan: Grammar stays paused to the end of it */
+  const until = done || '9999-12-31';
+  /* grammar rows come back on the days after Udemy, the paused ones leave the schedule */
+  Object.keys(UDEMY_STASH).forEach(iso => {
+    const rows = PLAN[iso].rows;
+    if (!rows.some(r => r.i === iso + '--grammar')) rows.splice(UDEMY_STASH[iso].at, 0, UDEMY_STASH[iso].row);
+    delete UDEMY_STASH[iso];
+  });
+  let pointer = 0;
+  gq.forEach(slot => {
+    const d = slot.id.slice(0, 10);
+    if (d < UDEMY_RESET.date){ if (Number(st[slot.id]) !== 2 && pointer < gq.length - 1) pointer++; return; }
+    if (d <= until){
+      OVERRIDE[slot.id] = '\uD83D\uDCD8 English Grammar in Use \u2014 paused until Udemy is finished';
+      const rows = PLAN[d] && PLAN[d].rows, at = rows ? rows.findIndex(r => r.i === slot.id) : -1;
+      if (at >= 0){ UDEMY_STASH[d] = { at, row: rows[at] }; rows.splice(at, 1); }
+      return;
+    }
+    OVERRIDE[slot.id] = gq[Math.min(pointer, gq.length - 1)].text;
+    if (Number(st[slot.id]) !== 2 && pointer < gq.length - 1) pointer++;
+  });
 }
 /* Listening restarts from a chosen test on a chosen day: from then on two tests a day,
    a day marked with a cross does not move it on, like every other stream */
@@ -4024,7 +4061,7 @@ function ringFor(it){
     return { total, done, miss, left: total - done - miss, pg: Math.round(done / total * 100), pr: Math.round((done + miss) / total * 100) };
   };
   if (/Grammar in Use/.test(L)) return mk(145, 29, q('GRAMMAR'), id => (tx(id).match(/Unit \d+/g) || []).length);
-  if (/Udemy/.test(L))          return mk(154, 18, q('UDEMY'), id => range(tx(id), /lessons? (\d+)(?:–(\d+))?\/154/));
+  if (/Udemy/.test(L))          return mk(154, 24, q('UDEMY').filter(id => id >= UDEMY_RESET.date), id => range(tx(id), /lessons? (\d+)(?:–(\d+))?\/154/));
   if (/Listening/.test(L))      return mk(52, 0, q('LISTENING'), id => range(tx(id), /B2 (\d+)(?:–(\d+))?\/52/));
   if (/Oshima/.test(L))         return mk(14, 0, q('OSHIMA'), id => { const m = tx(id).match(/day (\d+) of (\d+)/); return m && m[1] === m[2] ? 1 : 0; });
   if (/50 new words/.test(L))   return mk(1000, 0, rows('sv-words'), () => 50);
@@ -4190,8 +4227,8 @@ function paintFinish(){
   /* B1 was dropped on 18 Nov for B2 */
   const l2 = lastNumbered('LISTENING', 'B2');
   if (l2) add('Listening B2', '\uD83C\uDFA7', l2, '52 tests, two a day');
-  const u = finishOf('UDEMY');
-  if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u.iso, '154 lessons, two or three a day · certificate');
+  const u = lastNumbered('UDEMY', 'lessons');
+  if (u) add('Udemy \u00b7 Mendoza', '\uD83C\uDF93', u, '154 lessons, five a day \u00b7 certificate');
   const o = finishOf('OSHIMA');
   if (o) add('Longman Academic (Oshima)', '\uD83D\uDCD9', o.iso, 'Book 4 · 14 chapters, about 4 days each');
   /* Quran: the review of the memorised surahs, and the tafsir, five pages a day (every day, Sundays too) */
